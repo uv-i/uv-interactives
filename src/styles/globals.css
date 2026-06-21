@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens (single source of truth, shared with 3D scene) ───────── */
+:root {
+  /* Brand violet */
+  --c-violet: #6320ee;
+  --c-violet-deep: #3a0ca3;
+  --c-violet-night: #160b32;
+
+  /* Brand amber/gold */
+  --c-gold: #f5a623;
+  --c-gold-warm: #ff8c1a;
+
+  /* Neutrals */
+  --c-sand: #e8d5b5;
+  --c-pearl: #f5f0e6;
+  --c-ink: #0c0717;
+
+  /* Surfaces */
+  --bg: var(--c-violet-night);
+  --fg: var(--c-pearl);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lenis smooth-scroll baseline */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utility: subtle gold focus ring */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
