@@ -1,27 +1,24 @@
 'use client';
 
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
-import { useQuality } from '@/shared/providers/QualityProvider';
+import { useQualityStore } from '@/scene/quality/qualityStore';
+import { useTheme } from '@/scene/theme/themeStore';
 
 /**
- * Tier-gated post-processing. Bloom gives the cinematic glow (sun glints,
- * lantern, beam); vignette focuses the frame. AA via multisampling on high.
- * Low tier never mounts the canvas, so this only runs on medium/high.
+ * Post-processing, theme-aware:
+ *   dusk  → none (the clean, contrasty night look; also a touch faster)
+ *   dawn  → bloom glow + vignette
+ * Off entirely on low tier.
  */
 export function Effects() {
-  const { tier } = useQuality();
-  if (tier === 'low') return null;
-  const high = tier === 'high';
+  const tier = useQualityStore((s) => s.tier);
+  const theme = useTheme((s) => s.theme);
+  if (tier === 'low' || theme === 'dusk') return null;
 
   return (
-    <EffectComposer multisampling={high ? 4 : 0}>
-      <Bloom
-        mipmapBlur
-        intensity={high ? 0.85 : 0.6}
-        luminanceThreshold={0.72}
-        luminanceSmoothing={0.25}
-      />
-      <Vignette offset={0.28} darkness={0.62} eskil={false} />
+    <EffectComposer multisampling={0}>
+      <Bloom mipmapBlur intensity={0.7} luminanceThreshold={0.75} luminanceSmoothing={0.2} />
+      <Vignette offset={0.3} darkness={0.55} eskil={false} />
     </EffectComposer>
   );
 }

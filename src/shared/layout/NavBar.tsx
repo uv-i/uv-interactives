@@ -5,16 +5,32 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { Container } from '@/shared/ui/Container';
 import { studioConfig } from '@/content/data/config';
+import { useTheme } from '@/shared/state/themeStore';
 
 const links = [
   { href: '/lab', label: 'Dev Lab' },
   { href: '/games', label: 'Games' },
-  { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
+
+function ThemeToggle() {
+  const theme = useTheme((s) => s.theme);
+  const toggle = useTheme((s) => s.toggle);
+  const isDusk = theme === 'dusk';
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={isDusk ? 'Switch to day (golden dawn)' : 'Switch to night (purple dusk)'}
+      className="grid h-9 w-9 place-items-center rounded-full border border-white/25 bg-white/10 text-pearl transition-colors hover:border-gold/60 hover:text-gold"
+    >
+      {isDusk ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </button>
+  );
+}
 
 export function NavBar() {
   const pathname = usePathname();
@@ -23,7 +39,7 @@ export function NavBar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-20 border-b border-white/5 bg-violet-night/70 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-50 h-20 border-b border-white/5 bg-[rgba(22,11,50,0.72)] backdrop-blur-md">
       <Container className="flex h-full items-center justify-between">
         <Link
           href="/"
@@ -35,7 +51,6 @@ export function NavBar() {
           <span className="text-lg font-semibold tracking-tight">{studioConfig.studio}</span>
         </Link>
 
-        {/* Desktop nav */}
         <nav aria-label="Primary" className="hidden md:block">
           <ul className="flex items-center gap-7 text-sm">
             {links.map((l) => (
@@ -57,23 +72,24 @@ export function NavBar() {
           </ul>
         </nav>
 
-        {/* Mobile toggle */}
-        <button
-          type="button"
-          className="md:hidden"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            type="button"
+            className="md:hidden"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </Container>
 
-      {/* Mobile panel */}
       {open && (
         <nav
           aria-label="Mobile"
-          className="md:hidden border-t border-white/5 bg-violet-night/95 backdrop-blur-md"
+          className="md:hidden border-t border-white/5 bg-[rgba(22,11,50,0.96)] backdrop-blur-md"
         >
           <ul className="flex flex-col px-5 py-3">
             {links.map((l) => (

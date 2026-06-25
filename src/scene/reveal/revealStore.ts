@@ -1,20 +1,11 @@
 import { create } from 'zustand';
+import { MAX_STAGE } from '@/scene/archipelago/layout';
 
 /**
- * Staged-reveal sequence for the 3D harbour.
- * `stage` means "all stages with index <= stage are revealed".
- * Order: water -> trees -> lighthouse -> docks -> extras (boat).
+ * Generic staged-reveal store. `stage` = "all stages with index <= stage are revealed".
+ * MAX_STAGE is sourced from the active environment's layout -- update it there when
+ * swapping worlds.
  */
-export const STAGE = {
-  WATER: 0,
-  TREES: 1,
-  LIGHTHOUSE: 2,
-  DOCKS: 3,
-  EXTRAS: 4,
-} as const;
-
-export const MAX_STAGE = STAGE.EXTRAS;
-
 interface RevealState {
   stage: number;
   setStage: (n: number) => void;

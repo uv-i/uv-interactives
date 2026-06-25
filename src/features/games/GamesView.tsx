@@ -5,7 +5,7 @@ import { JsonLd } from '@/shared/seo/JsonLd';
 import { Reveal } from '@/animation/Reveal';
 import { videoGameLd } from '@/lib/seo/jsonld';
 
-/** Games — the Dry Docks. Originals in development + the Skillmatics-owned title. */
+/** Games — the Dry Docks. Originals in development + the {g.attribution ?? 'Partner site'}-owned title. */
 export function GamesView({ games, config }: { games: Game[]; config: StudioConfig }) {
   const originals = games.filter((g) => g.ownership === 'original');
   const partners = games.filter((g) => g.ownership === 'partner');
@@ -87,7 +87,7 @@ export function GamesView({ games, config }: { games: Game[]; config: StudioConf
                   ) : null}
                   {g.links?.partnerUrl ? (
                     <a className="text-pearl/60 hover:underline" href={g.links.partnerUrl} target="_blank" rel="noreferrer">
-                      Skillmatics
+                      {g.attribution ?? 'Partner site'}
                     </a>
                   ) : null}
                 </div>

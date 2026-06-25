@@ -4,12 +4,8 @@ import { useRef, type ReactNode } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import { useReveal } from '@/scene/reveal/revealStore';
+import { easeOutBack } from '@/scene/reveal/easing';
 
-const easeOutBack = (x: number) => {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-};
 
 /**
  * Animates its children in when the global reveal reaches `stage`.

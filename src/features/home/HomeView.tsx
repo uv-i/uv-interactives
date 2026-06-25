@@ -3,7 +3,6 @@ import { Container } from '@/shared/ui/Container';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Button } from '@/shared/ui/Button';
 import { Reveal } from '@/animation/Reveal';
-import { SceneBackdrop } from '@/scene/SceneBackdrop';
 
 /**
  * Home presentation. Pure: receives content as props (page fetches it).
@@ -17,14 +16,12 @@ export function HomeView({ config, services }: { config: StudioConfig; services:
       <section className="relative flex min-h-[88vh] items-center overflow-hidden pt-20">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-violet-deep/40 via-violet-night to-violet-night"
+          className="pointer-events-none absolute inset-0 -z-10"
         />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-violet/30 to-transparent"
         />
-        {/* 3D environment backdrop (client-only, capable devices); CSS gradient above is the fallback */}
-        <SceneBackdrop className="pointer-events-none absolute inset-0 -z-[5]" />
         {/* readability scrim over the 3D scene (darkens behind the copy, clears to the right) */}
         <div
           aria-hidden

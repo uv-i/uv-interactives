@@ -4,16 +4,21 @@ import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ACESFilmicToneMapping } from 'three';
 import { activeEnvironment } from '@/scene/environment';
+import { CameraRig } from '@/scene/CameraRig';
+import { DebugCamera } from '@/scene/DebugCamera';
+import { PerfProbe } from '@/scene/debug/PerfProbe';
+import { isDebug } from '@/scene/debug/perfStore';
 import { useQuality } from '@/shared/providers/QualityProvider';
 
-/**
- * Generic WebGL canvas (the "engine"). Renders whatever environment is active.
- * Default-exported for lazy next/dynamic({ ssr:false }).
- */
+const DEBUG_CAM =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('cam');
+
+/** Generic WebGL canvas (the "engine"). Renders whatever environment is active. */
 export default function SceneCanvas() {
   const { tier } = useQuality();
-  const dpr: [number, number] = tier === 'high' ? [1, 2] : [1, 1.5];
-  const { Scene, camera } = activeEnvironment;
+  const dpr: [number, number] = tier === 'high' ? [1, 1.5] : [1, 1.25];
+  const { Scene, camera, cameraComponent: CameraComponent } = activeEnvironment;
+  const debug = isDebug();
 
   return (
     <Canvas
@@ -29,6 +34,14 @@ export default function SceneCanvas() {
     >
       <Suspense fallback={null}>
         <Scene />
+        {DEBUG_CAM ? (
+          <DebugCamera target={camera.target} />
+        ) : CameraComponent ? (
+          <CameraComponent />
+        ) : (
+          <CameraRig />
+        )}
+        {debug ? <PerfProbe /> : null}
       </Suspense>
     </Canvas>
   );

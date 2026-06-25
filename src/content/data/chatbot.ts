@@ -53,7 +53,6 @@ PAGES:
 - Home (/): studio intro + the rising-tide harbour.
 - Dev Lab (/lab): free teaching packages (Coin Rush, OOP Pillars; more engines soon).
 - Games (/games): UV Originals (in development) + Guess In 10 (Skillmatics-owned, maintained by UV).
-- About (/about): light studio story + founder note.
 - Contact (/contact): get in touch.
 
 RULES: Be concise. Do not mention any clients other than Skillmatics. Do not claim shipped original games yet. No recruiting pressure.`,

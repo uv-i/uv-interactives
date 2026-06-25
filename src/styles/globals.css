@@ -5,18 +5,18 @@
 /* ── Design tokens (single source of truth, shared with 3D scene) ───────── */
 :root {
   /* Brand violet */
-  --c-violet: #6320ee;
-  --c-violet-deep: #3a0ca3;
-  --c-violet-night: #160b32;
+  --c-violet: 99 32 238;
+  --c-violet-deep: 58 12 163;
+  --c-violet-night: 22 11 50;
 
   /* Brand amber/gold */
-  --c-gold: #f5a623;
-  --c-gold-warm: #ff8c1a;
+  --c-gold: 245 166 35;
+  --c-gold-warm: 255 140 26;
 
   /* Neutrals */
-  --c-sand: #e8d5b5;
-  --c-pearl: #f5f0e6;
-  --c-ink: #0c0717;
+  --c-sand: 232 213 181;
+  --c-pearl: 245 240 230;
+  --c-ink: 12 7 23;
 
   /* Surfaces */
   --bg: var(--c-violet-night);
@@ -31,8 +31,8 @@ html {
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--fg);
+  background-color: rgb(var(--bg));
+  color: rgb(var(--fg));
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -66,7 +66,72 @@ html.lenis body {
 
 /* Utility: subtle gold focus ring */
 :where(a, button, [tabindex]):focus-visible {
-  outline: 2px solid var(--c-gold);
+  outline: 2px solid rgb(var(--c-gold));
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Frosted readable panel for inner pages sitting over the persistent 3D scene. */
+.frost-panel {
+  background-color: rgba(22, 11, 50, 0.92);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* ── Dawn (light) skin — only the frosted UI flips; the 3D hero stays as-is ── */
+html[data-theme='dawn'] .frost-panel {
+  background-color: rgba(247, 244, 237, 0.93);
+}
+html[data-theme='dawn'] .frost-panel h1,
+html[data-theme='dawn'] .frost-panel h2,
+html[data-theme='dawn'] .frost-panel h3,
+html[data-theme='dawn'] .frost-panel h4,
+html[data-theme='dawn'] .frost-panel p,
+html[data-theme='dawn'] .frost-panel li,
+html[data-theme='dawn'] .frost-panel label,
+html[data-theme='dawn'] .frost-panel span {
+  color: #29243f;
+}
+html[data-theme='dawn'] .frost-panel a {
+  color: #9a5b00;
+}
+/* cards / chips / inputs: dark-on-light */
+html[data-theme='dawn'] .frost-panel .rounded-2xl,
+html[data-theme='dawn'] .frost-panel .rounded-xl {
+  background-color: rgba(20, 16, 44, 0.035);
+  border-color: rgba(20, 16, 44, 0.14);
+}
+html[data-theme='dawn'] .frost-panel .rounded-md,
+html[data-theme='dawn'] .frost-panel .rounded-full {
+  background-color: rgba(20, 16, 44, 0.06);
+  border-color: rgba(20, 16, 44, 0.18);
+}
+html[data-theme='dawn'] .frost-panel input,
+html[data-theme='dawn'] .frost-panel textarea {
+  background-color: rgba(20, 16, 44, 0.04);
+  border-color: rgba(20, 16, 44, 0.18);
+  color: #29243f;
+}
+html[data-theme='dawn'] .frost-panel input::placeholder,
+html[data-theme='dawn'] .frost-panel textarea::placeholder {
+  color: #6b6680;
+}
+/* Send button stays gold (dark text) — keep it readable */
+html[data-theme='dawn'] .frost-panel button.bg-gold {
+  color: #1a1330;
+}
+
+/* Navbar flips light on dawn */
+html[data-theme='dawn'] header {
+  background-color: rgba(247, 244, 237, 0.85) !important;
+  border-color: rgba(20, 16, 44, 0.1) !important;
+}
+html[data-theme='dawn'] header a,
+html[data-theme='dawn'] header span,
+html[data-theme='dawn'] header button {
+  color: #29243f;
+}
+html[data-theme='dawn'] header button {
+  border-color: rgba(20, 16, 44, 0.25);
+  background-color: rgba(20, 16, 44, 0.06);
 }

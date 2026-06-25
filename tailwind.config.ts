@@ -14,25 +14,25 @@ const config: Config = {
       colors: {
         // Brand violet family
         violet: {
-          DEFAULT: 'var(--c-violet)',
-          deep: 'var(--c-violet-deep)',
-          night: 'var(--c-violet-night)',
+          DEFAULT: 'rgb(var(--c-violet) / <alpha-value>)',
+          deep: 'rgb(var(--c-violet-deep) / <alpha-value>)',
+          night: 'rgb(var(--c-violet-night) / <alpha-value>)',
         },
         // Brand amber/gold family
         gold: {
-          DEFAULT: 'var(--c-gold)',
-          warm: 'var(--c-gold-warm)',
+          DEFAULT: 'rgb(var(--c-gold) / <alpha-value>)',
+          warm: 'rgb(var(--c-gold-warm) / <alpha-value>)',
         },
-        sand: 'var(--c-sand)',
-        pearl: 'var(--c-pearl)',
-        ink: 'var(--c-ink)',
+        sand: 'rgb(var(--c-sand) / <alpha-value>)',
+        pearl: 'rgb(var(--c-pearl) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
       },
       boxShadow: {
-        glow: '0 0 40px -8px var(--c-gold)',
+        glow: '0 0 40px -8px rgb(var(--c-gold))',
       },
       keyframes: {
         'fade-up': {

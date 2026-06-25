@@ -1,19 +1,13 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import {
-  detectQuality,
-  type QualityProfile,
-} from '@/scene/quality/detectQuality';
+import { detectQuality, type QualityProfile } from '@/scene/quality/detectQuality';
+import { useQualityStore } from '@/scene/quality/qualityStore';
 
-/**
- * Provides the resolved quality profile to the whole app.
- * SSR renders a safe default; the client refines it after mount.
- */
 const SSR_DEFAULT: QualityProfile = {
   tier: 'high',
   reducedMotion: false,
-  enable3D: false, // off until the client confirms capability — avoids hydration flashes
+  enable3D: false,
   maxPixelRatio: 2,
 };
 
@@ -23,11 +17,17 @@ export function QualityProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<QualityProfile>(SSR_DEFAULT);
 
   useEffect(() => {
-    setProfile(detectQuality());
+    const p = detectQuality();
+    setProfile(p);
+    useQualityStore.getState().apply(p);
 
     if (typeof window !== 'undefined' && window.matchMedia) {
       const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const onChange = () => setProfile(detectQuality());
+      const onChange = () => {
+        const next = detectQuality();
+        setProfile(next);
+        useQualityStore.getState().apply(next);
+      };
       mq.addEventListener?.('change', onChange);
       return () => mq.removeEventListener?.('change', onChange);
     }

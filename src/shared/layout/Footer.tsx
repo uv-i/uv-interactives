@@ -7,7 +7,7 @@ export function Footer() {
   const { studio, motto, contactEmail, socials } = studioConfig;
 
   return (
-    <footer className="border-t border-white/5 py-12 text-sm text-pearl/60">
+    <footer className="frost-panel relative border-t border-white/5 py-12 text-sm text-pearl/60">
       <Container className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-semibold text-pearl/90">{studio}</p>

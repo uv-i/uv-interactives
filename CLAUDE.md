@@ -92,22 +92,28 @@ does. To replace the world, implement one contract and flip one import.
 - `src/scene/quality/` — device tier detection.
 - `src/scene/models/HModel.tsx` — glTF loader + palette-atlas filtering.
 
-**Environment (harbour-specific — replace when swapping):**
-- `src/scene/HarbourScene.tsx` — assembles lights, models, reveal, sky/fog, effects.
-- `src/scene/Ocean.tsx` — the water shader.
-- `src/scene/layout.ts` — model placements + `CAMERA`, mirrored from Blender.
-- `public/models/*.glb`, `public/textures/uvi_palette.png` — the assets.
-- Blender source of truth: `D:\uvi\Blender\uvi_website\UVI_Harbour.blend` (`UVI_Preview` scene).
+**Environment (world-specific — replace when swapping):**
+- `src/scene/ArchipelagoScene.tsx` — ACTIVE world. Lazy-loads the 5 stage glbs + staged reveal.
+- `src/scene/ArchipelagoCamera.tsx` — slow auto-orbit (the env's `cameraComponent`).
+- `src/scene/archipelago/layout.ts` — `ARCH_MODELS` urls, `ARCH_STAGE`, camera, preload.
+- `src/scene/HarbourScene.tsx` + `src/scene/layout.ts` — earlier world, kept as reference.
+- `src/scene/Ocean.tsx` — the water shader (shared by both worlds).
+- `public/models/archipelago/*.glb` (islands/peaks/structures/flora/dock), `public/textures/uvi_palette.png`.
+- Blender source of truth: `D:\uvi\Blender\uvi_website\UVI_Harbour.blend` (`UVI_World` scene; `UVI_Preview` for harbour).
 
 ## The contract
 
 ```ts
 // src/scene/environment.ts
 export interface SceneEnvironment {
-  Scene: ComponentType;                 // owns its lights/models/reveal/sky/fog/effects; sets camera.lookAt
+  Scene: ComponentType;                 // owns its lights/models/reveal/sky/fog/effects
   camera: { position: [number,number,number]; target: [number,number,number]; fov: number };
+  stations: Station[];                  // scroll waypoints for the default CameraRig
+  cameraComponent?: ComponentType;      // optional custom camera (e.g. orbit) — replaces CameraRig
 }
-export const activeEnvironment: SceneEnvironment = { Scene: HarbourScene, camera: CAMERA };
+export const activeEnvironment: SceneEnvironment = {
+  Scene: ArchipelagoScene, camera: ARCH_CAMERA, stations: ARCH_STATIONS, cameraComponent: ArchipelagoCamera,
+};
 ```
 
 ## To swap the environment
@@ -118,5 +124,118 @@ export const activeEnvironment: SceneEnvironment = { Scene: HarbourScene, camera
 4. In `src/scene/environment.ts`, import the new Scene + camera and set `activeEnvironment`.
 5. Done. `SceneCanvas`, `SceneBackdrop`, all pages, content, UI, and providers stay untouched.
 
+## Staged export + lazy reveal (the standard asset pipeline)
+
+Do NOT export a world as one monolithic glb. Export **one glb per reveal stage** so
+the browser lazy-loads each group over the network and animates it in on its own —
+matching the harbour/`UVI_Preview` behaviour (assets appear one by one).
+
+**Blender → web export (per stage):**
+1. Bucket every object into reveal stages (by parent-empty / collection, NOT by name —
+   pack object names are generic like `Cylinder.031`). Archipelago stages:
+   `islands → peaks → structures → flora → dock`.
+2. Export each bucket to `public/models/<world>/<stage>.glb` via a **temp scene**:
+   create `bpy.data.scenes.new(...)`, link only that bucket's objects, set it active,
+   then `export_scene.gltf(use_active_scene=True, use_selection=False, export_apply=True,
+   export_yup=True, ...)`. Pitfalls learned the hard way:
+   - `use_selection=True` leaks objects stuck-selected in excluded collections — avoid it.
+   - default `use_active_scene=False` dumps ALL scenes into every file — always pass `True`.
+   - keep transforms as node TRS (only `export_apply` = apply *modifiers*), so each group
+     mounts at the origin and the pieces line up into the full world.
+
+**Web side (lazy + staged):**
+- `archipelago/layout.ts` lists `ARCH_MODELS` (one url per stage) + `preload`.
+- `ArchipelagoScene` wraps each group in `Reveal3D` (mode `"rise"` = slides up from the
+  sea) driven by `revealStore` stage timers. Flora uses `StaggeredGroup`, which scales in
+  each top-level child one by one (per-index delay) for the "trees pop in" effect.
+- Reduced motion → `revealAll()` (no animation).
+
 ## Never changes when swapping
 `app/`, `features/`, `content/`, `shared/`, `styles/`, the providers, and the engine files above. Only the environment module + `activeEnvironment` line.
+
+# Project State & Resume (keep current — read this first on a new chat)
+
+Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoScene**
+(persistent fixed canvas behind whole site). Dev: `npm run dev` (localhost:3000).
+
+## Done
+- 3D archipelago built in Blender (`UVI_Harbour.blend`, scene `UVI_World`), exported as
+  5 stage glbs in `public/models/archipelago/` (islands, peaks, structures, flora, dock).
+- Web env: lazy staged reveal, slow orbit camera (`ArchipelagoCamera`), ocean shader.
+- Dusk/Dawn themes (`scene/theme/`): `themeStore` (zustand), `grade.ts` (all colours,
+  single source), `SkyDome` (gradient sky + sun/moon + stars), `ThemeSync` (localStorage +
+  `data-theme` on <html>), `GradedAtmosphere` lerps lights/fog/exposure. Toggle in NavBar.
+  Dusk bloom OFF, Dawn bloom ON (`Effects.tsx`, theme-aware).
+- Perf pass → ~60fps (was 10-15). See "Performance" below.
+- Debug HUD (`scene/debug/`, top-right): FPS/draws/tris/geo/tex/programs. On in dev or `?debug`.
+- Pages: Home (3D hero), Dev Lab, Games, Contact — all built, content in `content/data/`.
+- Contact form (`features/contact/ContactForm.tsx`): EmailJS REST, keys in `.env.local`
+  (`NEXT_PUBLIC_EMAILJS_*`, copied from old `uvi-website-3d`).
+- About page + river were intentionally DROPPED.
+- **AI backend (Gemini) — DONE.** One server route `app/api/leo/route.ts` (`runtime='nodejs'`)
+  proxies Gemini `gemini-2.5-flash-lite`; key is server-side only (`GEMINI_API_KEY` in
+  `.env.local`, blank in `.env.example`). One route, three `task`s:
+  - `chat` — client sends `{task,input,system,history}` (system = `chatbot.systemPrompt`,
+    last 10 msgs as history → mapped to Gemini `role:user|model`).
+  - `polish` / `forge` — server owns the prompt; client sends just `{task,input}`.
+  - Validation at the boundary: bad task→400, empty input→400, >4000 chars→413.
+  - **Offline fallback:** no key OR upstream error → HTTP 200 `{text, offline:true}`
+    (chat→Contact-page nudge, forge→"cooling down", polish→`''` so caller keeps original).
+    Never throws to the client. Pure decision logic has a node smoke test (7/7) — re-run
+    via the snippet in git history if route logic changes.
+- **Leo chatbot — DONE.** `features/leo/Leo.tsx` (client), mounted GLOBALLY in
+  `app/providers.tsx` (so it's on every page). Floating 🦁 launcher + chat window
+  (framer-motion). Idle teaser bubble cycles `chatbot.facts` (90s), hidden on `/lab` + `/games`
+  and when open. Reply keyword→route chips (inlined `PAGE_LINKS`/`extractLinks`). Listens for
+  `window` event `leo:open` so the future 3D LeoOrb can open it. Reads persona by importing
+  `chatbot` from `content/data/chatbot.ts` directly (static, no repository call). Uses
+  `themeStore` for dusk/dawn skin, `next/navigation` for routing.
+- **Idea Forge — DONE.** `features/devlab/IdeaForge.tsx` (client), embedded in `DevLabView`
+  (server component renders the client island). Calls `/api/leo` `forge` task; renders the
+  TITLE/GENRE/PITCH/MECHANIC/TWIST block as `<pre>`.
+- **Contact "Polish with AI" — DONE.** Button on the message field in `ContactForm.tsx` →
+  `/api/leo` `polish` task; replaces the textarea with the rewrite (keeps original if offline).
+
+## Still TODO (in order)
+- **Visual polish only.** All tech/backend is wired. New UI (Leo, Idea Forge, Polish button)
+  was left deliberately plain (frost-panel + gold) — Bhuvanesh is driving the visual pass.
+- Optional: run a full `npm run build` locally to confirm the prod bundle (R3F compile
+  exceeds the agent sandbox's per-call time cap, so it was verified via `tsc --noEmit` clean
+  + the route logic test, not a full build).
+
+## AI / env note
+- `GEMINI_API_KEY` is **server-side only** — never prefix `NEXT_PUBLIC`. Reused from old
+  `uvi-website-3d` (`VITE_GEMINI_API_KEY`). With the key blank the whole AI surface still works,
+  just returns the offline fallbacks — safe to ship without a key.
+- To swap AI provider: change `MODEL` + `callGemini` in `app/api/leo/route.ts` only; the three
+  client callers (Leo, IdeaForge, ContactForm) are provider-agnostic (`fetch('/api/leo', …)`).
+
+## Performance (root causes + fixes — don't regress these)
+- Bottleneck was draw calls (1420!) + fill-rate, NOT triangles.
+- `scene/archipelago/merge.ts`: `mergeByMaterial` (merge static groups by material → ~110
+  draws) + `cheapMaterial`/`cheapenMaterials` (MeshStandard → **MeshLambert**, cheap lighting).
+  ArchModel merges; flora uses `cheapenMaterials` (kept separate for per-tree stagger).
+- Ocean fragment: NO per-pixel fbm (foam from wave height only). Vertex fbm kept.
+- `Effects.tsx`: multisampling 0 (no MSAA), bloom dawn-only.
+- DPR capped ([1,1.5] high). Quality tier read via `scene/quality/qualityStore` (zustand) —
+  React context does NOT cross the R3F canvas, so use the store inside the canvas, not `useQuality`.
+
+## Readability / theming gotchas (IMPORTANT)
+- Inner pages (Dev Lab/Games/Contact) + Footer use the **`.frost-panel`** class
+  (`globals.css`): frosted dark panel over the 3D so text is readable. Home hero has no
+  frost (full 3D + scrims).
+- **Light/Dark UI flip** is done with scoped CSS in `globals.css` under
+  `html[data-theme='dawn'] .frost-panel` / `html[data-theme='dawn'] header` (literal colours,
+  works without a dev restart). Dusk = default dark skin; Dawn = light cream skin + dark text.
+  If adding new inner-page UI, give it `.frost-panel` (or it won't theme).
+- Brand colours in `globals.css` are RGB-channel triplets and Tailwind colours use
+  `rgb(var(--x) / <alpha-value>)` so opacity utilities (`bg-violet-night/85`, `text-pearl/70`)
+  work. **Tailwind config + env-var changes need a `npm run dev` restart** to take effect.
+  NavBar uses literal `bg-[rgba(22,11,50,0.72)]` to avoid depending on that.
+
+## Sandbox/file note (for the agent)
+The Linux sandbox occasionally shows stale/corrupted (truncated/null-padded) copies of
+source files, and file-tool writes to EXISTING files don't always reach it. Prefer editing
+via bash (heredoc) and verify with `npx tsc --noEmit`. Repo is git — `git checkout HEAD -- <f>`
+restores a clean file if corruption appears. Live UI can be inspected via Claude-in-Chrome
+at localhost:3000 (its control border/cursor are NOT site bugs).
