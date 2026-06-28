@@ -20,14 +20,16 @@ export function BottlePulse() {
     roughness:         0.25,
     metalness:         0.1,
     transparent:       true,
-    opacity:           0.92,
+    opacity:           0.55,  // semi-transparent glow shell
   }), []);
 
-  // Clone the mesh node — keeps its baked position + quaternion + scale
+  // Clone the mesh node — keeps its baked position + quaternion + scale.
+  // Scale up 8% so the glow shell sits outside the original, eliminating z-fighting.
   const clone = useMemo(() => {
     const src = scene.getObjectByName('Bottle_New') as Mesh | undefined;
     if (!src) return null;
     const m = src.clone(false);   // shallow — just the mesh, reuse geometry
+    m.scale.multiplyScalar(1.08);
     m.material = mat;
     m.renderOrder = 2;
     return m;
