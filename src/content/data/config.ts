@@ -4,7 +4,7 @@ export const studioConfig: StudioConfig = {
   studio: 'UV Interactives',
   founderName: 'Bhuvaneshwaran M',
   founderShort: 'Bhuvanesh',
-  tagline: 'We build games — and we share how, for free.',
+  tagline: 'Lets build games TOGETHER',
   motto: 'A rising tide lifts all boats.',
   contactEmail: 'huntingblu@gmail.com',
   contactLocation: 'Chennai, India',

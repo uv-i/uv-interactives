@@ -46,8 +46,13 @@ export function cheapenMaterials(root: Object3D): void {
  * Collapse a glb scene into one mesh PER MATERIAL (world matrices baked in) AND
  * cheapen materials. Turns hundreds of draw calls + PBR into a handful of cheap
  * draws. Multi-material meshes are kept separate (rare).
+ *
+ * @param skip  Optional predicate — return true to exclude a node from merging.
  */
-export function mergeByMaterial(root: Object3D): Group {
+export function mergeByMaterial(
+  root: Object3D,
+  skip?: (o: Object3D) => boolean,
+): Group {
   root.updateWorldMatrix(true, true);
   const buckets = new Map<string, { mat: Material; geos: BufferGeometry[] }>();
   const out = new Group();
@@ -55,6 +60,7 @@ export function mergeByMaterial(root: Object3D): Group {
   root.traverse((o: Object3D) => {
     const m = o as Mesh;
     if (!m.isMesh) return;
+    if (skip?.(o)) return;
     if (Array.isArray(m.material)) {
       const g = m.geometry.clone();
       g.applyMatrix4(m.matrixWorld);

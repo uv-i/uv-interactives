@@ -45,14 +45,14 @@ export function HomeView({
           >
             <Button href="/lab">Explore free learning</Button>
             <Button href="/games" variant="ghost">See what we&apos;re building</Button>
-            <Button
+            {/* <Button
               variant="ghost"
               style={{ animationDelay: '320ms' }}
               className="animate-fade-up"
               onClick={() => useIslandStore.getState().enter()}
             >
               Explore in 3D
-            </Button>
+            </Button> */}
           </div>
         </Container>
       </section>

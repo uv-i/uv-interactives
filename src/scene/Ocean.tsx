@@ -2,8 +2,32 @@
 
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { ShaderMaterial, Color, Vector3, type Mesh } from 'three';
+import {
+  ShaderMaterial, Color, Vector2, Vector3,
+  WebGLRenderTarget,
+  type Mesh,
+} from 'three';
 import { useReveal } from '@/scene/reveal/revealStore';
+
+// ponytail: 512×512 world-Y prepass, every 4th frame
+const DEPTH_SIZE = 512;
+const PREPASS_EVERY = 4;
+
+// Encodes world-space Y position into red channel so foam knows terrain height.
+// Works at any camera angle (unlike depth-diff which breaks at grazing angles).
+const worldYVertex = /* glsl */ `
+varying float vWorldY;
+void main(){
+  vWorldY = (modelMatrix * vec4(position, 1.0)).y;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+// Encode worldY [-10..+20] → [0..1]. Clear=black → decoded=-10 (deep below water = no foam).
+const worldYFragment = /* glsl */ `
+varying float vWorldY;
+void main(){
+  float enc = clamp((vWorldY + 10.0) / 30.0, 0.001, 1.0);
+  gl_FragColor = vec4(enc, 0.0, 0.0, 1.0);
+}`;
 
 const common = /* glsl */ `
 uniform float uTime;
@@ -80,6 +104,8 @@ uniform vec3 uSunDir;
 uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
+uniform sampler2D tWorldY;
+uniform vec2 uResolution;
 varying float vH;
 varying vec3 vPos;
 varying vec3 vNormal;
@@ -94,16 +120,28 @@ void main(){
   vec3 R = reflect(-normalize(uSunDir), n);
   float spec = pow(max(dot(R, V), 0.0), 120.0);
   col += uSunColor * spec * 0.9;
+
+  // Wave-crest foam
   float fn = fbm(vPos.xz * 0.35 + vec2(uTime * 0.04, -uTime * 0.03));
   float crest = smoothstep(0.14, 0.32, vH + (fn - 0.5) * 0.22);
   float foamPatch = smoothstep(0.55, 0.9, fn);
-  float foam = crest * foamPatch;
-  col = mix(col, vec3(0.9, 0.95, 1.0), foam * 0.38);
+  col = mix(col, vec3(0.9, 0.95, 1.0), crest * foamPatch * 0.38);
 
-  // Horizon blend: two terms combined —
-  //   distFog: standard distance haze starting close
-  //   horizonFog: fragments seen at grazing angle (near horizon) → fully sky colour
-  // This eliminates the hard seam at the skyline regardless of distance.
+  // Shore foam: sample world-Y prepass
+  // enc=0 (black) = sky/nothing. enc>0 = terrain. Decode to worldY.
+  // Foam where terrain worldY ≈ 0 (land–water interface).
+  vec2 screenUV = gl_FragCoord.xy / uResolution;
+  float enc = texture2D(tWorldY, screenUV).r;
+  if (enc > 0.001) {
+    float terrainY = enc * 30.0 - 10.0;          // decode [-10,+20]
+    float foamN = fbm(vPos.xz * 0.45 + vec2(uTime * 0.18, -uTime * 0.12));
+    // ponytail: ±1.2m band around y=0 — world-space, camera-angle-independent
+    float proximity = 1.0 - smoothstep(0.0, 1.2, abs(terrainY));
+    float shoreFoam = proximity * (0.55 + foamN * 0.45);
+    col = mix(col, vec3(0.95, 0.98, 1.0), clamp(shoreFoam, 0.0, 1.0) * 0.85);
+  }
+
+  // Horizon fog
   float dist = length(cameraPosition.xz - vPos.xz);
   float distFog = smoothstep(uFogNear * 0.4, uFogFar, dist);
   float horizonFog = 1.0 - smoothstep(0.0, 0.18, abs(V.y));
@@ -137,6 +175,16 @@ export function Ocean({
 }) {
   const meshRef = useRef<Mesh>(null);
   const current = useReveal((s) => s.stage);
+  const frameRef = useRef(0);
+
+  const { worldYTarget, worldYMat } = useMemo(() => {
+    const t = new WebGLRenderTarget(DEPTH_SIZE, DEPTH_SIZE);
+    const m = new ShaderMaterial({
+      vertexShader: worldYVertex,
+      fragmentShader: worldYFragment,
+    });
+    return { worldYTarget: t, worldYMat: m };
+  }, []);
 
   const material = useMemo(
     () =>
@@ -144,15 +192,17 @@ export function Ocean({
         vertexShader: vertex,
         fragmentShader: fragment,
         uniforms: {
-          uTime:     { value: 0 },
-          uReveal:   { value: 0 },
-          uDeep:     { value: new Color(deep) },
-          uShallow:  { value: new Color(shallow) },
-          uSunColor: { value: new Color(sunColor) },
-          uSunDir:   { value: new Vector3(...sunDir).normalize() },
-          uFogColor: { value: new Color(fogColor) },
-          uFogNear:  { value: fogNear },
-          uFogFar:   { value: fogFar },
+          uTime:       { value: 0 },
+          uReveal:     { value: 0 },
+          uDeep:       { value: new Color(deep) },
+          uShallow:    { value: new Color(shallow) },
+          uSunColor:   { value: new Color(sunColor) },
+          uSunDir:     { value: new Vector3(...sunDir).normalize() },
+          uFogColor:   { value: new Color(fogColor) },
+          uFogNear:    { value: fogNear },
+          uFogFar:     { value: fogFar },
+          tWorldY:     { value: null },
+          uResolution: { value: new Vector2(1, 1) },
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,9 +222,25 @@ export function Ocean({
     [deep, shallow, sunColor, sunDir, fogColor, fogNear, fogFar],
   );
 
-  useFrame((_, dt) => {
+  useFrame(({ gl, scene, camera }, dt) => {
+    // World-Y prepass: render scene with worldY material, capture into color RT
+    if (frameRef.current % PREPASS_EVERY === 0 && meshRef.current) {
+      meshRef.current.visible = false;
+      scene.overrideMaterial = worldYMat;
+      gl.setRenderTarget(worldYTarget);
+      gl.clear(true, true, false);
+      gl.render(scene, camera);
+      gl.setRenderTarget(null);
+      scene.overrideMaterial = null;
+      meshRef.current.visible = true;
+
+      material.uniforms.tWorldY.value = worldYTarget.texture;
+      material.uniforms.uResolution.value.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    }
+    frameRef.current++;
+
     material.uniforms.uTime.value += dt;
-    const target = current >= 0 ? 1 : 0;
+    const target  = current >= 0 ? 1 : 0;
     const uReveal = material.uniforms.uReveal;
     uReveal.value += (target - uReveal.value) * Math.min(1, dt * 2.2);
     const k = Math.min(1, dt * 1.8);

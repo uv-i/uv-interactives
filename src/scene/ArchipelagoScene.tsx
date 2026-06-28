@@ -1,4 +1,4 @@
-'use client';
+'use client'; // buoyancy-v102
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -23,16 +23,19 @@ import { SkyDome } from '@/scene/theme/SkyDome';
 import { ARCH_MODELS, ARCH_STAGE } from '@/scene/archipelago/layout';
 import { mergeByMaterial, cheapenMaterials } from '@/scene/archipelago/merge';
 import { LighthouseBeam } from '@/scene/LighthouseBeam';
+import { BoatBuoyancy } from '@/scene/BoatBuoyancy2';
 import { Landmarks } from '@/scene/Landmarks';
 import { BottlePulse } from '@/scene/BottlePulse';
 import { easeOutBack } from '@/scene/reveal/easing';
 
 const LERP = 1.8;
 
+const BOAT_RE = /DG_Boat_Catamaran/;
+
 /** Loads a group glb and clones it (world transforms baked -> mount at origin). */
-function ArchModel({ url }: { url: string }) {
+function ArchModel({ url, skip }: { url: string; skip?: (o: Object3D) => boolean }) {
   const { scene } = useGLTF(url);
-  const obj = useMemo(() => mergeByMaterial(scene), [scene]);
+  const obj = useMemo(() => mergeByMaterial(scene, skip), [scene, skip]);
   return <primitive object={obj} />;
 }
 
@@ -223,8 +226,9 @@ export function ArchipelagoScene() {
       <StaggeredGroup url={ARCH_MODELS.flora} stage={ARCH_STAGE.FLORA} />
 
       <Reveal3D stage={ARCH_STAGE.DOCK} mode="rise" rise={2}>
-        <ArchModel url={ARCH_MODELS.dock} />
+        <ArchModel url={ARCH_MODELS.dock} skip={(o) => BOAT_RE.test(o.name)} />
       </Reveal3D>
+      <BoatBuoyancy />
 
       <Ocean
         segments={segments}
