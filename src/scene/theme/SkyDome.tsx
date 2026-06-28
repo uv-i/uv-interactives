@@ -135,7 +135,7 @@ export function SkyDome() {
       </group>
 
       {/* Stars: cast as RefObject<Points> -- drei's Stars exposes a Points ref */}
-      <Stars ref={stars as React.RefObject<Points>} radius={300} depth={60} count={1000} factor={6} saturation={0} fade speed={0.4} />
+      <Stars ref={stars as React.RefObject<Points>} radius={100} depth={60} count={1000} factor={6} saturation={0} fade speed={0.4} />
     </group>
   );
 }

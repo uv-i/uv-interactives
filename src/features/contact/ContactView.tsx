@@ -6,7 +6,7 @@ import { ContactForm } from '@/features/contact/ContactForm';
 /** Contact — Set Sail Together. EmailJS-backed form + studio details. */
 export function ContactView({ config }: { config: StudioConfig }) {
   return (
-    <section className="frost-panel relative min-h-screen pt-32 pb-24">
+    <section className="frost-panel relative min-h-screen pt-24 pb-20 md:pt-32 md:pb-24">
       <Container>
         <SectionHeader
           eyebrow="Contact"

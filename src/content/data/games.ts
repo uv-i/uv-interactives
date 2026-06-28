@@ -8,16 +8,18 @@ export const games: Game[] = [
   {
     id: 'guess-in-10',
     title: 'Guess In 10',
-    genre: 'Mobile · Family Trivia',
+    genre: 'Mobile · Educational Trivia',
     engine: 'Unity',
     status: 'live',
     year: '2023 → Now',
     summary:
-      'Family trivia game with 10+ themes and 500+ cards. UV Interactives maintains and updates the live title.',
+      '10+ themes. 500+ question cards. Countless family game nights. Guess In 10 is Skillmatics\' flagship trivia experience — and UV Interactives keeps it live and loved, quietly handling everything behind the scenes so players always get the best version of the game.',
     highlights: ['50K+ downloads across Android & iOS', 'Live content updates & store ops'],
     tags: ['Unity', 'C#', 'Firebase', 'Android', 'iOS'],
     ownership: 'partner',
-    attribution: 'Guess In 10 is owned by Skillmatics (IP owner). Maintained by UV Interactives.',
+    role: 'Live ops & maintenance',
+    partnerName: 'Skillmatics',
+    attribution: 'IP © Skillmatics',
     links: {
       android: 'https://play.google.com/store/apps/details?id=com.skillmatics.guessin10',
       ios: 'https://apps.apple.com/in/app/guess-in-10-by-skillmatics/id1532193910',

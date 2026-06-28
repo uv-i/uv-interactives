@@ -196,12 +196,41 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
 - **Contact "Polish with AI" — DONE.** Button on the message field in `ContactForm.tsx` →
   `/api/leo` `polish` task; replaces the textarea with the rewrite (keeps original if offline).
 
+## Feature work completed (session 2+)
+- **Vercel Analytics** — `@vercel/analytics/next` in `app/layout.tsx`. (T1)
+- **Home page sections** — StatsSection, BuildPicker (3-tab platform picker), GamesSection preview,
+  OpenSourceBanner, ForgeTeaser, PlatformStrip all built in `features/home/`. (T5–T9)
+- **Content data files** — `content/data/home.ts` (stats, platforms, forgePosts),
+  `content/data/services.ts` (4 services), `content/data/teaching.ts` (packages + coming-soon UEFN). (T14)
+- **GamesPage tabs + timeline** — `GamesView` is now a client component with "UV Originals" /
+  "Proud Partners" tabs, vertical timeline layout, TeaserCard (redacted title ████), PartnerCard. (T4)
+- **GameDetailPanel** — spring modal with backdrop blur, YouTube embed, screenshot strip,
+  store links, ←→ Esc keyboard nav, slide animation between games. (T3)
+- **DevLab UI** — intro banner + GitHub CTA, AnimatePresence tab bar, PackageCard with
+  active/coming-soon variants (`features/devlab/DevLabTabs.tsx` + `DevLabView.tsx`). (T15)
+- **404 polish** — ghost "404", gold eyebrow, two nav CTAs (`app/not-found.tsx`). (T16)
+- **Visual atoms** — `shared/ui/TiltWrapper.tsx` (3D tilt, DOM only, zero re-renders),
+  `shared/ui/StatusBadge.tsx` (live/in-development/coming-soon), `shared/ui/ParticleField.tsx`
+  (3-layer depth canvas, cursor parallax, publishes `--px`/`--py` CSS vars, screen blend). (T12)
+- **Hooks** — `shared/hooks/useIdle.ts`, `shared/hooks/useMagnetic.ts` (NavBar links),
+  `shared/hooks/useCountUp.ts` (IntersectionObserver + ease-out-quart, wired to StatsSection). (T13)
+- **Game model extended** — added `role`, `partnerName`, `trailerYoutubeId`, `screenshots`,
+  `playableUrl` optional fields to `content/models/index.ts`.
+- **ParticleField mounted globally** in `app/providers.tsx` alongside Leo.
+- **Architecture fixes** — 14 issues (3 critical + 11 warnings) all resolved. (T17)
+
 ## Still TODO (in order)
-- **Visual polish only.** All tech/backend is wired. New UI (Leo, Idea Forge, Polish button)
-  was left deliberately plain (frost-panel + gold) — Bhuvanesh is driving the visual pass.
-- Optional: run a full `npm run build` locally to confirm the prod bundle (R3F compile
-  exceeds the agent sandbox's per-call time cap, so it was verified via `tsc --noEmit` clean
-  + the route logic test, not a full build).
+- **T2** — Sanity CMS: port `sanityClient`, GROQ queries, `useGamesData`/`useDevLabData` with 1hr
+  localStorage cache + silent fallback. Keys: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`.
+- **T10** — 3D: IslandView toggle + TransitionCurtain (full-screen 3D opt-in, `islandState` localStorage).
+- **T11** — 3D: Landmarks + LeoOrb (fires `leo:open`) + Island HUD (TitleHUD, StatsHUD, HintBar, BackButton).
+- **T18** — Typography: Archivo Black display + Space Grotesk body, font-swap in `globals.css`.
+- **T19** — Cinematic frost panels: ambient blobs + hairline borders.
+- **T20** — Micro-interactions: press states, custom cursor, easing tokens.
+- **T21** — Page transitions + section entrance animations.
+- **T22** — Dawn theme polish: warm cream base + full parity.
+- **T23** — Mobile: 3D fallback + touch targets + dvh fix.
+- Optional: run `npm run build` on Windows to confirm prod bundle (sandbox SWC missing).
 
 ## AI / env note
 - `GEMINI_API_KEY` is **server-side only** — never prefix `NEXT_PUBLIC`. Reused from old

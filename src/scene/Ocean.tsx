@@ -34,15 +34,15 @@ vec3 waveDisp(vec2 g0){
   );
   vec2 g = g0 + (warp - 0.5) * 8.0;
   vec3 disp = vec3(0.0);
-  disp += gerstner(g, vec2( 1.0, 0.25), 0.16, 9.3, 0.9);
-  disp += gerstner(g, vec2(-0.7, 1.0 ), 0.12, 5.7, 1.2);
-  disp += gerstner(g, vec2( 0.6,-0.85), 0.08, 3.1, 1.5);
-  disp += gerstner(g, vec2(-0.3,-0.6 ), 0.06, 1.9, 1.9);
-  float chop = fbm(g * 0.16 + vec2(uTime * 0.06, uTime * 0.04)) * 0.65
+  disp += gerstner(g, vec2( 1.0, 0.25), 0.16, 14.0, 0.9);
+  disp += gerstner(g, vec2(-0.7, 1.0 ), 0.05, 9.0,  1.2);
+  disp += gerstner(g, vec2( 0.6,-0.85), 0.03, 5.5,  1.5);
+  disp += gerstner(g, vec2(-0.3,-0.6 ), 0.02, 3.2,  1.9);
+  float chop = fbm(g * 0.16 + vec2(uTime * 0.16, uTime * 0.04)) * 0.65
              + fbm(g * 0.42 + vec2(-uTime * 0.09, uTime * 0.05)) * 0.30;
-  disp.y += (chop - 0.5) * 0.95;
-  disp.x += (fbm(g * 0.22 + vec2(uTime * 0.03, 0.0)) - 0.5) * 0.7;
-  disp.z += (fbm(g * 0.22 + vec2(9.0, -uTime * 0.03)) - 0.5) * 0.7;
+  disp.y += (chop - 0.5) * 0.5;
+  disp.x += (fbm(g * 0.22 + vec2(uTime * 0.03, 0.0)) - 0.5) * 0.35;
+  disp.z += (fbm(g * 0.22 + vec2(9.0, -uTime * 0.03)) - 0.5) * 0.35;
   return disp;
 }
 `;
@@ -77,6 +77,9 @@ uniform vec3 uDeep;
 uniform vec3 uShallow;
 uniform vec3 uSunColor;
 uniform vec3 uSunDir;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
 varying float vH;
 varying vec3 vPos;
 varying vec3 vNormal;
@@ -96,17 +99,31 @@ void main(){
   float foamPatch = smoothstep(0.55, 0.9, fn);
   float foam = crest * foamPatch;
   col = mix(col, vec3(0.9, 0.95, 1.0), foam * 0.38);
+
+  // Horizon blend: two terms combined —
+  //   distFog: standard distance haze starting close
+  //   horizonFog: fragments seen at grazing angle (near horizon) → fully sky colour
+  // This eliminates the hard seam at the skyline regardless of distance.
+  float dist = length(cameraPosition.xz - vPos.xz);
+  float distFog = smoothstep(uFogNear * 0.4, uFogFar, dist);
+  float horizonFog = 1.0 - smoothstep(0.0, 0.18, abs(V.y));
+  float fogT = clamp(distFog + horizonFog * (1.0 - distFog), 0.0, 1.0);
+  col = mix(col, uFogColor, fogT);
+
   gl_FragColor = vec4(col, 1.0);
 }
 `;
 
 export function Ocean({
-  size = 240,
+  size = 1500,
   segments = 150,
   sunDir = [40, 16, 20] as [number, number, number],
   deep = '#0c3d54',
   shallow = '#2f86a6',
   sunColor = '#ffe7b3',
+  fogColor = '#222a52',
+  fogNear = 85,
+  fogFar = 250,
 }: {
   size?: number;
   segments?: number;
@@ -114,6 +131,9 @@ export function Ocean({
   deep?: string;
   shallow?: string;
   sunColor?: string;
+  fogColor?: string;
+  fogNear?: number;
+  fogFar?: number;
 }) {
   const meshRef = useRef<Mesh>(null);
   const current = useReveal((s) => s.stage);
@@ -124,28 +144,32 @@ export function Ocean({
         vertexShader: vertex,
         fragmentShader: fragment,
         uniforms: {
-          uTime: { value: 0 },
-          uReveal: { value: 0 },
-          uDeep: { value: new Color(deep) },
-          uShallow: { value: new Color(shallow) },
+          uTime:     { value: 0 },
+          uReveal:   { value: 0 },
+          uDeep:     { value: new Color(deep) },
+          uShallow:  { value: new Color(shallow) },
           uSunColor: { value: new Color(sunColor) },
-          uSunDir: { value: new Vector3(...sunDir).normalize() },
+          uSunDir:   { value: new Vector3(...sunDir).normalize() },
+          uFogColor: { value: new Color(fogColor) },
+          uFogNear:  { value: fogNear },
+          uFogFar:   { value: fogFar },
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [], // intentional: ShaderMaterial must NOT be recreated on prop changes -- uniforms are
-    // mutated imperatively in useFrame below. Recreating would cause a flash + GC spike.
+    [],
   );
 
-  // cached lerp targets -- rebuilt only when props change (no per-frame alloc)
   const targets = useMemo(
     () => ({
-      deep: new Color(deep),
-      shallow: new Color(shallow),
+      deep:     new Color(deep),
+      shallow:  new Color(shallow),
       sunColor: new Color(sunColor),
-      sunDir: new Vector3(...sunDir).normalize(),
+      sunDir:   new Vector3(...sunDir).normalize(),
+      fogColor: new Color(fogColor),
+      fogNear,
+      fogFar,
     }),
-    [deep, shallow, sunColor, sunDir],
+    [deep, shallow, sunColor, sunDir, fogColor, fogNear, fogFar],
   );
 
   useFrame((_, dt) => {
@@ -154,10 +178,15 @@ export function Ocean({
     const uReveal = material.uniforms.uReveal;
     uReveal.value += (target - uReveal.value) * Math.min(1, dt * 2.2);
     const k = Math.min(1, dt * 1.8);
-    (material.uniforms.uDeep.value as Color).lerp(targets.deep, k);
-    (material.uniforms.uShallow.value as Color).lerp(targets.shallow, k);
+    (material.uniforms.uDeep.value     as Color).lerp(targets.deep,     k);
+    (material.uniforms.uShallow.value  as Color).lerp(targets.shallow,  k);
     (material.uniforms.uSunColor.value as Color).lerp(targets.sunColor, k);
-    (material.uniforms.uSunDir.value as Vector3).lerp(targets.sunDir, k);
+    (material.uniforms.uSunDir.value   as Vector3).lerp(targets.sunDir, k);
+    (material.uniforms.uFogColor.value as Color).lerp(targets.fogColor, k);
+    material.uniforms.uFogNear.value +=
+      (targets.fogNear - material.uniforms.uFogNear.value) * k;
+    material.uniforms.uFogFar.value +=
+      (targets.fogFar  - material.uniforms.uFogFar.value)  * k;
   });
 
   return (

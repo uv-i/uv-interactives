@@ -22,6 +22,7 @@ import { THEME_GRADE } from '@/scene/theme/grade';
 import { SkyDome } from '@/scene/theme/SkyDome';
 import { ARCH_MODELS, ARCH_STAGE } from '@/scene/archipelago/layout';
 import { mergeByMaterial, cheapenMaterials } from '@/scene/archipelago/merge';
+import { LighthouseBeam } from '@/scene/LighthouseBeam';
 import { easeOutBack } from '@/scene/reveal/easing';
 
 const LERP = 1.8;
@@ -103,6 +104,7 @@ function GradedAtmosphere() {
   const amb = useRef<AmbientLight>(null);
   const hemi = useRef<HemisphereLight>(null);
   const key = useRef<DirectionalLight>(null);
+  const fill = useRef<DirectionalLight>(null);
   const rim = useRef<DirectionalLight>(null);
 
   // rebuilt only on theme change — zero per-frame allocation
@@ -110,13 +112,16 @@ function GradedAtmosphere() {
     const g = THEME_GRADE[theme];
     return {
       g,
-      amb: new Color(g.ambient.color),
-      hemiSky: new Color(g.hemi.sky),
-      hemiGround: new Color(g.hemi.ground),
-      key: new Color(g.key.color),
-      rim: new Color(g.rim.color),
-      fog: new Color(g.fog.color),
-      dir: new Vector3(...g.bodyDir),
+      amb:      new Color(g.ambient.color),
+      hemiSky:  new Color(g.hemi.sky),
+      hemiGnd:  new Color(g.hemi.ground),
+      keyCol:   new Color(g.key.color),
+      fillCol:  new Color(g.fill.color),
+      rimCol:   new Color(g.rim.color),
+      fog:      new Color(g.fog.color),
+      keyDir:   new Vector3(...g.key.dir),
+      fillDir:  new Vector3(...g.fill.dir),
+      rimDir:   new Vector3(...g.rim.dir),
     };
   }, [theme]);
 
@@ -129,17 +134,23 @@ function GradedAtmosphere() {
     }
     if (hemi.current) {
       hemi.current.color.lerp(t.hemiSky, k);
-      hemi.current.groundColor.lerp(t.hemiGround, k);
+      hemi.current.groundColor.lerp(t.hemiGnd, k);
       hemi.current.intensity += (g.hemi.intensity - hemi.current.intensity) * k;
     }
     if (key.current) {
-      key.current.color.lerp(t.key, k);
+      key.current.color.lerp(t.keyCol, k);
       key.current.intensity += (g.key.intensity - key.current.intensity) * k;
-      key.current.position.lerp(t.dir, k);
+      key.current.position.lerp(t.keyDir, k);
+    }
+    if (fill.current) {
+      fill.current.color.lerp(t.fillCol, k);
+      fill.current.intensity += (g.fill.intensity - fill.current.intensity) * k;
+      fill.current.position.lerp(t.fillDir, k);
     }
     if (rim.current) {
-      rim.current.color.lerp(t.rim, k);
+      rim.current.color.lerp(t.rimCol, k);
       rim.current.intensity += (g.rim.intensity - rim.current.intensity) * k;
+      rim.current.position.lerp(t.rimDir, k);
     }
     if (scene.fog) {
       const f = scene.fog as Fog;
@@ -156,8 +167,9 @@ function GradedAtmosphere() {
       <fog attach="fog" args={[d.fog.color, d.fog.near, d.fog.far]} />
       <ambientLight ref={amb} />
       <hemisphereLight ref={hemi} />
-      <directionalLight ref={key} position={d.bodyDir} />
-      <directionalLight ref={rim} position={[-30, 14, -28]} />
+      <directionalLight ref={key}  position={d.key.dir} />
+      <directionalLight ref={fill} position={d.fill.dir} />
+      <directionalLight ref={rim}  position={d.rim.dir} />
     </>
   );
 }
@@ -202,26 +214,4 @@ export function ArchipelagoScene() {
         <ArchModel url={ARCH_MODELS.peaks} />
       </Reveal3D>
 
-      <Reveal3D stage={ARCH_STAGE.STRUCTURES} mode="rise" rise={6}>
-        <ArchModel url={ARCH_MODELS.structures} />
-      </Reveal3D>
-
-      <StaggeredGroup url={ARCH_MODELS.flora} stage={ARCH_STAGE.FLORA} />
-
-      <Reveal3D stage={ARCH_STAGE.DOCK} mode="rise" rise={2}>
-        <ArchModel url={ARCH_MODELS.dock} />
-      </Reveal3D>
-
-      <Ocean
-        segments={segments}
-        sunDir={g.bodyDir}
-        deep={g.ocean.deep}
-        shallow={g.ocean.shallow}
-        sunColor={g.ocean.sun}
-      />
-      <Effects />
-    </>
-  );
-}
-
-Object.values(ARCH_MODELS).forEach((u) => useGLTF.preload(u));
+      <Reveal3D stage={ARCH_STAGE.STR

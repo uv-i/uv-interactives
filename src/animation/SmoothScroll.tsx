@@ -13,6 +13,7 @@ import { useQuality } from '@/shared/providers/QualityProvider';
 export function SmoothScroll({ children }: { children: ReactNode }) {
   const { reducedMotion } = useQuality();
   const setProgress = useScrollStore((s) => s.setProgress);
+  const setHeroProgress = useScrollStore((s) => s.setHeroProgress);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -25,6 +26,8 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     const onScroll = () => {
       ScrollTrigger.update();
       setProgress(lenis.progress ?? 0);
+      // heroProgress: 0→1 over first screenful, then stays 1
+      setHeroProgress(Math.min((lenis.scroll ?? 0) / window.innerHeight, 1));
     };
     lenis.on('scroll', onScroll);
 
@@ -36,7 +39,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       gsap.ticker.remove(raf);
       lenis.destroy();
     };
-  }, [reducedMotion, setProgress]);
+  }, [reducedMotion, setProgress, setHeroProgress]);
 
   return <>{children}</>;
 }

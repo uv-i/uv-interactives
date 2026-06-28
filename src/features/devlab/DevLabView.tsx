@@ -1,24 +1,14 @@
 import type { TeachingPackage, StudioConfig } from '@/content/models';
+import { Github } from 'lucide-react';
 import { Container } from '@/shared/ui/Container';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { JsonLd } from '@/shared/seo/JsonLd';
 import { Reveal } from '@/animation/Reveal';
 import { courseLd } from '@/lib/seo/jsonld';
 import { IdeaForge } from '@/features/devlab/IdeaForge';
+import { DevLabTabs } from '@/features/devlab/DevLabTabs';
 
-/**
- * Dev Lab -- the free learning library (the Lighthouse).
- * Cards are real, server-rendered HTML so every package is indexable;
- * each emits Course JSON-LD. Categories are derived from the data.
- */
-export function DevLabView({
-  teaching,
-  config,
-}: {
-  teaching: TeachingPackage[];
-  config: StudioConfig;
-}) {
-  // pre-group once -- avoids re-filtering the full array for each category render
+export function DevLabView({ teaching, config }: { teaching: TeachingPackage[]; config: StudioConfig }) {
   const grouped = teaching.reduce<Record<string, typeof teaching>>((acc, t) => {
     (acc[t.category] ??= []).push(t);
     return acc;
@@ -26,13 +16,32 @@ export function DevLabView({
   const categories = Object.keys(grouped);
 
   return (
-    <section className="frost-panel relative min-h-screen pt-32 pb-24">
+    <section className="frost-panel relative min-h-screen pt-24 pb-20 md:pt-32 md:pb-24">
       <Container>
-        <SectionHeader
-          eyebrow="Dev Lab - Free & open source"
-          title="Learn game dev, for free."
-          subtitle="Installable Unity & C# packages -- straight from GitHub via UPM. Unreal, UEFN and Fortnite tracks are coming very soon."
-        />
+        {/* Intro banner */}
+        <Reveal>
+          <div className="mb-14 flex flex-col gap-6 rounded-2xl border border-violet/20 bg-violet/5 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold">
+                Dev Lab — Free & open source
+              </p>
+              <h1 className="text-3xl font-bold sm:text-4xl">Learn game dev, for free.</h1>
+              <p className="mt-3 max-w-xl text-pearl/65">
+                Installable Unity &amp; C# packages — straight from GitHub via UPM.
+                Unreal, UEFN and Fortnite tracks are coming very soon.
+              </p>
+            </div>
+            <a
+              href="https://github.com/uv-interactives"
+              target="_blank"
+              rel="noreferrer"
+              className="flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-pearl transition-colors hover:border-gold hover:text-gold sm:self-auto"
+            >
+              <Github size={16} />
+              GitHub
+            </a>
+          </div>
+        </Reveal>
 
         {teaching.map((pkg) => (
           <JsonLd key={`ld-${pkg.id}`} data={courseLd(pkg, config)} />
@@ -40,49 +49,8 @@ export function DevLabView({
 
         <IdeaForge />
 
-        {categories.map((category) => (
-          <div key={category} className="mb-14">
-            <h3 className="mb-5 text-sm font-semibold uppercase tracking-widest text-pearl/50">
-              {category}
-            </h3>
-            <ul className="grid gap-5 md:grid-cols-2">
-              {grouped[category].map((pkg, i) => (
-                <Reveal
-                  as="li"
-                  key={pkg.id}
-                  delay={i * 0.08}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-gold/50"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <h4 className="text-xl font-semibold">{pkg.title}</h4>
-                    <span className="rounded-full border border-gold/40 px-3 py-1 text-xs text-gold">
-                      {pkg.engine}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-pearl/70">{pkg.summary}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {pkg.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-md bg-white/5 px-2 py-1 text-xs text-pearl/60"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <a
-                    href={pkg.githubUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-5 inline-block font-semibold text-gold transition-transform group-hover:translate-x-1"
-                  >
-                    View on GitHub
-                  </a>
-                </Reveal>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {/* Tab bar + package cards (client) */}
+        <DevLabTabs grouped={grouped} categories={categories} />
       </Container>
     </section>
   );

@@ -10,24 +10,24 @@ export const services: Service[] = [
     icon: 'Gamepad2',
   },
   {
-    id: 'unreal',
-    title: 'Unreal / UEFN',
+    id: 'uefn',
+    title: 'UEFN / Fortnite',
     description:
-      'Unreal Engine and UEFN experiences with Verse scripting — interactive worlds and Fortnite islands.',
-    icon: 'Boxes',
+      'Custom Fortnite islands built in Verse — tycoons, battle maps, economy systems, and live events.',
+    icon: 'Zap',
   },
   {
     id: 'webgl',
-    title: 'WebGL & Playables',
+    title: 'WebGL / Playable Ads',
     description:
-      'Instant-play browser games and playable ads — lightweight, shareable, no install required.',
+      'Instant-play browser games and playable ad formats in Cocos Creator + TypeScript — no install required.',
     icon: 'Globe',
   },
   {
-    id: 'teaching',
-    title: 'Free Learning',
+    id: 'ar',
+    title: 'AR & Firebase',
     description:
-      'Open-source Unity & C# teaching packages — install straight from GitHub. Unreal & UEFN tracks coming soon.',
-    icon: 'GraduationCap',
+      'Augmented reality experiences and cloud-connected game backends using AR Foundation and Firebase.',
+    icon: 'Sparkles',
   },
 ];

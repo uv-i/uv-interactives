@@ -54,6 +54,16 @@ export interface Game {
   attribution?: string;
   /** UV-owned original vs partner/maintained title. */
   ownership: 'original' | 'partner';
+  /** Studio's role on partner titles (e.g. "Live ops & maintenance"). */
+  role?: string;
+  /** IP owner name for partner titles (e.g. "Skillmatics"). */
+  partnerName?: string;
+  /** YouTube video ID for trailer embed. */
+  trailerYoutubeId?: string;
+  /** Array of screenshot URLs. */
+  screenshots?: string[];
+  /** URL to play in browser (WebGL builds). */
+  playableUrl?: string;
 }
 
 export interface TeachingPackage {

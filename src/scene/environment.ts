@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import { ArchipelagoScene } from '@/scene/ArchipelagoScene';
-import { ArchipelagoCamera } from '@/scene/ArchipelagoCamera';
+import { NarrativeCamera } from '@/scene/NarrativeCamera';
 import { ARCH_CAMERA, ARCH_STATIONS, type Station } from '@/scene/archipelago/layout';
 
 /**
@@ -24,5 +24,5 @@ export const activeEnvironment: SceneEnvironment = {
   Scene: ArchipelagoScene,
   camera: ARCH_CAMERA,
   stations: ARCH_STATIONS,
-  cameraComponent: ArchipelagoCamera,
+  cameraComponent: NarrativeCamera,
 };

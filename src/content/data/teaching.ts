@@ -1,10 +1,5 @@
 import type { TeachingPackage } from '@/content/models';
 
-/**
- * The free Dev Lab library. Today: Unity & C#.
- * Add Unreal / UEFN / Verse-Fortnite records here as they release —
- * the UI is engine-agnostic and categories are derived from this data.
- */
 export const teaching: TeachingPackage[] = [
   {
     id: 'coin-rush',
@@ -29,5 +24,29 @@ export const teaching: TeachingPackage[] = [
     tags: ['Unity', 'C#', 'OOP', 'Patterns', 'Intermediate'],
     githubUrl: 'https://github.com/uv-interactives/uvi-learn-oop-pillars',
     status: 'active',
+  },
+  {
+    id: 'uefn-intro',
+    title: 'UEFN Fundamentals',
+    summary:
+      'Getting started with Unreal Editor for Fortnite — island creation, Verse scripting basics, and your first custom game mode. Coming soon to GitHub.',
+    engine: 'UEFN',
+    category: 'Fortnite / UEFN',
+    level: 'Beginner',
+    tags: ['UEFN', 'Verse', 'Fortnite', 'Beginner'],
+    githubUrl: '',
+    status: 'coming-soon',
+  },
+  {
+    id: 'verse-scripting',
+    title: 'Verse Scripting Patterns',
+    summary:
+      'Practical Verse patterns for Fortnite island scripting — economy systems, NPC behaviour, tycoon loops, and event-driven game logic.',
+    engine: 'Verse/Fortnite',
+    category: 'Fortnite / UEFN',
+    level: 'Intermediate',
+    tags: ['Verse', 'UEFN', 'Fortnite', 'Intermediate'],
+    githubUrl: '',
+    status: 'coming-soon',
   },
 ];

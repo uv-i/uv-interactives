@@ -1,4 +1,5 @@
 'use client';
+import type React from 'react';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -9,6 +10,26 @@ import { Menu, X, Sun, Moon } from 'lucide-react';
 import { Container } from '@/shared/ui/Container';
 import { studioConfig } from '@/content/data/config';
 import { useTheme } from '@/shared/state/themeStore';
+import { useMagnetic } from '@/shared/hooks/useMagnetic';
+
+function MagneticLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  const ref = useMagnetic(0.28);
+  return (
+    <Link
+      ref={ref as React.Ref<HTMLAnchorElement>}
+      href={href}
+      className={clsx(
+        'relative transition-colors hover:text-gold',
+        active ? 'text-gold' : 'text-pearl/80',
+      )}
+    >
+      {label}
+      {active && (
+        <span className="absolute -bottom-1.5 left-0 h-0.5 w-full rounded-full bg-gold" />
+      )}
+    </Link>
+  );
+}
 
 const links = [
   { href: '/lab', label: 'Dev Lab' },
@@ -39,7 +60,7 @@ export function NavBar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-20 border-b border-white/5 bg-[rgba(22,11,50,0.72)] backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-[60] h-20 border-b border-white/5 bg-[rgba(22,11,50,0.72)]">
       <Container className="flex h-full items-center justify-between">
         <Link
           href="/"
@@ -55,18 +76,7 @@ export function NavBar() {
           <ul className="flex items-center gap-7 text-sm">
             {links.map((l) => (
               <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className={clsx(
-                    'relative transition-colors hover:text-gold',
-                    isActive(l.href) ? 'text-gold' : 'text-pearl/80',
-                  )}
-                >
-                  {l.label}
-                  {isActive(l.href) && (
-                    <span className="absolute -bottom-1.5 left-0 h-0.5 w-full rounded-full bg-gold" />
-                  )}
-                </Link>
+                <MagneticLink href={l.href} label={l.label} active={isActive(l.href)} />
               </li>
             ))}
           </ul>
@@ -89,7 +99,7 @@ export function NavBar() {
       {open && (
         <nav
           aria-label="Mobile"
-          className="md:hidden border-t border-white/5 bg-[rgba(22,11,50,0.96)] backdrop-blur-md"
+          className="md:hidden border-t border-white/5 bg-[rgba(22,11,50,0.96)]"
         >
           <ul className="flex flex-col px-5 py-3">
             {links.map((l) => (

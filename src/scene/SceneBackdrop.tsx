@@ -2,20 +2,22 @@
 
 import dynamic from 'next/dynamic';
 import { useQuality } from '@/shared/providers/QualityProvider';
+import { useIslandStore } from '@/scene/islandStore';
 
-// Lazy, client-only — never server-rendered, only mounted on capable devices.
 const SceneCanvas = dynamic(() => import('@/scene/SceneCanvas'), { ssr: false });
 
-/**
- * Generic 3D backdrop mount. Renders nothing on low-tier / reduced-motion
- * devices (the CSS gradient behind the hero is the graceful fallback).
- * Environment-agnostic: it just hosts whatever `activeEnvironment` is.
- */
 export function SceneBackdrop({ className }: { className?: string }) {
   const { enable3D } = useQuality();
+  const isIsland = useIslandStore((s) => s.isIsland);
+
   if (!enable3D) return null;
+
+  const cls = isIsland
+    ? 'pointer-events-auto fixed inset-0 z-10'
+    : (className ?? 'pointer-events-none fixed inset-0 -z-10');
+
   return (
-    <div className={className} aria-hidden>
+    <div className={cls} aria-hidden>
       <SceneCanvas />
     </div>
   );

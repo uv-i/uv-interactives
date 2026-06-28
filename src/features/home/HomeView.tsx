@@ -1,40 +1,33 @@
-import type { StudioConfig, Service } from '@/content/models';
+'use client';
+
+import type { StudioConfig, Service, Game } from '@/content/models';
 import { Container } from '@/shared/ui/Container';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Button } from '@/shared/ui/Button';
 import { Reveal } from '@/animation/Reveal';
+import { StatsSection } from '@/features/home/StatsSection';
+import { BuildPicker } from '@/features/home/BuildPicker';
+import { GamesSection } from '@/features/home/GamesSection';
+import { OpenSourceBanner } from '@/features/home/OpenSourceBanner';
+import { ForgeTeaser } from '@/features/home/ForgeTeaser';
+import { PlatformStrip } from '@/features/home/PlatformStrip';
+// TO ENABLE "Explore in 3D" button: uncomment the line below + the <Button> block in the hero
+// import { useIslandStore } from '@/scene/islandStore';
 
-/**
- * Home presentation. Pure: receives content as props (page fetches it).
- * Hero uses CSS fade-up (no-JS / crawler safe); below-fold uses scroll reveals.
- * The active 3D environment mounts behind the hero via <SceneBackdrop/> (client-only).
- */
-export function HomeView({ config, services }: { config: StudioConfig; services: Service[] }) {
+export function HomeView({
+  config,
+  services,
+  games,
+}: {
+  config: StudioConfig;
+  services: Service[];
+  games: Game[];
+}) {
   return (
     <>
-      {/* Hero — the future rising-tide harbour lives behind this content */}
-      <section className="relative flex min-h-[88vh] items-center overflow-hidden pt-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-violet/30 to-transparent"
-        />
-        {/* readability scrim over the 3D scene (darkens behind the copy, clears to the right) */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-[1] bg-gradient-to-r from-violet-night/85 via-violet-night/45 to-transparent"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 -z-[1] h-2/5 bg-gradient-to-t from-violet-night/70 to-transparent"
-        />
+      {/* ── Hero ── */}
+      <section className="relative flex min-h-[88vh] items-start overflow-hidden pt-20">
         <Container>
-          <p className="mb-4 animate-fade-up text-sm font-semibold uppercase tracking-[0.2em] text-gold [text-shadow:0_1px_8px_rgba(8,4,20,0.6)]">
-            {config.studio}
-          </p>
           <h1
             className="max-w-2xl animate-fade-up text-4xl font-bold leading-[1.08] tracking-tight drop-shadow-[0_2px_16px_rgba(8,4,20,0.55)] sm:text-5xl lg:text-6xl"
             style={{ animationDelay: '80ms' }}
@@ -45,22 +38,36 @@ export function HomeView({ config, services }: { config: StudioConfig; services:
             className="mt-5 max-w-xl animate-fade-up text-lg italic text-pearl/85 [text-shadow:0_1px_10px_rgba(8,4,20,0.6)]"
             style={{ animationDelay: '160ms' }}
           >
-            “{config.motto}”
+            &ldquo;{config.motto}&rdquo;
           </p>
           <div
             className="mt-9 flex animate-fade-up flex-wrap gap-4"
             style={{ animationDelay: '240ms' }}
           >
             <Button href="/lab">Explore free learning</Button>
-            <Button href="/games" variant="ghost">
-              See what we’re building
+            <Button href="/games" variant="ghost">See what we&apos;re building</Button>
+            {/* TO ENABLE: uncomment this block + the import above
+            <Button
+              variant="ghost"
+              style={{ animationDelay: '320ms' }}
+              className="animate-fade-up"
+              onClick={() => useIslandStore.getState().enter()}
+            >
+              Explore in 3D
             </Button>
+            */}
           </div>
         </Container>
       </section>
 
-      {/* What we do */}
-      <section className="py-24">
+      {/* ── Platform strip ── */}
+      <PlatformStrip />
+
+      {/* ── Stats ── */}
+      <StatsSection />
+
+      {/* ── What we do (Services) ── */}
+      <section className="py-20 frost-panel">
         <Container>
           <Reveal>
             <SectionHeader
@@ -81,6 +88,18 @@ export function HomeView({ config, services }: { config: StudioConfig; services:
           </ul>
         </Container>
       </section>
+
+      {/* ── Games preview ── */}
+      <GamesSection games={games} />
+
+      {/* ── Build picker ── */}
+      <BuildPicker />
+
+      {/* ── Open source banner ── */}
+      <OpenSourceBanner />
+
+      {/* ── Forge teaser ── */}
+      <ForgeTeaser />
     </>
   );
 }

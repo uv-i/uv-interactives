@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePerfStore } from '@/scene/debug/perfStore';
-import { isDebug } from '@/scene/debug/perfStore';
+import { usePerfStore, isDebug } from '@/scene/debug/perfStore';
 
 export function PerfHud() {
   const [show, setShow] = useState(false);
@@ -28,7 +27,7 @@ export function PerfHud() {
         pointerEvents: 'none',
         lineHeight: 1.6,
         minWidth: 132,
-        backdropFilter: 'blur(4px)',
+        /* ponytail: blur removed globally -- restore with T19 */
       }}
     >
       <div style={row}><span>FPS</span><b style={{ color: fpsColor }}>{p.fps}</b></div>

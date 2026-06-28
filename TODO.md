@@ -6,23 +6,23 @@
 
 ## 🔴 High Priority — Functional
 
-- [ ] **Vercel Analytics** — add `@vercel/analytics/next` to `app/layout.tsx`
+- [x] **Vercel Analytics** — add `@vercel/analytics/next` to `app/layout.tsx`
 - [ ] **Sanity CMS** — port `sanityClient`, GROQ queries, `useGamesData` + `useDevLabData` hooks with 1hr localStorage cache + silent fallback to local data
-- [ ] **GameDetailPanel** — slide-over modal: YouTube trailer, screenshot strip, store links, keyboard nav (←→ Esc), scroll lock, Framer Motion spring
-- [ ] **GamesPage tabs** — UV Originals / Proud Partners tab switcher, vertical timeline layout, `TeaserCard` (redacted title), deep-link routing state `{ tab, gameIndex }`
+- [x] **GameDetailPanel** — slide-over modal: YouTube trailer, screenshot strip, store links, keyboard nav (←→ Esc), scroll lock, Framer Motion spring
+- [x] **GamesPage tabs** — UV Originals / Proud Partners tab switcher, vertical timeline layout, `TeaserCard` (redacted title), deep-link routing state `{ tab, gameIndex }`
 
 ---
 
 ## 🟠 Home Page — Missing Sections
 
-- [ ] **StatsSection** — 4 animated stat cards, `useCountUp` hook, TiltWrapper
-- [ ] **BuildPicker** — 3-way platform picker (Mobile / WebGL / Fortnite) with expandable detail panel + CTA
-- [ ] **GamesSection** — 3 partner game preview cards on homepage
-- [ ] **OpenSourceBanner** — "open source by default" GitHub CTA strip
-- [ ] **ForgeTeaser** — "From the Forge" blog post placeholder cards section
-- [ ] **PlatformStrip** — platform tag pills row
+- [x] **StatsSection** — 4 animated stat cards, `useCountUp` hook, TiltWrapper
+- [x] **BuildPicker** — 3-way platform picker (Mobile / WebGL / Fortnite) with expandable detail panel + CTA
+- [x] **GamesSection** — 3 partner game preview cards on homepage
+- [x] **OpenSourceBanner** — "open source by default" GitHub CTA strip
+- [x] **ForgeTeaser** — "From the Forge" blog post placeholder cards section
+- [x] **PlatformStrip** — platform tag pills row
 - [ ] **ShowreelSection** — YouTube embed (wire up `showreelYoutubeId` in `config.ts`, hidden until set)
-- [ ] **PackagesSection** — Dev Lab UPM package preview cards on homepage
+- [x] **PackagesSection** — Dev Lab UPM package preview cards on homepage
 
 ---
 
@@ -38,24 +38,24 @@
 
 ## 🟢 Visual Atoms & Hooks
 
-- [ ] **TiltWrapper** — perspective-tilt card with specular glare + border glow (`use3DTilt` hook)
-- [ ] **ParticleField** — 3-layer depth particle field with cursor parallax + `--px`/`--py` CSS vars
+- [x] **TiltWrapper** — perspective-tilt card with specular glare + border glow (`use3DTilt` hook)
+- [x] **ParticleField** — 3-layer depth particle field with cursor parallax + `--px`/`--py` CSS vars
 - [ ] **MouseParticleBackground** — cursor-repelling canvas particle network
-- [ ] **StatusBadge** — smart status badge (`live` / `development` / `other`)
-- [ ] **`useCountUp`** — scroll-triggered number animation (used by StatsSection)
-- [ ] **`useMagnetic`** — magnetic hover drift + `--gx`/`--gy` CSS vars (NavBar links)
-- [ ] **`useIdle`** — idle detection after N ms (Leo fact cycling already uses inline version — extract if reused)
+- [x] **StatusBadge** — smart status badge (`live` / `development` / `other`)
+- [x] **`useCountUp`** — scroll-triggered number animation (used by StatsSection)
+- [x] **`useMagnetic`** — magnetic hover drift + `--gx`/`--gy` CSS vars (NavBar links)
+- [x] **`useIdle`** — idle detection after N ms (Leo fact cycling already uses inline version — extract if reused)
 
 ---
 
 ## 🔵 Content Data
 
-- [ ] **STATS** — 4 stat entries (value, label, icon) in `content/data/stats.ts`
+- [x] **STATS** — 4 stat entries (value, label, icon) in `content/data/stats.ts`
 - [ ] **STUDIO_STATS** — compact 3-pill HUD version in `content/data/stats.ts`
-- [ ] **BUILD_OPTIONS** — 3 platform picker entries (Mobile/WebGL/Fortnite) in `content/data/buildOptions.ts`
-- [ ] **PLATFORMS** — platform tag array in `content/data/platforms.ts`
-- [ ] **FORGE_POSTS** — 3 blog post placeholders in `content/data/forge.ts`
-- [ ] **`showreelYoutubeId`** — add to `config.ts` (null until video ready)
+- [x] **BUILD_OPTIONS** — 3 platform picker entries (Mobile/WebGL/Fortnite) in `content/data/buildOptions.ts`
+- [x] **PLATFORMS** — platform tag array in `content/data/platforms.ts`
+- [x] **FORGE_POSTS** — 3 blog post placeholders in `content/data/forge.ts`
+- [x] **`showreelYoutubeId`** — add to `config.ts` (null until video ready)
 - [ ] **Chatbot fact `state` field** — add optional `state: { tab?, gameIndex? }` to `ChatbotFact` type for Leo deep-link nav
 
 ---

@@ -22,19 +22,42 @@
   --bg: var(--c-violet-night);
   --fg: var(--c-pearl);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: var(--font-sans);
+  /* --font-sans / --font-display set on <html> by next/font (layout.tsx) */
+
+  /* ── Easing tokens ───────────────────────────────────────────────────────── */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-expo:   cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Duration tokens ─────────────────────────────────────────────────────── */
+  --dur-fast:   80ms;
+  --dur-base:   200ms;
+  --dur-slow:   400ms;
+  --dur-enter:  320ms;
+  --dur-exit:   200ms;
 }
 
 html {
   color-scheme: dark;
 }
 
+html[data-theme='dawn'] {
+  color-scheme: light;
+  /* Flip foreground token so rgb(var(--fg)) resolves to dark ink in dawn */
+  --fg: 41 36 63;
+}
+
 body {
-  background-color: rgb(var(--bg));
+  background-color: transparent;
   color: rgb(var(--fg));
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display), sans-serif;
 }
 
 /* Lenis smooth-scroll baseline */
@@ -50,6 +73,39 @@ html.lenis body {
 }
 .lenis.lenis-stopped {
   overflow: hidden;
+}
+
+/* ── Island mode — hide page chrome when 3D view is fullscreen ──────────────── */
+html[data-island='1'] main,
+html[data-island='1'] footer,
+html[data-island='1'] header {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* dvh fix — full viewport on mobile without browser chrome overlap */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Touch target minimum — ensure 44px hit area on mobile without forcing layout height.
+   Uses padding-based expansion so desktop compact buttons are unaffected. */
+@media (pointer: coarse) {
+  :where(button, a, [role="button"]):not([data-no-touch-expand]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 3D scene fallback gradient when WebGL is unavailable */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  background: radial-gradient(ellipse 80% 60% at 60% 40%, #3a0ca3 0%, #16082e 55%, #0c0716 100%);
+  pointer-events: none;
 }
 
 /* Respect reduced motion globally */
@@ -71,41 +127,67 @@ html.lenis body {
   border-radius: 4px;
 }
 
-/* Frosted readable panel for inner pages sitting over the persistent 3D scene. */
-.frost-panel {
-  background-color: rgba(22, 11, 50, 0.92);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+/* Press state — scale-down on active for all buttons/links not handled by useMagnetic.
+   Uses will-change so the compositor layer is ready before the gesture. */
+:where(button, [role="button"]):not([data-magnetic]):not([disabled]):active {
+  transform: scale(0.96);
+  transition: transform var(--dur-fast) var(--ease-in-expo);
+}
+:where(button, [role="button"]):not([data-magnetic]):not([disabled]) {
+  transition: transform var(--dur-base) var(--ease-out-back),
+              opacity   var(--dur-base) ease,
+              box-shadow var(--dur-base) ease,
+              background-color var(--dur-base) ease,
+              border-color var(--dur-base) ease;
+  will-change: transform;
 }
 
-/* ── Dawn (light) skin — only the frosted UI flips; the 3D hero stays as-is ── */
+/* ── Frost panel — cinematic glassmorphism over the persistent 3D scene ──── */
+.frost-panel {
+  position: relative;
+  /* SceneBlur in providers handles the global backdrop-filter; panels add tint + border */
+  background-color: rgba(22, 11, 50, 0.45);
+  border: 1px solid rgba(245, 240, 230, 0.08);
+  overflow: hidden;
+}
+
+/* Ambient blob — single warm violet glow in the top-right corner */
+.frost-panel::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 40% at 85% 10%, rgba(99, 32, 238, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 12% 88%, rgba(245, 166, 35, 0.10) 0%, transparent 65%);
+  z-index: 0;
+}
+
+/* Ensure direct children sit above the blob layer */
+.frost-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* SceneBlur overlay flips to warm cream in dawn */
+html[data-theme='dawn'] [data-scene-blur] {
+  background: rgba(247, 244, 237, 0.68) !important;
+}
+
+/* ── Dawn (light) skin ─────────────────────────────────────────────────────── */
 html[data-theme='dawn'] .frost-panel {
-  background-color: rgba(247, 244, 237, 0.93);
+  background-color: rgba(247, 244, 237, 0.55);
+  border-color: rgba(20, 16, 44, 0.10);
 }
-html[data-theme='dawn'] .frost-panel h1,
-html[data-theme='dawn'] .frost-panel h2,
-html[data-theme='dawn'] .frost-panel h3,
-html[data-theme='dawn'] .frost-panel h4,
-html[data-theme='dawn'] .frost-panel p,
-html[data-theme='dawn'] .frost-panel li,
-html[data-theme='dawn'] .frost-panel label,
-html[data-theme='dawn'] .frost-panel span {
-  color: #29243f;
+
+html[data-theme='dawn'] .frost-panel::before {
+  background:
+    radial-gradient(ellipse 55% 40% at 85% 10%, rgba(245, 166, 35, 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 12% 88%, rgba(99, 32, 238, 0.08) 0%, transparent 65%);
 }
-html[data-theme='dawn'] .frost-panel a {
-  color: #9a5b00;
-}
-/* cards / chips / inputs: dark-on-light */
-html[data-theme='dawn'] .frost-panel .rounded-2xl,
-html[data-theme='dawn'] .frost-panel .rounded-xl {
-  background-color: rgba(20, 16, 44, 0.035);
-  border-color: rgba(20, 16, 44, 0.14);
-}
-html[data-theme='dawn'] .frost-panel .rounded-md,
-html[data-theme='dawn'] .frost-panel .rounded-full {
-  background-color: rgba(20, 16, 44, 0.06);
-  border-color: rgba(20, 16, 44, 0.18);
-}
+
+/* Body text flips via --fg token (set above on html[data-theme='dawn']).
+   Only reset explicit light overrides that don't inherit from body. */
 html[data-theme='dawn'] .frost-panel input,
 html[data-theme='dawn'] .frost-panel textarea {
   background-color: rgba(20, 16, 44, 0.04);
@@ -116,9 +198,14 @@ html[data-theme='dawn'] .frost-panel input::placeholder,
 html[data-theme='dawn'] .frost-panel textarea::placeholder {
   color: #6b6680;
 }
-/* Send button stays gold (dark text) — keep it readable */
-html[data-theme='dawn'] .frost-panel button.bg-gold {
-  color: #1a1330;
+/* Links: amber-brown instead of violet */
+html[data-theme='dawn'] .frost-panel a:not([class*='text-']) {
+  color: #9a5b00;
+}
+/* Gold accent text: slightly deeper for cream bg readability */
+html[data-theme='dawn'] .text-gold,
+html[data-theme='dawn'] [class*='text-gold'] {
+  color: #c47500;
 }
 
 /* Navbar flips light on dawn */
@@ -134,4 +221,14 @@ html[data-theme='dawn'] header button {
 html[data-theme='dawn'] header button {
   border-color: rgba(20, 16, 44, 0.25);
   background-color: rgba(20, 16, 44, 0.06);
+}
+
+/* Leo bubble progress bar */
+@keyframes leoBubbleShrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+@keyframes leoFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
