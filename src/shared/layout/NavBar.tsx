@@ -1,23 +1,57 @@
 'use client';
 import type React from 'react';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import { Container } from '@/shared/ui/Container';
 import { studioConfig } from '@/content/data/config';
 import { useTheme } from '@/shared/state/themeStore';
 import { useMagnetic } from '@/shared/hooks/useMagnetic';
+import { useCameraStore } from '@/scene/cameraStore';
+
+const ROUTED_LINKS = [
+  { href: '/lab',     label: 'Dev Lab' },
+  { href: '/games',   label: 'Games'   },
+  { href: '/contact', label: 'Contact' },
+];
+
+const ZOOM_DELAY = 480; // ms — matches punch-in animation (~500ms to feel settled)
 
 function MagneticLink({ href, label, active }: { href: string; label: string; active: boolean }) {
   const ref = useMagnetic(0.28);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { setRouteTarget, startZoomIn, endZoom } = useCameraStore();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (href === pathname) return;
+    setRouteTarget(href);
+    if (pathname === '/') {
+      // From home: zoom in first, then navigate
+      e.preventDefault();
+      startZoomIn();
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        endZoom();
+        router.push(href);
+      }, ZOOM_DELAY);
+    }
+    // From inner pages: navigate instantly (routeTarget already set above)
+  };
+
+  // Cleanup on unmount
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
   return (
     <Link
       ref={ref as React.Ref<HTMLAnchorElement>}
       href={href}
+      onClick={handleClick}
       className={clsx(
         'relative transition-colors hover:text-gold',
         active ? 'text-gold' : 'text-pearl/80',
@@ -30,12 +64,6 @@ function MagneticLink({ href, label, active }: { href: string; label: string; ac
     </Link>
   );
 }
-
-const links = [
-  { href: '/lab', label: 'Dev Lab' },
-  { href: '/games', label: 'Games' },
-  { href: '/contact', label: 'Contact' },
-];
 
 function ThemeToggle() {
   const theme = useTheme((s) => s.theme);
@@ -56,6 +84,14 @@ function ThemeToggle() {
 export function NavBar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const clearRouteTarget  = useCameraStore((s) => s.clearRouteTarget);
+  const setRouteTarget    = useCameraStore((s) => s.setRouteTarget);
+
+  // Clear camera target when landing on home; set it when already on an inner page
+  useEffect(() => {
+    if (pathname === '/') clearRouteTarget();
+    else setRouteTarget(pathname);
+  }, [pathname, clearRouteTarget, setRouteTarget]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
@@ -66,7 +102,7 @@ export function NavBar() {
           href="/"
           className="flex items-center gap-3"
           aria-label={`${studioConfig.studio} home`}
-          onClick={() => setOpen(false)}
+          onClick={() => { setOpen(false); clearRouteTarget(); }}
         >
           <Image src="/uv-logo.png" alt="" width={40} height={40} priority className="rounded" />
           <span className="text-lg font-semibold tracking-tight">{studioConfig.studio}</span>
@@ -74,7 +110,7 @@ export function NavBar() {
 
         <nav aria-label="Primary" className="hidden md:block">
           <ul className="flex items-center gap-7 text-sm">
-            {links.map((l) => (
+            {ROUTED_LINKS.map((l) => (
               <li key={l.href}>
                 <MagneticLink href={l.href} label={l.label} active={isActive(l.href)} />
               </li>
@@ -102,11 +138,11 @@ export function NavBar() {
           className="md:hidden border-t border-white/5 bg-[rgba(22,11,50,0.96)]"
         >
           <ul className="flex flex-col px-5 py-3">
-            {links.map((l) => (
+            {ROUTED_LINKS.map((l) => (
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  onClick={() => setOpen(false)}
+                  onClick={() => { setOpen(false); setRouteTarget(l.href); }}
                   className={clsx(
                     'block py-3 text-base',
                     isActive(l.href) ? 'text-gold' : 'text-pearl/85',

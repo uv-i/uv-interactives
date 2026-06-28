@@ -45,6 +45,15 @@ export const ARCH_ZOOM_TARGET: [number, number, number] = [
   ARCH_ORBIT.center[2] + Math.sin(2.0) * ARCH_ORBIT.R * ZOOM_R_FACTOR,
 ];
 
+/** Per-route camera positions for landmark zoom.
+ *  ponytail: tune with ?cam&debug — initial values estimated from landmark world coords.
+ *  Landmarks: Docks [15,1,13], Lighthouse [29.5,7,-3], Bottle [-11,0,13] */
+export const ROUTE_CAMERAS: Record<string, { position: [number, number, number]; lookAt: [number, number, number] }> = {
+  '/games':   { position: [12,  10, 36], lookAt: [15,   3, 13]  }, // Docks
+  '/lab':     { position: [18,  13, 18], lookAt: [29.5, 7, -3]  }, // Lighthouse
+  '/contact': { position: [-8,  10, 34], lookAt: [-11,  2, 13]  }, // Bottle
+};
+
 export interface Station {
   position: [number, number, number];
   lookAt: [number, number, number];

@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLandmarkStore, type ScreenPin } from '@/scene/landmarkStore';
-import { useRouterStore } from '@/animation/routerStore';
 import { useIslandStore } from '@/scene/islandStore';
 import { useReveal } from '@/scene/reveal/revealStore';
+import { useCameraStore } from '@/scene/cameraStore';
 import { ARCH_STAGE } from '@/scene/archipelago/layout';
+
+const ZOOM_DELAY = 480;
 
 function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: string, route: string) => void }) {
   const [hovered, setHovered] = useState(false);
@@ -99,13 +101,14 @@ function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: st
 }
 
 export function LandmarkOverlay() {
-  const navigate = useRouterStore((s) => s.navigate);
-  const pathname = usePathname();
-  const isIsland = useIslandStore((s) => s.isIsland);
-  // Callouts after dock — lighthouse is in the dock GLB; beam also gates on DOCK
+  const router    = useRouter();
+  const pathname  = usePathname();
+  const isIsland  = useIslandStore((s) => s.isIsland);
   const sceneReady = useReveal((s) => s.stage >= ARCH_STAGE.DOCK);
+  const { setRouteTarget, startZoomIn, endZoom } = useCameraStore();
   const [pins, setPins] = useState<ScreenPin[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isHome = pathname === '/';
   const active = isHome || isIsland;
@@ -126,13 +129,22 @@ export function LandmarkOverlay() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [isHome, isIsland]);
 
-  // ponytail: removed isIsland opacity override — it was bypassing sceneReady gate on mount
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   if (!active) return null;
 
   const handleNavigate = (id: string, route: string) => {
-    if (id === 'leo') window.dispatchEvent(new CustomEvent('leo:open'));
-    else navigate(route);
+    if (id === 'leo') {
+      window.dispatchEvent(new CustomEvent('leo:open'));
+      return;
+    }
+    setRouteTarget(route);
+    startZoomIn();
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      endZoom();
+      router.push(route);
+    }, ZOOM_DELAY);
   };
 
   return (

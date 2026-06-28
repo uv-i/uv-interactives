@@ -11,6 +11,7 @@ import { CustomCursor } from '@/shared/cursor/CustomCursor';
 import { Leo } from '@/features/leo/Leo';
 import { ParticleField } from '@/shared/ui/ParticleField';
 import { useRouterStore } from '@/animation/routerStore';
+import { useReveal } from '@/scene/reveal/revealStore';
 import { LandmarkOverlay } from '@/scene/LandmarkOverlay';
 import { TransitionCurtain } from '@/scene/TransitionCurtain';
 import { IslandHUD } from '@/scene/IslandHUD';
@@ -28,6 +29,16 @@ function RouterBridge() {
   useEffect(() => {
     if (pendingRoute) { router.push(pendingRoute); clear(); }
   }, [pendingRoute, router, clear]);
+  return null;
+}
+
+/** Ensures 3D reveal never replays on inner pages.
+ *  Strict-mode double-invoke can call reset() mid-reveal; this re-seals it. */
+function RevealGuard() {
+  const pathname = usePathname();
+  useEffect(() => {
+    if (pathname !== '/') useReveal.getState().revealAll();
+  }, [pathname]);
   return null;
 }
 
@@ -73,13 +84,13 @@ function PageTransition({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
   if (reduce) return <>{children}</>;
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={pathname}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
         style={{ minHeight: '100%' }}
       >
         {children}
@@ -92,6 +103,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QualityProvider>
       <RouterBridge />
+      <RevealGuard />
       <IslandSync />
       <SceneBlur />
       <TransitionCurtain />

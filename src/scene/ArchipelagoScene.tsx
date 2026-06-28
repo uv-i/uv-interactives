@@ -202,7 +202,6 @@ export function ArchipelagoScene() {
     const timers = steps.map(([s, ms]) => window.setTimeout(() => set(s), ms));
     return () => {
       timers.forEach((tm) => window.clearTimeout(tm));
-      useReveal.getState().reset();
     };
   }, [reducedMotion]);
 
