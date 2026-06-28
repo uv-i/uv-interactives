@@ -218,18 +218,26 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   `playableUrl` optional fields to `content/models/index.ts`.
 - **ParticleField mounted globally** in `app/providers.tsx` alongside Leo.
 - **Architecture fixes** — 14 issues (3 critical + 11 warnings) all resolved. (T17)
+- **Typography, frost panels, micro-interactions, page transitions** — T18–T21 all done.
+- **Dawn theme full parity** — T22 done. Mobile 3D fallback + touch + dvh — T23 done.
+- **NarrativeCamera** — killed auto-spin, added mouse parallax (T24), scroll-driven zoom (T25). (T24–T25)
+- **Landmarks + LeoOrb** — mounted in ArchipelagoScene, LeoOrb fires `leo:open` event. (T26)
+- **GradedAtmosphere rewrite** — fixed broken lighting: key light was using `bodyDir` (sun/moon
+  horizon position) instead of `key.dir`; fill light was missing entirely. Now all three lights
+  (key/fill/rim) lerp correctly to their own dir vectors from `grade.ts`.
+- **Ocean dawn fog** — ArchipelagoScene now passes `fogColor={g.fog.color}`, `fogNear`, `fogFar`
+  to `<Ocean>`. Previously defaulted to hardcoded dusk purple `#222a52` in both themes.
+- **LighthouseBeam restored** — was accidentally dropped in a prior revert; re-added to
+  ArchipelagoScene render tree. File `src/scene/LighthouseBeam.tsx` gates on `ARCH_STAGE.DOCK`.
+- **"Explore in 3D" button restored** — was commented out in `HomeView.tsx`; re-enabled.
+- **BottlePulse CTA** — `src/scene/BottlePulse.tsx`: clones `Bottle_New` from dock GLB using
+  `src.clone(false)` (preserves baked position+quaternion+scale), swaps to `MeshStandardMaterial`
+  with pulsing `emissiveIntensity` (0.6→2.5 sine). Scaled 1.08× + opacity 0.55 to avoid
+  z-fighting with the original mesh. PointLight co-located for environmental spillover.
 
-## Still TODO (in order)
+## Still TODO
 - **T2** — Sanity CMS: port `sanityClient`, GROQ queries, `useGamesData`/`useDevLabData` with 1hr
   localStorage cache + silent fallback. Keys: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`.
-- **T10** — 3D: IslandView toggle + TransitionCurtain (full-screen 3D opt-in, `islandState` localStorage).
-- **T11** — 3D: Landmarks + LeoOrb (fires `leo:open`) + Island HUD (TitleHUD, StatsHUD, HintBar, BackButton).
-- **T18** — Typography: Archivo Black display + Space Grotesk body, font-swap in `globals.css`.
-- **T19** — Cinematic frost panels: ambient blobs + hairline borders.
-- **T20** — Micro-interactions: press states, custom cursor, easing tokens.
-- **T21** — Page transitions + section entrance animations.
-- **T22** — Dawn theme polish: warm cream base + full parity.
-- **T23** — Mobile: 3D fallback + touch targets + dvh fix.
 - Optional: run `npm run build` on Windows to confirm prod bundle (sandbox SWC missing).
 
 ## AI / env note
@@ -263,8 +271,48 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   NavBar uses literal `bg-[rgba(22,11,50,0.72)]` to avoid depending on that.
 
 ## Sandbox/file note (for the agent)
-The Linux sandbox occasionally shows stale/corrupted (truncated/null-padded) copies of
-source files, and file-tool writes to EXISTING files don't always reach it. Prefer editing
-via bash (heredoc) and verify with `npx tsc --noEmit`. Repo is git — `git checkout HEAD -- <f>`
-restores a clean file if corruption appears. Live UI can be inspected via Claude-in-Chrome
-at localhost:3000 (its control border/cursor are NOT site bugs).
+The Linux sandbox has several known failure modes — read this before touching files:
+
+**File write failures (most common):** The `Edit` tool writes to a sandbox cache that does NOT
+always reach the actual mounted disk. After any `Edit`, run `git diff <file>` in bash to confirm
+the change is on disk. If git shows no diff, the write was lost — use bash heredoc instead:
+`cat > /sessions/…/mnt/uv-i/src/... << 'EOF' … EOF`. This is the reliable write path.
+
+**Never use the Edit tool for files > ~390 lines** — it silently truncates. Use bash heredoc
+or write a Python script.
+
+**Null-byte corruption:** Sandbox can embed null bytes in source files (grep reports "binary
+file matches"). Strip with: `tr -d '\000' < file > /tmp/clean && cp /tmp/clean file`.
+⚠️ NEVER run `tr -d '\000'` on `.glb` files — GLBs are binary and null bytes are data.
+Restore corrupted GLBs with: `git checkout HEAD -- public/models/archipelago/<file>.glb`.
+
+**Restoring files from git:** `git checkout HEAD -- <file>` restores the last committed version
+but destroys any uncommitted changes. Commit frequently after each meaningful batch.
+
+**Live UI inspection:** Claude-in-Chrome at localhost:3000. The orange control border/cursor
+are the Chrome extension UI, NOT site bugs.
+
+## 3D scene gotchas (learned the hard way)
+
+**`grade.ts` — `bodyDir` vs light dirs:** `bodyDir` is the sun/moon disc position in `SkyDome`
+(near horizon, e.g. `[40,12,-100]`). Do NOT use it for directional lights. Use `key.dir`,
+`fill.dir`, `rim.dir` instead — these are separate steep-angle positions that actually illuminate
+rooftops and walls.
+
+**`GradedAtmosphere`:** Three directional lights (key/fill/rim). All lerp toward their respective
+`dir` vectors from `grade.ts` each frame. JSX must render all three refs:
+`<directionalLight ref={key} position={d.key.dir} />` etc (using dusk defaults as initial mount).
+
+**Ocean fog:** Must pass `fogColor={g.fog.color} fogNear={g.fog.near} fogFar={g.fog.far}` to
+`<Ocean>` in ArchipelagoScene. Without this, Ocean uses its own hardcoded dusk purple fallback
+in both themes — the horizon won't blend with dawn sky.
+
+**Glow overlays on GLB meshes:** Use `src.clone(false)` (shallow clone) — it preserves the
+node's baked position + quaternion + scale from the GLTF scene graph. Do NOT try to re-apply
+position/rotation manually. To avoid z-fighting: scale the clone 1.05–1.10× and set opacity
+0.4–0.6 with `transparent: true`. Use `MeshStandardMaterial` (not `MeshLambertMaterial`) for
+emissive pulsing via `emissiveIntensity` in `useFrame`.
+
+**GLB node parsing (Node.js):** To find a named node's world position/quaternion/scale in a
+GLB without running Three.js: `buf.readUInt32LE(12)` = JSON chunk length,
+`buf.slice(20, 20+jsonLen)` = the GLTF JSON. Parse and walk `nodes` array by name.
