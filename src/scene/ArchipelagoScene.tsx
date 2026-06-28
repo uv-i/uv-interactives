@@ -23,6 +23,8 @@ import { SkyDome } from '@/scene/theme/SkyDome';
 import { ARCH_MODELS, ARCH_STAGE } from '@/scene/archipelago/layout';
 import { mergeByMaterial, cheapenMaterials } from '@/scene/archipelago/merge';
 import { LighthouseBeam } from '@/scene/LighthouseBeam';
+import { Landmarks } from '@/scene/Landmarks';
+import { BottlePulse } from '@/scene/BottlePulse';
 import { easeOutBack } from '@/scene/reveal/easing';
 
 const LERP = 1.8;
@@ -214,4 +216,32 @@ export function ArchipelagoScene() {
         <ArchModel url={ARCH_MODELS.peaks} />
       </Reveal3D>
 
-      <Reveal3D stage={ARCH_STAGE.STR
+      <Reveal3D stage={ARCH_STAGE.STRUCTURES} mode="rise" rise={6}>
+        <ArchModel url={ARCH_MODELS.structures} />
+      </Reveal3D>
+
+      <StaggeredGroup url={ARCH_MODELS.flora} stage={ARCH_STAGE.FLORA} />
+
+      <Reveal3D stage={ARCH_STAGE.DOCK} mode="rise" rise={2}>
+        <ArchModel url={ARCH_MODELS.dock} />
+      </Reveal3D>
+
+      <Ocean
+        segments={segments}
+        sunDir={g.bodyDir}
+        deep={g.ocean.deep}
+        shallow={g.ocean.shallow}
+        sunColor={g.ocean.sun}
+        fogColor={g.fog.color}
+        fogNear={g.fog.near}
+        fogFar={g.fog.far}
+      />
+      <Landmarks />
+      <BottlePulse />
+      <LighthouseBeam />
+      <Effects />
+    </>
+  );
+}
+
+Object.values(ARCH_MODELS).forEach((u) => useGLTF.preload(u));

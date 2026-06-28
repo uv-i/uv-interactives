@@ -11,8 +11,7 @@ import { GamesSection } from '@/features/home/GamesSection';
 import { OpenSourceBanner } from '@/features/home/OpenSourceBanner';
 import { ForgeTeaser } from '@/features/home/ForgeTeaser';
 import { PlatformStrip } from '@/features/home/PlatformStrip';
-// TO ENABLE "Explore in 3D" button: uncomment the line below + the <Button> block in the hero
-// import { useIslandStore } from '@/scene/islandStore';
+import { useIslandStore } from '@/scene/islandStore';
 
 export function HomeView({
   config,
@@ -46,7 +45,6 @@ export function HomeView({
           >
             <Button href="/lab">Explore free learning</Button>
             <Button href="/games" variant="ghost">See what we&apos;re building</Button>
-            {/* TO ENABLE: uncomment this block + the import above
             <Button
               variant="ghost"
               style={{ animationDelay: '320ms' }}
@@ -55,13 +53,12 @@ export function HomeView({
             >
               Explore in 3D
             </Button>
-            */}
           </div>
         </Container>
       </section>
 
       {/* ── Platform strip ── */}
-      <PlatformStrip />
+      {/* <PlatformStrip /> */}
 
       {/* ── Stats ── */}
       <StatsSection />

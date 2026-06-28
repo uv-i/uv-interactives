@@ -17,10 +17,10 @@ export function BottlePulse() {
     color:             new Color('#7ec8c8'),
     emissive:          new Color('#00ffcc'),
     emissiveIntensity: 1.0,
-    roughness:         0.25,
+    roughness:         0.0,
     metalness:         0.1,
     transparent:       true,
-    opacity:           0.55,  // semi-transparent glow shell
+    opacity:           0.1,  // semi-transparent glow shell
   }), []);
 
   // Clone the mesh node — keeps its baked position + quaternion + scale.
