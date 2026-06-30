@@ -12,7 +12,7 @@ import { useTheme } from '@/scene/theme/themeStore';
  */
 export function Effects() {
   const tier = useQualityStore((s) => s.tier);
-  const theme = useTheme((s) => s.theme);
+  const theme = useTheme((s) => s.resolved);
   if (tier === 'low' || theme === 'dusk') return null;
 
   return (

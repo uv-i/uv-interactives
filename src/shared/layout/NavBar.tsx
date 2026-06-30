@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon, Monitor } from 'lucide-react';
 import { Container } from '@/shared/ui/Container';
 import { studioConfig } from '@/content/data/config';
 import { useTheme } from '@/shared/state/themeStore';
@@ -67,16 +67,17 @@ function MagneticLink({ href, label, active }: { href: string; label: string; ac
 
 function ThemeToggle() {
   const theme = useTheme((s) => s.theme);
-  const toggle = useTheme((s) => s.toggle);
-  const isDusk = theme === 'dusk';
+  const cycle = useTheme((s) => s.cycle);
+  const labels = { dusk: 'Switch to day (golden dawn)', dawn: 'Switch to auto (system)', auto: 'Switch to night (purple dusk)' };
+  const icons  = { dusk: <Sun className="h-5 w-5" />, dawn: <Monitor className="h-5 w-5" />, auto: <Moon className="h-5 w-5" /> };
   return (
     <button
       type="button"
-      onClick={toggle}
-      aria-label={isDusk ? 'Switch to day (golden dawn)' : 'Switch to night (purple dusk)'}
+      onClick={cycle}
+      aria-label={labels[theme]}
       className="grid h-9 w-9 place-items-center rounded-full border border-white/25 bg-white/10 text-pearl transition-colors hover:border-gold/60 hover:text-gold"
     >
-      {isDusk ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {icons[theme]}
     </button>
   );
 }

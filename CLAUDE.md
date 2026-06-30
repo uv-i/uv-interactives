@@ -235,6 +235,13 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   with pulsing `emissiveIntensity` (0.6→2.5 sine). Scaled 1.08× + opacity 0.55 to avoid
   z-fighting with the original mesh. PointLight co-located for environmental spillover.
 
+- **Shore foam** — `Ocean.tsx` world-Y prepass: renders scene with custom `ShaderMaterial` into 512×512 color RT every 4th frame. Encodes terrain worldY [-10..+20] into red channel; foam where `abs(terrainY) < 1.2`. Camera-angle-independent (depth-diff approach failed at grazing angles). Key gotcha: `enc < 0.001` = sky pixel = no foam.
+- **Boat buoyancy** — `src/scene/BoatBuoyancy2.tsx`: regex traverse (`BOAT_RE = /DG_Boat_Catamaran/`) to dodge Three.js name sanitization bug (`DG_Boat_Catamaran.001` → `DG_Boat_Catamaran001`). `HULL_LIFT=0.18`, `E=1.5`, `TILT=0.45`. Two-group JSX (outer stable world pos, inner per-frame Y+pitch+roll). Dock `<ArchModel>` uses `skip={(o) => BOAT_RE.test(o.name)}`. Imported by ArchipelagoScene.
+- **Camera zoom system** — `src/scene/cameraStore.ts` (Zustand): `{ routeTarget: string|null, setRouteTarget, clearRouteTarget }`. `ROUTE_CAMERAS` added to `layout.ts` — per-route `{position, lookAt}` for `/games` (Docks `[15,1,13]`), `/lab` (Lighthouse `[29.5,7,-3]`), `/contact` (Bottle `[-11,0,13]`). Estimates — tune with `?cam&debug`. `NarrativeCamera.tsx` reads `routeTarget`: lerps to `ROUTE_CAMERAS[target]` at `LERP_ROUTE=0.03` (cinematic); null = heroProgress scroll zoom at `LERP_HOME=0.1`. Both position AND lookAt lerp.
+- **Nav wired to camera** — `NavBar.tsx` + `LandmarkOverlay.tsx` both call `cameraStore.setRouteTarget(route)` on click. NavBar `useEffect` clears on `pathname==='/'`, sets on inner page arrival. LandmarkOverlay now uses `useRouter()` directly (removed Zustand bridge — it's not inside R3F canvas).
+- **RevealGuard** — `providers.tsx`: watches `pathname`, calls `revealAll()` immediately when not on `/`. `reset()` removed from ArchipelagoScene cleanup (only `clearTimeout` now). Prevents strict-mode double-invoke from replaying island-rise on inner pages.
+- **PageTransition** — `mode="wait"` → `mode="popLayout"`, `280ms` → `150ms`. New page appears without waiting for old page to fully exit.
+
 ## Still TODO
 - **T2** — Sanity CMS: port `sanityClient`, GROQ queries, `useGamesData`/`useDevLabData` with 1hr
   localStorage cache + silent fallback. Keys: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`.

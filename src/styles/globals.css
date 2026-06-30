@@ -47,6 +47,8 @@ html[data-theme='dawn'] {
   color-scheme: light;
   /* Flip foreground token so rgb(var(--fg)) resolves to dark ink in dawn */
   --fg: 41 36 63;
+  /* Flip pearl→dark-ink so text-pearl/X classes are readable on cream bg */
+  --c-pearl: 41 36 63;
 }
 
 body {
@@ -142,16 +144,56 @@ body::before {
   will-change: transform;
 }
 
-/* ── Frost panel — cinematic glassmorphism over the persistent 3D scene ──── */
+/* ── Theme transition tween ─────────────────────────────────────────────────
+ * Smooth lerp between dusk/dawn. Applied to elements that change color on theme
+ * switch. backdrop-filter can't tween, but bg-color/color/border-color can.
+ * ponytail: targeting key elements only — * selector would tank perf.
+ */
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 420ms ease,
+    color            420ms ease,
+    border-color     420ms ease,
+    box-shadow       420ms ease !important;
+}
+
+/* ── Frost panel ─────────────────────────────────────────────────────────── */
+/*
+ * DUSK  = Dark Glassmorphism — frosted violet glass over night-sky 3D.
+ *         backdrop-filter frosts each panel individually; 3D still visible.
+ * DAWN  = Claymorphism — chunky warm cream panels echoing the 3D art style.
+ *         No backdrop-filter; depth from dual soft shadows instead.
+ */
 .frost-panel {
   position: relative;
-  /* SceneBlur in providers handles the global backdrop-filter; panels add tint + border */
-  background-color: rgba(22, 11, 50, 0.45);
-  border: 1px solid rgba(245, 240, 230, 0.08);
+  background-color: rgba(22, 11, 50, 0.55);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
-/* Ambient blob — single warm violet glow in the top-right corner */
+/* Top-edge catch-light — thin specular highlight on the glass surface */
+.frost-panel::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.20) 25%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.20) 75%,
+    transparent 100%
+  );
+  z-index: 2;
+}
+
+/* Ambient blob — warm violet glow top-right, gold hint bottom-left */
 .frost-panel::before {
   content: '';
   pointer-events: none;
@@ -163,27 +205,51 @@ body::before {
   z-index: 0;
 }
 
-/* Ensure direct children sit above the blob layer */
+/* Ensure direct children sit above the blob + catch-light layers */
 .frost-panel > * {
   position: relative;
   z-index: 1;
 }
 
-/* SceneBlur overlay flips to warm cream in dawn */
-html[data-theme='dawn'] [data-scene-blur] {
-  background: rgba(247, 244, 237, 0.68) !important;
-}
-
-/* ── Dawn (light) skin ─────────────────────────────────────────────────────── */
+/* ── Dawn (light) — Warm Frosted Glass ─────────────────────────────────────
+ * Same glass mechanic as dusk but warmer + thicker:
+ *   higher opacity tint (0.72 vs 0.55), more blur (22px vs 16px),
+ *   gold-tinted border, amber catch-light, warm blob gradients.
+ */
 html[data-theme='dawn'] .frost-panel {
-  background-color: rgba(247, 244, 237, 0.55);
-  border-color: rgba(20, 16, 44, 0.10);
+  background-color: rgba(242, 235, 218, 0.65);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid rgba(175, 135, 55, 0.28);
+  box-shadow: none;
 }
 
+/* Amber catch-light on the top edge */
+html[data-theme='dawn'] .frost-panel::after {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(210, 160, 60, 0.22) 25%,
+    rgba(210, 160, 60, 0.32) 50%,
+    rgba(210, 160, 60, 0.22) 75%,
+    transparent 100%
+  );
+}
+
+/* Warm amber blob top-right, soft cream glow bottom-left */
 html[data-theme='dawn'] .frost-panel::before {
   background:
-    radial-gradient(ellipse 55% 40% at 85% 10%, rgba(245, 166, 35, 0.14) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 35% at 12% 88%, rgba(99, 32, 238, 0.08) 0%, transparent 65%);
+    radial-gradient(ellipse 55% 40% at 85% 10%, rgba(215, 155, 40, 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 35% at 12% 88%, rgba(255, 220, 140, 0.18) 0%, transparent 65%);
+}
+
+/* Inner cards: flip white-based Tailwind utilities to dark equivalents */
+html[data-theme='dawn'] .frost-panel [class*='border-white'] {
+  border-color: rgba(20, 16, 44, 0.12) !important;
+}
+html[data-theme='dawn'] .frost-panel [class*='bg-white'] {
+  background-color: rgba(20, 16, 44, 0.04) !important;
 }
 
 /* Body text flips via --fg token (set above on html[data-theme='dawn']).
@@ -208,17 +274,17 @@ html[data-theme='dawn'] [class*='text-gold'] {
   color: #c47500;
 }
 
-/* Navbar flips light on dawn */
-html[data-theme='dawn'] header {
+/* Navbar flips light on dawn — scoped to fixed nav header only */
+html[data-theme='dawn'] header.fixed {
   background-color: rgba(247, 244, 237, 0.85) !important;
   border-color: rgba(20, 16, 44, 0.1) !important;
 }
-html[data-theme='dawn'] header a,
-html[data-theme='dawn'] header span,
-html[data-theme='dawn'] header button {
+html[data-theme='dawn'] header.fixed a,
+html[data-theme='dawn'] header.fixed span,
+html[data-theme='dawn'] header.fixed button {
   color: #29243f;
 }
-html[data-theme='dawn'] header button {
+html[data-theme='dawn'] header.fixed button {
   border-color: rgba(20, 16, 44, 0.25);
   background-color: rgba(20, 16, 44, 0.06);
 }

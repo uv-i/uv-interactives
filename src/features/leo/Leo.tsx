@@ -44,7 +44,7 @@ const randomIntro = () =>
 export function Leo() {
   const router = useRouter();
   const pathname = usePathname();
-  const isDark = useTheme((s) => s.theme === 'dusk');
+  const isDark = useTheme((s) => s.resolved === 'dusk');
 
   const [open, setOpen] = useState(false);
   const [showBubble, setShowBubble] = useState(false);

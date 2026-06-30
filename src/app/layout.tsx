@@ -3,6 +3,7 @@ import { Archivo_Black, Space_Grotesk } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import '@/styles/globals.css';
 import { Providers } from '@/app/providers';
+import { PageTransition } from '@/app/PageTransition';
 import { SceneBackdrop } from '@/scene/SceneBackdrop';
 import { NavBar } from '@/shared/layout/NavBar';
 import { Footer } from '@/shared/layout/Footer';
@@ -36,7 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <SceneBackdrop className="pointer-events-none fixed inset-0 -z-10" />
           <NavBar />
-          <main id="main">{children}</main>
+          <PageTransition>
+            <main id="main">{children}</main>
+          </PageTransition>
           <Footer />
         </Providers>
         <PerfHud />

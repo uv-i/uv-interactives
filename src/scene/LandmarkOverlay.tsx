@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLandmarkStore, type ScreenPin } from '@/scene/landmarkStore';
 import { useIslandStore } from '@/scene/islandStore';
+import { useTheme } from '@/shared/state/themeStore';
 import { useReveal } from '@/scene/reveal/revealStore';
 import { useCameraStore } from '@/scene/cameraStore';
 import { ARCH_STAGE } from '@/scene/archipelago/layout';
@@ -12,6 +13,7 @@ const ZOOM_DELAY = 480;
 
 function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: string, route: string) => void }) {
   const [hovered, setHovered] = useState(false);
+  const isDawn = useTheme((s) => s.resolved === 'dawn');
 
   const onEnter = () => {
     setHovered(true);
@@ -22,16 +24,23 @@ function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: st
     useLandmarkStore.getState().setHoveredId(null);
   };
 
+  // Dawn: warm cream glass. Dusk: deep violet glass.
+  const bg       = isDawn ? 'rgba(242, 235, 218, 0.82)' : 'rgba(8,8,15,0.90)';
+  const borderIdle = isDawn ? 'rgba(175,135,55,0.35)' : 'rgba(136,85,255,0.28)';
+  const subColor = isDawn ? 'rgba(80,65,40,0.55)'    : 'rgba(200,190,255,0.45)';
+  const labelColor = isDawn ? (hovered ? pin.color : '#29243f') : (hovered ? pin.color : '#f0f0ff');
+  const descColor  = isDawn ? 'rgba(60,50,30,0.7)'   : 'rgba(220,210,255,0.6)';
+
   const cardStyle: React.CSSProperties = {
     position: 'relative',
-    background: 'rgba(8,8,15,0.90)',
-    border: `1.5px solid ${hovered ? pin.color : 'rgba(136,85,255,0.28)'}`,
+    background: bg,
+    border: `1.5px solid ${hovered ? pin.color : borderIdle}`,
     borderRadius: '14px',
     padding: '10px 16px 10px',
     cursor: 'pointer',
     pointerEvents: 'auto',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    backdropFilter: 'blur(16px) saturate(1.4)',
+    WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
     textAlign: 'center',
     minWidth: '148px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -39,7 +48,7 @@ function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: st
     transform: `scale(${hovered ? 1.08 : 1})`,
     boxShadow: hovered
       ? `0 0 22px ${pin.color}60, 0 6px 20px rgba(0,0,0,0.35)`
-      : '0 4px 14px rgba(0,0,0,0.28)',
+      : isDawn ? '0 4px 14px rgba(140,105,40,0.18)' : '0 4px 14px rgba(0,0,0,0.28)',
   };
 
   return (
@@ -47,14 +56,14 @@ function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: st
       <div style={{ fontSize: '20px', lineHeight: 1, marginBottom: '5px' }}>{pin.icon}</div>
 
       <div style={{
-        color: hovered ? pin.color : '#f0f0ff',
+        color: labelColor,
         fontWeight: 700, fontSize: '12px', letterSpacing: '0.09em',
         textTransform: 'uppercase', transition: 'color 0.2s ease',
       }}>
         {pin.label}
       </div>
 
-      <div style={{ color: 'rgba(200,190,255,0.45)', fontSize: '10px', letterSpacing: '0.05em', marginTop: '3px' }}>
+      <div style={{ color: subColor, fontSize: '10px', letterSpacing: '0.05em', marginTop: '3px' }}>
         {pin.sub}
       </div>
 
@@ -64,7 +73,7 @@ function LandmarkCard({ pin, onNavigate }: { pin: ScreenPin; onNavigate: (id: st
           background: `linear-gradient(to right, transparent, ${pin.color}55, transparent)`,
         }} />
         {pin.desc && (
-          <div style={{ color: 'rgba(220,210,255,0.6)', fontSize: '9px', letterSpacing: '0.04em', marginBottom: '6px', lineHeight: 1.4 }}>
+          <div style={{ color: descColor, fontSize: '9px', letterSpacing: '0.04em', marginBottom: '6px', lineHeight: 1.4 }}>
             {pin.desc}
           </div>
         )}

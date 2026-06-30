@@ -56,12 +56,19 @@ export function NarrativeCamera() {
   useFrame(() => {
     const still = reducedMotion || tier === 'low';
 
-    if (zoomPhase === 'in') {
-      // Punch in toward world center before page switch
+    if (zoomPhase === 'in' && routeTarget && ROUTE_CAMERAS[routeTarget]) {
+      // Fast punch-in toward destination landmark before page switch
+      const rc = ROUTE_CAMERAS[routeTarget];
+      GOAL.set(...rc.position);
+      LOOK.set(...rc.lookAt);
+      pos.current.lerp(GOAL, LERP_ZOOM);
+      lookAt.current.lerp(LOOK, LERP_ZOOM);
+    } else if (zoomPhase === 'in') {
+      // Fallback: no route camera, punch to world center
       pos.current.lerp(ZOOM, LERP_ZOOM);
       lookAt.current.lerp(TARGET, LERP_ZOOM);
     } else if (routeTarget && ROUTE_CAMERAS[routeTarget]) {
-      // Route zoom: lerp toward per-page landmark camera (slow, cinematic)
+      // On inner page: hold camera at landmark position
       const rc = ROUTE_CAMERAS[routeTarget];
       GOAL.set(...rc.position);
       LOOK.set(...rc.lookAt);
@@ -69,16 +76,4 @@ export function NarrativeCamera() {
       lookAt.current.lerp(LOOK, LERP_ROUTE);
     } else {
       // Home: scroll-driven zoom + mouse parallax
-      GOAL.lerpVectors(ZOOM, BASE, heroProgress);
-      GOAL.x += still ? 0 : mouse.current.x * PARALLAX_X;
-      GOAL.y += still ? 0 : mouse.current.y * PARALLAX_Y;
-      pos.current.lerp(GOAL, LERP_HOME);
-      lookAt.current.lerp(TARGET, LERP_HOME);
-    }
-
-    camera.position.copy(pos.current);
-    camera.lookAt(lookAt.current);
-  });
-
-  return null;
-}
+      GOAL.lerpVectors(ZOOM, BAS

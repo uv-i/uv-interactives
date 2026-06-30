@@ -22,7 +22,7 @@ const LERP = 1.8;
 
 /** Vertical gradient sky + sun/moon disc + stars, all crossfading by theme. */
 export function SkyDome() {
-  const theme = useTheme((s) => s.theme);
+  const theme = useTheme((s) => s.resolved);
 
   const domeMat = useMemo(
     () =>

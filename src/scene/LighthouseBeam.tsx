@@ -44,7 +44,7 @@ const frag = /* glsl */`
 
 export function LighthouseBeam() {
   const rotRef = useRef<Group>(null);
-  const isDusk  = useTheme((s) => s.theme === 'dusk');
+  const isDusk  = useTheme((s) => s.resolved === 'dusk');
   // Gate on dock stage — lighthouse 3D model is in the dock GLB
   const ready   = useReveal((s) => s.stage >= ARCH_STAGE.DOCK);
 

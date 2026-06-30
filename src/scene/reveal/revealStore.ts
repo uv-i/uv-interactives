@@ -15,7 +15,6 @@ interface RevealState {
 
 export const useReveal = create<RevealState>((set) => ({
   stage: -1,
-  setStage: (n) => set({ stage: n }),
+  setStage: (n) => set((s) => ({ stage: Math.max(s.stage, n) })),
   revealAll: () => set({ stage: MAX_STAGE }),
-  reset: () => set({ stage: -1 }),
-}));
+  reset: () 

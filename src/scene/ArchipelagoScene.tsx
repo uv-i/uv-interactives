@@ -104,7 +104,7 @@ function StaggeredGroup({
 
 /** Lights + fog + exposure crossfading toward the active theme grade (cached targets). */
 function GradedAtmosphere() {
-  const theme = useTheme((s) => s.theme);
+  const theme = useTheme((s) => s.resolved);
   const { scene, gl } = useThree();
   const amb = useRef<AmbientLight>(null);
   const hemi = useRef<HemisphereLight>(null);
@@ -182,7 +182,7 @@ function GradedAtmosphere() {
 export function ArchipelagoScene() {
   const reducedMotion = useQualityStore((s) => s.reducedMotion);
   const tier = useQualityStore((s) => s.tier);
-  const theme = useTheme((s) => s.theme);
+  const theme = useTheme((s) => s.resolved);
   const g = THEME_GRADE[theme];
   const segments = tier === 'high' ? 90 : tier === 'medium' ? 64 : 40;
 
