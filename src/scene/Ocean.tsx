@@ -235,7 +235,7 @@ export function Ocean({
       meshRef.current.visible = true;
 
       material.uniforms.tWorldY.value = worldYTarget.texture;
-      material.uniforms.uResolution.value.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
+      material.uniforms.uResolution.value.set(gl.domElement.width, gl.domElement.height);
     }
     frameRef.current++;
 
