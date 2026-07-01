@@ -29,7 +29,7 @@ export interface Grade {
   exposure: number;
 }
 
-export const THEME_GRADE: Record<ThemeName, Grade> = {
+export const THEME_GRADE: Record<Exclude<ThemeName, 'auto'>, Grade> = {
   dawn: {
     skyTop: '#7fb6dd',
     skyBottom: '#ffd9a6',
