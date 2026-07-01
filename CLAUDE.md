@@ -162,10 +162,12 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
 - 3D archipelago built in Blender (`UVI_Harbour.blend`, scene `UVI_World`), exported as
   5 stage glbs in `public/models/archipelago/` (islands, peaks, structures, flora, dock).
 - Web env: lazy staged reveal, slow orbit camera (`ArchipelagoCamera`), ocean shader.
-- Dusk/Dawn themes (`scene/theme/`): `themeStore` (zustand), `grade.ts` (all colours,
+- **Dusk/Dawn/Auto themes** (`scene/theme/`): `themeStore` (zustand), `grade.ts` (all colours,
   single source), `SkyDome` (gradient sky + sun/moon + stars), `ThemeSync` (localStorage +
   `data-theme` on <html>), `GradedAtmosphere` lerps lights/fog/exposure. Toggle in NavBar.
-  Dusk bloom OFF, Dawn bloom ON (`Effects.tsx`, theme-aware).
+  Three states: dusk 🌙 → dawn ☀️ → auto 🖥️. Auto follows `prefers-color-scheme` via
+  `MediaQueryList`. 420ms CSS tween on bg/color/border/shadow during transitions (`.theme-transitioning`
+  class added/removed). Dusk bloom OFF, Dawn bloom ON (`Effects.tsx`, reads `s.resolved`).
 - Perf pass → ~60fps (was 10-15). See "Performance" below.
 - Debug HUD (`scene/debug/`, top-right): FPS/draws/tris/geo/tex/programs. On in dev or `?debug`.
 - Pages: Home (3D hero), Dev Lab, Games, Contact — all built, content in `content/data/`.
@@ -189,7 +191,7 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   and when open. Reply keyword→route chips (inlined `PAGE_LINKS`/`extractLinks`). Listens for
   `window` event `leo:open` so the future 3D LeoOrb can open it. Reads persona by importing
   `chatbot` from `content/data/chatbot.ts` directly (static, no repository call). Uses
-  `themeStore` for dusk/dawn skin, `next/navigation` for routing.
+  `themeStore` for dusk/dawn skin (reads `s.resolved`), `next/navigation` for routing.
 - **Idea Forge — DONE.** `features/devlab/IdeaForge.tsx` (client), embedded in `DevLabView`
   (server component renders the client island). Calls `/api/leo` `forge` task; renders the
   TITLE/GENRE/PITCH/MECHANIC/TWIST block as `<pre>`.
@@ -234,13 +236,23 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   `src.clone(false)` (preserves baked position+quaternion+scale), swaps to `MeshStandardMaterial`
   with pulsing `emissiveIntensity` (0.6→2.5 sine). Scaled 1.08× + opacity 0.55 to avoid
   z-fighting with the original mesh. PointLight co-located for environmental spillover.
-
 - **Shore foam** — `Ocean.tsx` world-Y prepass: renders scene with custom `ShaderMaterial` into 512×512 color RT every 4th frame. Encodes terrain worldY [-10..+20] into red channel; foam where `abs(terrainY) < 1.2`. Camera-angle-independent (depth-diff approach failed at grazing angles). Key gotcha: `enc < 0.001` = sky pixel = no foam.
 - **Boat buoyancy** — `src/scene/BoatBuoyancy2.tsx`: regex traverse (`BOAT_RE = /DG_Boat_Catamaran/`) to dodge Three.js name sanitization bug (`DG_Boat_Catamaran.001` → `DG_Boat_Catamaran001`). `HULL_LIFT=0.18`, `E=1.5`, `TILT=0.45`. Two-group JSX (outer stable world pos, inner per-frame Y+pitch+roll). Dock `<ArchModel>` uses `skip={(o) => BOAT_RE.test(o.name)}`. Imported by ArchipelagoScene.
 - **Camera zoom system** — `src/scene/cameraStore.ts` (Zustand): `{ routeTarget: string|null, setRouteTarget, clearRouteTarget }`. `ROUTE_CAMERAS` added to `layout.ts` — per-route `{position, lookAt}` for `/games` (Docks `[15,1,13]`), `/lab` (Lighthouse `[29.5,7,-3]`), `/contact` (Bottle `[-11,0,13]`). Estimates — tune with `?cam&debug`. `NarrativeCamera.tsx` reads `routeTarget`: lerps to `ROUTE_CAMERAS[target]` at `LERP_ROUTE=0.03` (cinematic); null = heroProgress scroll zoom at `LERP_HOME=0.1`. Both position AND lookAt lerp.
 - **Nav wired to camera** — `NavBar.tsx` + `LandmarkOverlay.tsx` both call `cameraStore.setRouteTarget(route)` on click. NavBar `useEffect` clears on `pathname==='/'`, sets on inner page arrival. LandmarkOverlay now uses `useRouter()` directly (removed Zustand bridge — it's not inside R3F canvas).
 - **RevealGuard** — `providers.tsx`: watches `pathname`, calls `revealAll()` immediately when not on `/`. `reset()` removed from ArchipelagoScene cleanup (only `clearTimeout` now). Prevents strict-mode double-invoke from replaying island-rise on inner pages.
 - **PageTransition** — `mode="wait"` → `mode="popLayout"`, `280ms` → `150ms`. New page appears without waiting for old page to fully exit.
+- **Dawn frosted glass** — replaced claymorphism with warm frosted glass. `globals.css`:
+  `rgba(242,235,218,0.65)` bg + `blur(22px) saturate(1.5)` + gold border + radial gradient overlays.
+  Much more readable over the 3D than the "bleached" clay look.
+- **Pearl token flip** — `html[data-theme='dawn']` sets `--c-pearl: 41 36 63` (dark ink) so all
+  `text-pearl/X` Tailwind classes become dark-on-cream readable without touching any component.
+- **Landmark placards theme-aware** — `LandmarkOverlay.tsx` reads `s.resolved` from themeStore,
+  applies cream glass in dawn and dark glass in dusk via conditional inline styles.
+- **3-state theme toggle** — dusk 🌙 → dawn ☀️ → auto 🖥️. Icon represents CURRENT state (not next).
+  `ThemeSync.tsx` handles auto via `MediaQueryList` listener on `prefers-color-scheme`.
+- **420ms theme tween** — `.theme-transitioning` CSS class added before switch, removed after 450ms.
+  Transitions only active during switch (perf optimization vs always-on `*` transitions).
 
 ## Still TODO
 - **T2** — Sanity CMS: port `sanityClient`, GROQ queries, `useGamesData`/`useDevLabData` with 1hr
@@ -269,13 +281,40 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   (`globals.css`): frosted dark panel over the 3D so text is readable. Home hero has no
   frost (full 3D + scrims).
 - **Light/Dark UI flip** is done with scoped CSS in `globals.css` under
-  `html[data-theme='dawn'] .frost-panel` / `html[data-theme='dawn'] header` (literal colours,
+  `html[data-theme='dawn'] .frost-panel` / `html[data-theme='dawn'] header.fixed` (literal colours,
   works without a dev restart). Dusk = default dark skin; Dawn = light cream skin + dark text.
   If adding new inner-page UI, give it `.frost-panel` (or it won't theme).
+- **NavBar selector MUST be `header.fixed`** — `html[data-theme='dawn'] header` matches ALL
+  `<header>` HTML elements including `SectionHeader`'s internal `<header>` tag, causing white
+  patches on section titles. Always scope to `header.fixed`.
 - Brand colours in `globals.css` are RGB-channel triplets and Tailwind colours use
   `rgb(var(--x) / <alpha-value>)` so opacity utilities (`bg-violet-night/85`, `text-pearl/70`)
   work. **Tailwind config + env-var changes need a `npm run dev` restart** to take effect.
   NavBar uses literal `bg-[rgba(22,11,50,0.72)]` to avoid depending on that.
+
+## Theme system architecture (IMPORTANT — `themeStore.ts`)
+
+```ts
+type ThemeName = 'dusk' | 'dawn' | 'auto';
+// theme  = what user selected (can be 'auto')
+// resolved = always 'dusk' | 'dawn' — safe for 3D grade lookups
+```
+
+**ALL 3D scene files must use `s.resolved`, never `s.theme`.** `THEME_GRADE['auto']` is
+undefined — using `s.theme` in a scene file crashes with "cannot read property of undefined".
+Affected files: `ArchipelagoScene.tsx`, `Effects.tsx`, `LighthouseBeam.tsx`, `SkyDome.tsx`,
+`Leo.tsx` (anywhere that does `THEME_GRADE[s.theme]` or `s.theme === 'dawn'` in a 3D context).
+
+**Zustand infinite loop trap:** `ThemeSync.tsx` subscribes to store changes to apply theme to DOM.
+If `applyResolved()` calls `setResolved()` unconditionally, and the subscriber fires on `resolved`
+changes, you get infinite recursion. Two guards required:
+1. `if (useTheme.getState().resolved !== resolved) setResolved(resolved)` — equality check before write.
+2. `useTheme.subscribe((s, prev) => { if (s.theme !== prev.theme) applyTheme(s.theme); })` — subscribe
+   only to `theme` changes, not `resolved`, to avoid feedback loop.
+
+**Theme icon mapping:** icons represent CURRENT state, not next state.
+`{ dusk: <Moon />, dawn: <Sun />, auto: <Monitor /> }` — if you see it wrong, it was
+previously inverted (`{ dusk: <Sun />, dawn: <Monitor />, auto: <Moon /> }`).
 
 ## Sandbox/file note (for the agent)
 The Linux sandbox has several known failure modes — read this before touching files:
@@ -287,6 +326,15 @@ the change is on disk. If git shows no diff, the write was lost — use bash her
 
 **Never use the Edit tool for files > ~390 lines** — it silently truncates. Use bash heredoc
 or write a Python script.
+
+**Targeted string replacement without full rewrite:** For a single-line change in a large file,
+use `sed -i 's/old/new/' file` in bash — faster and safer than a full heredoc rewrite.
+Verify with `grep 'new pattern' file` after.
+
+**File truncation from Python string replacement:** If using Python to replace a function block,
+always verify `wc -l file` before and after. A botched replace that leaves an unclosed JSX tag
+(`</u` at EOF) will silently break the whole file. Restore with `git show HEAD:path > /tmp/base`
+then re-apply only the targeted change.
 
 **Null-byte corruption:** Sandbox can embed null bytes in source files (grep reports "binary
 file matches"). Strip with: `tr -d '\000' < file > /tmp/clean && cp /tmp/clean file`.

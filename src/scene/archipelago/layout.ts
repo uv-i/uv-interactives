@@ -35,15 +35,51 @@ export const ARCH_CAMERA = {
   fov: ARCH_ORBIT.fov,
 };
 
-// Zoom-in target at heroProgress===1. Tweak ZOOM_R_FACTOR + ZOOM_H_DELTA to taste.
-// ponytail: only two knobs needed -- don't add more.
+// Scroll-zoom knobs — only two, don't add more.
 const ZOOM_R_FACTOR = 0.75;
-const ZOOM_H_DELTA = -5;
+const ZOOM_H_DELTA  = -5;
+
 export const ARCH_ZOOM_TARGET: [number, number, number] = [
   ARCH_ORBIT.center[0] + Math.cos(2.0) * ARCH_ORBIT.R * 0.2 * ZOOM_R_FACTOR,
   ARCH_ORBIT.H + ZOOM_H_DELTA,
   ARCH_ORBIT.center[2] + Math.sin(2.0) * ARCH_ORBIT.R * ZOOM_R_FACTOR,
 ];
+
+// ─── Responsive camera helpers ───────────────────────────────────────────────
+
+// Base calibrated at 16:9 desktop. On narrower viewports, HFOV shrinks and the
+// camera must pull back so the island still fills the screen.
+// Math: at fixed VFOV, horizontal coverage ∝ aspect, so D ∝ 1/aspect.
+// → R_new = R_base × (16/9) / aspect
+const BASE_ASPECT = 16 / 9;
+
+/** Orbit radius that keeps the island filling the viewport at any aspect ratio. */
+export function responsiveR(width: number, height: number): number {
+  if (!width || !height) return ARCH_ORBIT.R;
+  const scale = BASE_ASPECT / (width / height);
+  // ponytail: clamp — 0.7× (ultrawide) to 3× (portrait phone)
+  return ARCH_ORBIT.R * Math.min(Math.max(scale, 0.7), 3.0);
+}
+
+/** Hero base camera position at a given R. */
+export function basePosFromR(R: number): [number, number, number] {
+  return [
+    ARCH_ORBIT.center[0] + Math.cos(2.0) * R * 0.2,
+    ARCH_ORBIT.H,
+    ARCH_ORBIT.center[2] + Math.sin(2.0) * R,
+  ];
+}
+
+/** Scroll zoom-in position at a given R. */
+export function zoomPosFromR(R: number): [number, number, number] {
+  return [
+    ARCH_ORBIT.center[0] + Math.cos(2.0) * R * 0.2 * ZOOM_R_FACTOR,
+    ARCH_ORBIT.H + ZOOM_H_DELTA,
+    ARCH_ORBIT.center[2] + Math.sin(2.0) * R * ZOOM_R_FACTOR,
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 /** Per-route camera positions for landmark zoom.
  *  ponytail: tune with ?cam&debug — initial values estimated from landmark world coords.

@@ -69,7 +69,7 @@ function ThemeToggle() {
   const theme = useTheme((s) => s.theme);
   const cycle = useTheme((s) => s.cycle);
   const labels = { dusk: 'Switch to day (golden dawn)', dawn: 'Switch to auto (system)', auto: 'Switch to night (purple dusk)' };
-  const icons  = { dusk: <Sun className="h-5 w-5" />, dawn: <Monitor className="h-5 w-5" />, auto: <Moon className="h-5 w-5" /> };
+  const icons  = { dusk: <Moon className="h-5 w-5" />, dawn: <Sun className="h-5 w-5" />, auto: <Monitor className="h-5 w-5" /> };
   return (
     <button
       type="button"
