@@ -25,26 +25,26 @@ export function HomeView({
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[88vh] items-start overflow-hidden pt-20">
-        <Container>
+      <section className="relative flex min-h-[88vh] items-start overflow-hidden pt-[clamp(5.5rem,8vw,6rem)]">
+        <Container className="flex flex-col items-center text-center">
           <h1
-            className="max-w-2xl animate-fade-up text-4xl font-bold leading-[1.08] tracking-tight drop-shadow-[0_2px_16px_rgba(8,4,20,0.55)] sm:text-5xl lg:text-6xl"
+            className="max-w-2xl animate-fade-up font-bold leading-[1.08] tracking-tight drop-shadow-[0_2px_16px_rgba(8,4,20,0.55)] text-[clamp(1.6rem,7vw,3.75rem)]"
             style={{ animationDelay: '80ms' }}
           >
             {config.tagline}
           </h1>
           <p
-            className="mt-5 max-w-xl animate-fade-up text-lg italic text-pearl/85 [text-shadow:0_1px_10px_rgba(8,4,20,0.6)]"
+            className="mt-[clamp(0.5rem,2vw,1.25rem)] max-w-xl animate-fade-up italic text-pearl/85 [text-shadow:0_1px_10px_rgba(8,4,20,0.6)] text-[clamp(0.875rem,2.5vw,1.125rem)]"
             style={{ animationDelay: '160ms' }}
           >
             &ldquo;{config.motto}&rdquo;
           </p>
           <div
-            className="mt-9 flex animate-fade-up flex-wrap gap-4"
+            className="mt-[clamp(0.75rem,3vw,2.25rem)] flex animate-fade-up justify-center gap-[clamp(0.5rem,2vw,1rem)]"
             style={{ animationDelay: '240ms' }}
           >
-            <Button href="/lab">Explore free learning</Button>
-            <Button href="/games" variant="ghost">See what we&apos;re building</Button>
+            <Button href="/lab" className="text-[clamp(0.75rem,3.2vw,1rem)] px-[clamp(0.875rem,3.5vw,1.5rem)] py-[clamp(0.45rem,1.5vw,0.75rem)]">Explore free learning</Button>
+            <Button href="/games" variant="ghost" className="text-[clamp(0.75rem,3.2vw,1rem)] px-[clamp(0.875rem,3.5vw,1.5rem)] py-[clamp(0.45rem,1.5vw,0.75rem)]">See what we&apos;re building</Button>
             {/* <Button
               variant="ghost"
               style={{ animationDelay: '320ms' }}

@@ -139,30 +139,32 @@ export function ContactForm() {
         className={field}
       />
 
-      <button
-        type="button"
-        onClick={polish}
-        disabled={polishing || !form.message.trim()}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-gold transition-opacity hover:opacity-80 disabled:opacity-40"
-      >
-        <Sparkles className="h-3.5 w-3.5" />
-        {polishing ? 'Polishing…' : 'Polish with AI'}
-      </button>
-
       {error ? (
         <p className="text-xs text-red-400">
           Something went wrong — please email us directly at the address on the right.
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={sending}
-        className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-semibold text-ink shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        <Send className="h-4 w-4" />
-        {sending ? 'Sending…' : 'Send message'}
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={polish}
+          disabled={polishing || !form.message.trim()}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-gold transition-opacity hover:opacity-80 disabled:opacity-40"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {polishing ? 'Polishing…' : 'Polish with AI'}
+        </button>
+
+        <button
+          type="submit"
+          disabled={sending}
+          className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-semibold text-ink shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          <Send className="h-4 w-4" />
+          {sending ? 'Sending…' : 'Send message'}
+        </button>
+      </div>
     </form>
   );
 }

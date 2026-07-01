@@ -37,7 +37,7 @@ function LandmarkCard({ pin, onNavigate, scale }: {
   const onEnter = () => { setHovered(true);  useLandmarkStore.getState().setHoveredId(pin.id); };
   const onLeave = () => { setHovered(false); useLandmarkStore.getState().setHoveredId(null); };
 
-  const bg         = isDawn ? 'rgba(242, 235, 218, 0.82)' : 'rgba(8,8,15,0.90)';
+  const bg         = isDawn ? 'rgba(242, 235, 218, 0.50)' : 'rgba(8,8,15,0.50)';
   const borderIdle = isDawn ? 'rgba(175,135,55,0.35)'     : 'rgba(136,85,255,0.28)';
   const subColor   = isDawn ? 'rgba(80,65,40,0.55)'       : 'rgba(200,190,255,0.45)';
   const labelColor = isDawn ? (hovered ? pin.color : '#29243f') : (hovered ? pin.color : '#f0f0ff');
@@ -119,7 +119,7 @@ export function LandmarkOverlay() {
   const router     = useRouter();
   const pathname   = usePathname();
   const isIsland   = useIslandStore((s) => s.isIsland);
-  const sceneReady = useReveal((s) => s.stage >= ARCH_STAGE.DOCK);
+  const sceneReady = useReveal((s) => s.stage >= ARCH_STAGE.PLACARDS);
   const { setRouteTarget, startZoomIn, endZoom } = useCameraStore();
   const [pins, setPins]   = useState<ScreenPin[]>([]);
   const wrapperRef        = useRef<HTMLDivElement>(null);

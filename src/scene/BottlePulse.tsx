@@ -9,7 +9,7 @@ import { ARCH_STAGE, ARCH_MODELS } from '@/scene/archipelago/layout';
 
 // ponytail: clones Bottle_New from cached dock GLB — position/rotation/scale exact match
 export function BottlePulse() {
-  const ready   = useReveal((s) => s.stage >= ARCH_STAGE.DOCK);
+  const ready   = useReveal((s) => s.stage >= ARCH_STAGE.BOATS);
   const { scene } = useGLTF(ARCH_MODELS.dock);
   const lightRef = useRef<PointLight>(null);
 

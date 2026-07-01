@@ -17,11 +17,13 @@ const vert = /* glsl */`
   varying vec2  vUv;
   varying vec3  vNormal;
   varying vec3  vViewDir;
+  varying float vWorldY;
   void main() {
     vUv       = uv;
     vNormal   = normalize(normalMatrix * normal);
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
     vViewDir  = normalize(-mvPos.xyz);
+    vWorldY   = (modelMatrix * vec4(position, 1.0)).y;
     gl_Position = projectionMatrix * mvPos;
   }
 `;
@@ -32,11 +34,14 @@ const frag = /* glsl */`
   varying vec2  vUv;
   varying vec3  vNormal;
   varying vec3  vViewDir;
+  varying float vWorldY;
   void main() {
-    float lenFade  = pow(1.0 - vUv.y, 1.2);
-    float rim      = abs(dot(vNormal, vViewDir));
-    float edgeFade = pow(rim, 0.45);
-    float alpha    = lenFade * edgeFade * uOpacity;
+    float lenFade   = pow(1.0 - vUv.y, 1.2);
+    float rim       = abs(dot(vNormal, vViewDir));
+    float edgeFade  = pow(rim, 0.45);
+    // ponytail: fade beam to 0 as it approaches ocean (worldY~0) — kills hard intersection edge
+    float oceanFade = smoothstep(0.0, 3.0, vWorldY);
+    float alpha     = lenFade * edgeFade * oceanFade * uOpacity;
     if (alpha < 0.002) discard;
     gl_FragColor = vec4(uColor, alpha);
   }
@@ -46,7 +51,7 @@ export function LighthouseBeam() {
   const rotRef = useRef<Group>(null);
   const isDusk  = useTheme((s) => s.resolved === 'dusk');
   // Gate on dock stage — lighthouse 3D model is in the dock GLB
-  const ready   = useReveal((s) => s.stage >= ARCH_STAGE.DOCK);
+  const ready   = useReveal((s) => s.stage >= ARCH_STAGE.BEAM);
 
   const mat = useMemo(() => new ShaderMaterial({
     vertexShader:   vert,

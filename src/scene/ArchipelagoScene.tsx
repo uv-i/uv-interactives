@@ -185,6 +185,7 @@ export function ArchipelagoScene() {
   const theme = useTheme((s) => s.resolved);
   const g = THEME_GRADE[theme];
   const segments = tier === 'high' ? 90 : tier === 'medium' ? 64 : 40;
+  const boatsReady = useReveal((s) => s.stage >= ARCH_STAGE.BOATS);
 
   useEffect(() => {
     if (reducedMotion) {
@@ -193,11 +194,14 @@ export function ArchipelagoScene() {
     }
     const set = useReveal.getState().setStage;
     const steps: [number, number][] = [
-      [ARCH_STAGE.ISLANDS, 250],
-      [ARCH_STAGE.PEAKS, 1100],
-      [ARCH_STAGE.STRUCTURES, 1950],
-      [ARCH_STAGE.FLORA, 2700],
-      [ARCH_STAGE.DOCK, 3700],
+      [ARCH_STAGE.ISLANDS,    250],
+      [ARCH_STAGE.PEAKS,     1100],
+      [ARCH_STAGE.FLORA,     1950],   // vegetation before buildings
+      [ARCH_STAGE.STRUCTURES,2700],
+      [ARCH_STAGE.DOCK,      3700],
+      [ARCH_STAGE.BOATS,     5000],   // boats + bottle glow
+      [ARCH_STAGE.BEAM,      6200],   // lighthouse beam
+      [ARCH_STAGE.PLACARDS,  7400],   // landmark cards
     ];
     const timers = steps.map(([s, ms]) => window.setTimeout(() => set(s), ms));
     return () => {
@@ -218,16 +222,19 @@ export function ArchipelagoScene() {
         <ArchModel url={ARCH_MODELS.peaks} />
       </Reveal3D>
 
+      {/* Flora (vegetation) before structures (buildings) */}
+      <StaggeredGroup url={ARCH_MODELS.flora} stage={ARCH_STAGE.FLORA} />
+
       <Reveal3D stage={ARCH_STAGE.STRUCTURES} mode="rise" rise={6}>
         <ArchModel url={ARCH_MODELS.structures} />
       </Reveal3D>
 
-      <StaggeredGroup url={ARCH_MODELS.flora} stage={ARCH_STAGE.FLORA} />
-
       <Reveal3D stage={ARCH_STAGE.DOCK} mode="rise" rise={2}>
         <ArchModel url={ARCH_MODELS.dock} skip={(o) => BOAT_RE.test(o.name)} />
       </Reveal3D>
-      <BoatBuoyancy />
+
+      {/* Boats only mount after BOATS stage — prevents them rendering at scene start */}
+      {boatsReady && <BoatBuoyancy />}
 
       <Ocean
         segments={segments}

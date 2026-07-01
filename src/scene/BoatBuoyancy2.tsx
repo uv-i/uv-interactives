@@ -110,7 +110,7 @@ export function BoatBuoyancy() {
   innerRefs.current = innerRefs.current.slice(0, boats.length);
 
   useFrame((_, dt) => {
-    if (stage < ARCH_STAGE.DOCK) return;
+    if (stage < ARCH_STAGE.BOATS) return;
     timeRef.current += dt;
     const t = timeRef.current;
     innerRefs.current.forEach((g, i) => {

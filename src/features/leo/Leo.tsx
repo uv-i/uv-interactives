@@ -127,8 +127,8 @@ export function Leo() {
   const go = (route: string) => { router.push(route); setOpen(false); setShowBubble(false); };
 
   const panel = isDark
-    ? 'bg-violet-night/95 border-white/15 text-pearl'
-    : 'bg-white/95 border-gold/40 text-ink';
+    ? 'bg-violet-night/70 border-white/15 text-pearl backdrop-blur-xl'
+    : 'bg-white/70 border-gold/40 text-ink backdrop-blur-xl';
 
   return (
     <>
@@ -139,7 +139,7 @@ export function Leo() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className={`fixed bottom-28 right-6 z-50 hidden max-w-[260px] cursor-pointer select-none rounded-2xl rounded-br-none border border-gold shadow-[0_0_20px_rgba(245,166,35,0.45)] md:block ${isDark ? 'bg-violet-night/95 text-pearl' : 'bg-white/95 text-ink'}`}
+            className={`fixed bottom-28 right-6 z-50 hidden max-w-[260px] cursor-pointer select-none rounded-2xl rounded-br-none border border-gold shadow-[0_0_20px_rgba(245,166,35,0.45)] backdrop-blur-xl md:block ${isDark ? 'bg-violet-night/70 text-pearl' : 'bg-white/70 text-ink'}`}
             onClick={() => { dismiss(); fact.route ? go(fact.route) : setOpen(true); }}
           >
             {/* X dismiss */}

@@ -9,7 +9,7 @@ const MAP: Record<GameStatus, { label: string; classes: string }> = {
 export function StatusBadge({ status }: { status: GameStatus }) {
   const { label, classes } = MAP[status] ?? MAP['coming-soon'];
   return (
-    <span className={`inline-block rounded border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${classes}`}>
+    <span className={`inline-block whitespace-nowrap rounded border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${classes}`}>
       {label}
     </span>
   );

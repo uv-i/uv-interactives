@@ -166,7 +166,7 @@ export function Landmarks() {
         ...meta,
         x: (_v.x * 0.5 + 0.5) * size.width,
         y: (-_v.y * 0.5 + 0.5) * size.height,
-        visible: _v.z < 1 && _v.z > -1,
+        visible: _v.z < 1 && _v.z > -1 && Math.abs(_v.x) < 1.1 && _v.y > -1.3 && _v.y < 1.3,
       };
     });
 

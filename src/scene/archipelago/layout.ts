@@ -11,12 +11,15 @@ export const ARCH_MODELS = {
 export const ARCH_STAGE = {
   ISLANDS: 0,
   PEAKS: 1,
-  STRUCTURES: 2,
-  FLORA: 3,
+  FLORA: 2,       // vegetation before buildings
+  STRUCTURES: 3,
   DOCK: 4,
+  BOATS: 5,       // boats + bottle glow
+  BEAM: 6,        // lighthouse revolving beam
+  PLACARDS: 7,    // landmark overlay cards
 } as const;
 
-export const MAX_STAGE = ARCH_STAGE.DOCK;
+export const MAX_STAGE = ARCH_STAGE.PLACARDS;
 
 export const ARCH_ORBIT = {
   H: 15,
@@ -47,10 +50,6 @@ export const ARCH_ZOOM_TARGET: [number, number, number] = [
 
 // ─── Responsive camera helpers ───────────────────────────────────────────────
 
-// Base calibrated at 16:9 desktop. On narrower viewports, HFOV shrinks and the
-// camera must pull back so the island still fills the screen.
-// Math: at fixed VFOV, horizontal coverage ∝ aspect, so D ∝ 1/aspect.
-// → R_new = R_base × (16/9) / aspect
 const BASE_ASPECT = 16 / 9;
 
 /** Orbit radius that keeps the island filling the viewport at any aspect ratio. */
@@ -61,11 +60,19 @@ export function responsiveR(width: number, height: number): number {
   return ARCH_ORBIT.R * Math.min(Math.max(scale, 0.7), 3.0);
 }
 
+/** Camera height lifted above base as R grows.
+ *  At desktop (R=60) H=15. At portrait phone (R=180) H=135 → ~38° downward angle.
+ *  ponytail: H_LIFT=1.0. Tune lower if view feels too top-down on tablets. */
+const H_LIFT = 0.75;
+function responsiveH(R: number, baseH: number): number {
+  return baseH + Math.max(0, R - ARCH_ORBIT.R) * H_LIFT;
+}
+
 /** Hero base camera position at a given R. */
 export function basePosFromR(R: number): [number, number, number] {
   return [
     ARCH_ORBIT.center[0] + Math.cos(2.0) * R * 0.2,
-    ARCH_ORBIT.H,
+    responsiveH(R, ARCH_ORBIT.H),
     ARCH_ORBIT.center[2] + Math.sin(2.0) * R,
   ];
 }
@@ -74,7 +81,7 @@ export function basePosFromR(R: number): [number, number, number] {
 export function zoomPosFromR(R: number): [number, number, number] {
   return [
     ARCH_ORBIT.center[0] + Math.cos(2.0) * R * 0.2 * ZOOM_R_FACTOR,
-    ARCH_ORBIT.H + ZOOM_H_DELTA,
+    responsiveH(R, ARCH_ORBIT.H + ZOOM_H_DELTA),
     ARCH_ORBIT.center[2] + Math.sin(2.0) * R * ZOOM_R_FACTOR,
   ];
 }
