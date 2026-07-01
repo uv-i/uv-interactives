@@ -31,7 +31,7 @@ export default function Image() {
           Game studio &amp; free Unity learning — Chennai, India
         </div>
         <div style={{ fontSize: 16, color: '#f5a623', marginTop: 20, opacity: 0.7, fontStyle: 'italic' }}>
-          "A rising tide lifts all boats."
+          “A rising tide lifts all boats.”
         </div>
       </div>
     ),
