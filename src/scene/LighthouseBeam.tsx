@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useRef, useMemo, useEffect } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { ShaderMaterial, AdditiveBlending, DoubleSide, Color, type Group } from 'three';
 import { useTheme } from '@/scene/theme/themeStore';
 import { useReveal } from '@/scene/reveal/revealStore';
@@ -53,6 +53,9 @@ export function LighthouseBeam() {
   // Gate on dock stage — lighthouse 3D model is in the dock GLB
   const ready   = useReveal((s) => s.stage >= ARCH_STAGE.BEAM);
 
+  const { camera } = useThree();
+  useEffect(() => { camera.layers.enable(2); }, [camera]);
+
   const mat = useMemo(() => new ShaderMaterial({
     vertexShader:   vert,
     fragmentShader: frag,
@@ -79,6 +82,7 @@ export function LighthouseBeam() {
     <>
       <group ref={rotRef} position={LIGHTHOUSE_TOP}>
         <mesh
+          ref={(self) => { if (self) self.layers.set(2); }}
           position={[0, 0, BEAM_LEN / 2]}
           rotation={[Math.PI / 2, 0, 0]}
           renderOrder={5}

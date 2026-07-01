@@ -10,8 +10,8 @@ interface IslandStore {
 }
 
 export const useIslandStore = create<IslandStore>((set, get) => ({
-  // Always start true (SSR-safe). IslandSync reads localStorage after hydration.
-  isIsland: true,
+  // ponytail: default false — IslandSync was removed; feature disabled for now
+  isIsland: false,
   transitioning: false,
 
   enter: () => {

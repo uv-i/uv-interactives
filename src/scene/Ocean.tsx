@@ -3,25 +3,24 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
-  ShaderMaterial, Color, Vector2, Vector3,
-  WebGLRenderTarget,
+  ShaderMaterial, Color, Vector3,
+  WebGLRenderTarget, OrthographicCamera,
   type Mesh,
 } from 'three';
 import { useReveal } from '@/scene/reveal/revealStore';
 
-// ponytail: 512×512 world-Y prepass, every 4th frame
-const DEPTH_SIZE = 512;
-const PREPASS_EVERY = 4;
+// ponytail: 1024×1024 world-space top-down terrain map, every 8th frame
+const DEPTH_SIZE = 1024;
+const PREPASS_EVERY = 8;
 
-// Encodes world-space Y position into red channel so foam knows terrain height.
-// Works at any camera angle (unlike depth-diff which breaks at grazing angles).
+// Encodes world-space Y into red channel for the shore-foam pass.
+// Prepass uses an overhead ortho camera — world-anchored, not screen-space.
 const worldYVertex = /* glsl */ `
 varying float vWorldY;
 void main(){
   vWorldY = (modelMatrix * vec4(position, 1.0)).y;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
-// Encode worldY [-10..+20] → [0..1]. Clear=black → decoded=-10 (deep below water = no foam).
 const worldYFragment = /* glsl */ `
 varying float vWorldY;
 void main(){
@@ -105,7 +104,7 @@ uniform vec3 uFogColor;
 uniform float uFogNear;
 uniform float uFogFar;
 uniform sampler2D tWorldY;
-uniform vec2 uResolution;
+uniform float uSize;
 varying float vH;
 varying vec3 vPos;
 varying vec3 vNormal;
@@ -125,20 +124,34 @@ void main(){
   float fn = fbm(vPos.xz * 0.35 + vec2(uTime * 0.04, -uTime * 0.03));
   float crest = smoothstep(0.14, 0.32, vH + (fn - 0.5) * 0.22);
   float foamPatch = smoothstep(0.55, 0.9, fn);
-  col = mix(col, vec3(0.9, 0.95, 1.0), crest * foamPatch * 0.38);
+  col = mix(col, vec3(0.9, 0.95, 1.0), crest * foamPatch * 0.35);
 
-  // Shore foam: sample world-Y prepass
-  // enc=0 (black) = sky/nothing. enc>0 = terrain. Decode to worldY.
-  // Foam where terrain worldY ≈ 0 (land–water interface).
-  vec2 screenUV = gl_FragCoord.xy / uResolution;
-  float enc = texture2D(tWorldY, screenUV).r;
+  // Shore foam: soft-blurred world-space terrain sample
+  vec2 worldUV = vPos.xz / uSize + 0.5;
+  vec2 waveOff = vec2(
+    fbm(vPos.xz * 0.07 + vec2(uTime * 0.14, 0.0)) - 0.5,
+    fbm(vPos.xz * 0.07 + vec2(0.0, -uTime * 0.11)) - 0.5
+  ) * 0.006;
+  // 9-tap blur on terrain mask (bs=0.012 = ~12px in 1024 RT) — softens hard edges
+  float bs = 0.012;
+  float enc = texture2D(tWorldY, worldUV + waveOff).r                * 0.25
+            + texture2D(tWorldY, worldUV + waveOff + vec2( bs, 0.0)).r * 0.125
+            + texture2D(tWorldY, worldUV + waveOff + vec2(-bs, 0.0)).r * 0.125
+            + texture2D(tWorldY, worldUV + waveOff + vec2(0.0,  bs)).r * 0.125
+            + texture2D(tWorldY, worldUV + waveOff + vec2(0.0, -bs)).r * 0.125
+            + texture2D(tWorldY, worldUV + waveOff + vec2( bs,  bs)).r * 0.0625
+            + texture2D(tWorldY, worldUV + waveOff + vec2(-bs,  bs)).r * 0.0625
+            + texture2D(tWorldY, worldUV + waveOff + vec2( bs, -bs)).r * 0.0625
+            + texture2D(tWorldY, worldUV + waveOff + vec2(-bs, -bs)).r * 0.0625;
   if (enc > 0.001) {
-    float terrainY = enc * 30.0 - 10.0;          // decode [-10,+20]
+    float terrainY = enc * 30.0 - 10.0;
+    float pulse = 0.5 + 0.5 * sin(uTime * 1.4 + vPos.x * 0.22 + vPos.z * 0.17);
+    float band = 0.45 + pulse * 0.75;
+    // Soft inner edge: smoothstep from band→-0.3 so no hard wall at center
+    float proximity = smoothstep(band, -0.3, abs(terrainY));
     float foamN = fbm(vPos.xz * 0.45 + vec2(uTime * 0.18, -uTime * 0.12));
-    // ponytail: ±1.2m band around y=0 — world-space, camera-angle-independent
-    float proximity = 1.0 - smoothstep(0.0, 1.2, abs(terrainY));
-    float shoreFoam = proximity * (0.55 + foamN * 0.45);
-    col = mix(col, vec3(0.95, 0.98, 1.0), clamp(shoreFoam, 0.0, 1.0) * 0.85);
+    float shoreFoam = proximity * (0.4 + foamN * 0.4);
+    col = mix(col, vec3(0.97, 0.99, 1.0), clamp(shoreFoam, 0.0, 1.0) * 0.55);
   }
 
   // Horizon fog
@@ -177,14 +190,21 @@ export function Ocean({
   const current = useReveal((s) => s.stage);
   const frameRef = useRef(0);
 
-  const { worldYTarget, worldYMat } = useMemo(() => {
+  const { worldYTarget, worldYMat, prepassCam } = useMemo(() => {
     const t = new WebGLRenderTarget(DEPTH_SIZE, DEPTH_SIZE);
     const m = new ShaderMaterial({
       vertexShader: worldYVertex,
       fragmentShader: worldYFragment,
     });
-    return { worldYTarget: t, worldYMat: m };
-  }, []);
+    // Overhead orthographic camera covers the full ocean plane
+    const c = new OrthographicCamera(-size / 2, size / 2, size / 2, -size / 2, 0.1, 200);
+    c.position.set(0, 100, 0);
+    c.lookAt(0, 0, 0);
+    c.updateMatrixWorld(true);
+    c.layers.disableAll();
+    c.layers.enable(0); // ponytail: only see default-layer terrain; beam is on layer 2
+    return { worldYTarget: t, worldYMat: m, prepassCam: c };
+  }, [size]);
 
   const material = useMemo(
     () =>
@@ -202,7 +222,7 @@ export function Ocean({
           uFogNear:    { value: fogNear },
           uFogFar:     { value: fogFar },
           tWorldY:     { value: null },
-          uResolution: { value: new Vector2(1, 1) },
+          uSize:       { value: size },
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -222,20 +242,18 @@ export function Ocean({
     [deep, shallow, sunColor, sunDir, fogColor, fogNear, fogFar],
   );
 
-  useFrame(({ gl, scene, camera }, dt) => {
-    // World-Y prepass: render scene with worldY material, capture into color RT
+  useFrame(({ gl, scene }, dt) => {
+    // World-Y prepass: render scene from above with ortho cam into color RT
     if (frameRef.current % PREPASS_EVERY === 0 && meshRef.current) {
       meshRef.current.visible = false;
       scene.overrideMaterial = worldYMat;
       gl.setRenderTarget(worldYTarget);
       gl.clear(true, true, false);
-      gl.render(scene, camera);
+      gl.render(scene, prepassCam);
       gl.setRenderTarget(null);
       scene.overrideMaterial = null;
       meshRef.current.visible = true;
-
       material.uniforms.tWorldY.value = worldYTarget.texture;
-      material.uniforms.uResolution.value.set(gl.domElement.width, gl.domElement.height);
     }
     frameRef.current++;
 
