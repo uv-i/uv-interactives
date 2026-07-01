@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Archivo_Black, Space_Grotesk } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import '@/styles/globals.css';
 import { Providers } from '@/app/providers';
 import { PageTransition } from '@/app/PageTransition';
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Providers>
         <PerfHud />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
