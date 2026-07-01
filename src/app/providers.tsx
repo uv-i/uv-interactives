@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { QualityProvider } from '@/shared/providers/QualityProvider';
 import { SmoothScroll } from '@/animation/SmoothScroll';
 import { CustomCursor } from '@/shared/cursor/CustomCursor';
@@ -17,11 +16,7 @@ import { IslandHUD } from '@/scene/IslandHUD';
 import { useIslandStore } from '@/scene/islandStore';
 import { ThemeSync } from '@/scene/theme/ThemeSync';
 
-// ssr:false — framer-motion useReducedMotion returns different values on server vs client
-const LoadingScreen = dynamic(
-  () => import('@/shared/loader/LoadingScreen').then((m) => m.LoadingScreen),
-  { ssr: false },
-);
+import { LoadingScreen } from '@/shared/loader/LoadingScreen';
 
 function RouterBridge() {
   const router = useRouter();
