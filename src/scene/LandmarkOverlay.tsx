@@ -145,6 +145,7 @@ export function LandmarkOverlay() {
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   if (!active) return null;
+  if (vw < 768) return null;
 
   const handleNavigate = (id: string, route: string) => {
     if (id === 'leo') { window.dispatchEvent(new CustomEvent('leo:open')); return; }
