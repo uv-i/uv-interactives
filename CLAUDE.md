@@ -236,7 +236,7 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   `src.clone(false)` (preserves baked position+quaternion+scale), swaps to `MeshStandardMaterial`
   with pulsing `emissiveIntensity` (0.6→2.5 sine). Scaled 1.08× + opacity 0.55 to avoid
   z-fighting with the original mesh. PointLight co-located for environmental spillover.
-- **Shore foam** — `Ocean.tsx` world-Y prepass: renders scene with custom `ShaderMaterial` into 512×512 color RT every 4th frame. Encodes terrain worldY [-10..+20] into red channel; foam where `abs(terrainY) < 1.2`. Camera-angle-independent (depth-diff approach failed at grazing angles). Key gotcha: `enc < 0.001` = sky pixel = no foam.
+- **Shore foam (rewritten)** — `Ocean.tsx` uses a **1024×1024 top-down orthographic prepass** (not screen-space) so foam is world-anchored and camera-angle-independent. `prepassCam` is a separate `OrthographicCamera` covering the ocean plane; `LighthouseBeam` mesh is on **Three.js layer 2** and `prepassCam` only sees layer 0 — prevents the rotating triangle artifact. Fragment shader samples the terrain map via world XZ UV (not `gl_FragCoord`), 9-tap Gaussian blur (`bs=0.012`) for soft edges, pulse-animated band (`sin(time+pos)`) so foam breathes. Key gotchas: `enc < 0.001` = sky pixel = no foam; beam mesh on layer 2 requires `camera.layers.enable(2)` in `LighthouseBeam.tsx` so the main camera can still see it.
 - **Boat buoyancy** — `src/scene/BoatBuoyancy2.tsx`: regex traverse (`BOAT_RE = /DG_Boat_Catamaran/`) to dodge Three.js name sanitization bug (`DG_Boat_Catamaran.001` → `DG_Boat_Catamaran001`). `HULL_LIFT=0.18`, `E=1.5`, `TILT=0.45`. Two-group JSX (outer stable world pos, inner per-frame Y+pitch+roll). Dock `<ArchModel>` uses `skip={(o) => BOAT_RE.test(o.name)}`. Imported by ArchipelagoScene.
 - **Camera zoom system** — `src/scene/cameraStore.ts` (Zustand): `{ routeTarget: string|null, setRouteTarget, clearRouteTarget }`. `ROUTE_CAMERAS` added to `layout.ts` — per-route `{position, lookAt}` for `/games` (Docks `[15,1,13]`), `/lab` (Lighthouse `[29.5,7,-3]`), `/contact` (Bottle `[-11,0,13]`). Estimates — tune with `?cam&debug`. `NarrativeCamera.tsx` reads `routeTarget`: lerps to `ROUTE_CAMERAS[target]` at `LERP_ROUTE=0.03` (cinematic); null = heroProgress scroll zoom at `LERP_HOME=0.1`. Both position AND lookAt lerp.
 - **Nav wired to camera** — `NavBar.tsx` + `LandmarkOverlay.tsx` both call `cameraStore.setRouteTarget(route)` on click. NavBar `useEffect` clears on `pathname==='/'`, sets on inner page arrival. LandmarkOverlay now uses `useRouter()` directly (removed Zustand bridge — it's not inside R3F canvas).
@@ -253,6 +253,9 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
   `ThemeSync.tsx` handles auto via `MediaQueryList` listener on `prefers-color-scheme`.
 - **420ms theme tween** — `.theme-transitioning` CSS class added before switch, removed after 450ms.
   Transitions only active during switch (perf optimization vs always-on `*` transitions).
+- **Loading screen SSR fix** — `LoadingScreen` was `dynamic({ ssr: false })` causing a flash: browser received hero HTML, JS mounted the overlay late, content flashed then hid. Fix: direct import (no dynamic), `visible: true` initial state renders on server, `useReducedMotion` moved entirely into `useEffect` to avoid hydration mismatch. No more flash.
+- **Landmark placards hidden on mobile** — `LandmarkOverlay.tsx` returns `null` when `vw < 768`. Both themes. The `useViewport` hook already tracked `vw`; one early-return line.
+- **Vercel Speed Insights** — `@vercel/speed-insights/next` `<SpeedInsights />` added to `app/layout.tsx` alongside `<Analytics />`.
 
 ## Still TODO
 - **T2** — Sanity CMS: port `sanityClient`, GROQ queries, `useGamesData`/`useDevLabData` with 1hr
@@ -371,3 +374,5 @@ emissive pulsing via `emissiveIntensity` in `useFrame`.
 **GLB node parsing (Node.js):** To find a named node's world position/quaternion/scale in a
 GLB without running Three.js: `buf.readUInt32LE(12)` = JSON chunk length,
 `buf.slice(20, 20+jsonLen)` = the GLTF JSON. Parse and walk `nodes` array by name.
+
+**Ocean prepass + Three.js layers:** The worldY prepass must use a dedicated `OrthographicCamera` (not the main camera) or foam maps to screen-space and creates square/triangular artifacts that track camera movement. Any rotating/non-terrain mesh (e.g. `LighthouseBeam`) captured in the prepass appears as a rotating foam shape. Fix: `mesh.layers.set(2)` on the offending mesh + `prepassCam.layers.disableAll(); prepassCam.layers.enable(0)`. Then add `camera.layers.enable(2)` in that component so the main render camera can still see it. Default camera mask = layer 0 only — `layers.set(2)` makes a mesh invisible to the main camera unless you explicitly enable layer 2 on it.
