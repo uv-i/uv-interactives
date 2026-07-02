@@ -109,6 +109,18 @@ body::before {
   background: radial-gradient(ellipse 80% 60% at 60% 40%, #3a0ca3 0%, #16082e 55%, #0c0716 100%);
   pointer-events: none;
 }
+html[data-theme='dawn'] body::before {
+  background: linear-gradient(155deg, #f2e8d5 0%, #e4cfb0 45%, #d9c49f 100%);
+}
+
+/* Mobile backdrop base colour — CSS-driven so it flips the instant data-theme is set,
+   before React's Zustand re-render cycle completes. Orb overlays remain inline. */
+.mobile-backdrop {
+  background: radial-gradient(ellipse 85% 65% at 65% 35%, #22085c 0%, #100428 55%, #080215 100%);
+}
+html[data-theme='dawn'] .mobile-backdrop {
+  background: linear-gradient(155deg, #f2e8d5 0%, #e4cfb0 45%, #d9c49f 100%);
+}
 
 /* Respect reduced motion globally */
 @media (prefers-reduced-motion: reduce) {
@@ -287,6 +299,56 @@ html[data-theme='dawn'] header.fixed button {
 html[data-theme='dawn'] header.fixed button {
   border-color: rgba(20, 16, 44, 0.25);
   background-color: rgba(20, 16, 44, 0.06);
+}
+/* Mobile nav drawer: flip dark bg to cream in dawn so dark-ink text is readable */
+html[data-theme='dawn'] header.fixed nav {
+  background-color: rgba(242, 235, 218, 0.97) !important;
+  border-color: rgba(20, 16, 44, 0.10) !important;
+}
+
+/* ── Dawn: GameDetailPanel (modal — outside frost-panel, needs own dawn overrides) ── */
+html[data-theme='dawn'] .game-detail-panel {
+  background-color: rgba(242, 235, 218, 0.98) !important;
+  border-color: rgba(175, 135, 55, 0.28) !important;
+}
+html[data-theme='dawn'] .game-detail-panel [class*='border-white'] {
+  border-color: rgba(20, 16, 44, 0.10) !important;
+}
+html[data-theme='dawn'] .game-detail-panel [class*='bg-white'] {
+  background-color: rgba(20, 16, 44, 0.04) !important;
+}
+/* Separator pip inside panel header */
+html[data-theme='dawn'] .game-detail-panel .bg-white\/10 {
+  background-color: rgba(20, 16, 44, 0.10) !important;
+}
+/* MediaArea placeholder border */
+html[data-theme='dawn'] .game-detail-panel [class*='border-dashed'] {
+  border-color: rgba(20, 16, 44, 0.15) !important;
+}
+/* Store links: non-accent buttons */
+html[data-theme='dawn'] .game-detail-panel a[class*='border-white'] {
+  border-color: rgba(20, 16, 44, 0.18) !important;
+}
+
+/* ── Dawn: status badge text — light hues fail WCAG on cream ─────────────────
+ * emerald-400 (#4ade80) and amber-400 (#fbbf24) are < 1.6:1 contrast on cream.
+ * Darken to emerald-700 / amber-800 while preserving badge bg tint.
+ */
+html[data-theme='dawn'] .status-badge-live {
+  color: #047857 !important;   /* emerald-700 */
+  border-color: rgba(4, 120, 87, 0.45) !important;
+}
+html[data-theme='dawn'] .status-badge-dev {
+  color: #92400e !important;   /* amber-800 */
+  border-color: rgba(146, 64, 14, 0.45) !important;
+}
+
+/* ── Dawn: ForgeTeaser tag badge ─────────────────────────────────────────────
+ * text-violet-300 (light lavender) is unreadable on cream frost panel.
+ */
+html[data-theme='dawn'] .forge-tag {
+  color: rgb(79, 22, 204) !important;          /* brand violet, darkened */
+  background-color: rgba(99, 32, 238, 0.12) !important;
 }
 
 /* Leo bubble progress bar */

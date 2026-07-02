@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, type ReactNode, type CSSProperties } from 'react';
+import { useRef, useEffect, useState, type ReactNode, type CSSProperties } from 'react';
 
 /**
  * Wraps children in a 3-D tilt-on-hover effect.
- * ponytail: CSS transform only, no library needed.
+ * ponytail: CSS transform only, no library needed. Skipped entirely on touch
+ * devices (pointer: coarse) — event listeners never attach, zero overhead.
  */
 export function TiltWrapper({
   children,
@@ -16,6 +17,11 @@ export function TiltWrapper({
   max?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [isTouch, setIsTouch] = useState(true); // assume touch until checked (SSR-safe)
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = ref.current;
@@ -34,9 +40,9 @@ export function TiltWrapper({
     <div
       ref={ref}
       className={className}
-      style={{ transition: 'transform 0.25s ease', willChange: 'transform' } as CSSProperties}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
+      style={{ transition: 'transform 0.25s ease', willChange: isTouch ? 'auto' : 'transform' } as CSSProperties}
+      onMouseMove={isTouch ? undefined : handleMove}
+      onMouseLeave={isTouch ? undefined : handleLeave}
     >
       {children}
     </div>

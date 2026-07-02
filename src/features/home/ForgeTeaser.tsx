@@ -22,7 +22,7 @@ export function ForgeTeaser() {
             <Reveal as="li" key={post.slug} delay={i * 0.08}>
               <div className="flex h-full flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-6 opacity-75">
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-violet/20 px-2.5 py-0.5 text-xs font-medium text-violet-300">
+                  <span className="forge-tag rounded-full bg-violet/20 px-2.5 py-0.5 text-xs font-medium text-violet-300">
                     {post.tag}
                   </span>
                   <span className="ml-auto flex items-center gap-1 text-xs text-pearl/40">

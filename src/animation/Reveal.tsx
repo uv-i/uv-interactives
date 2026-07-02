@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { useQuality } from '@/shared/providers/QualityProvider';
 
 const MOTION_TAGS = {
   div: motion.div,
@@ -11,7 +12,7 @@ const MOTION_TAGS = {
 
 /**
  * Scroll-reveal wrapper. Fades + lifts content into view once.
- * Honours prefers-reduced-motion (renders static, no transform).
+ * Skips animation when: prefers-reduced-motion OR 3D disabled (mobile/no-WebGL).
  */
 export function Reveal({
   children,
@@ -25,9 +26,10 @@ export function Reveal({
   as?: 'div' | 'li' | 'section';
 }) {
   const reduce = useReducedMotion();
+  const { enable3D } = useQuality();
   const MotionTag = MOTION_TAGS[as];
 
-  if (reduce) {
+  if (reduce || !enable3D) {
     const Tag = as;
     return <Tag className={className}>{children}</Tag>;
   }

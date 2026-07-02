@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuality } from '@/shared/providers/QualityProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Star, Handshake } from 'lucide-react';
 import type { Game, StudioConfig } from '@/content/models';
@@ -34,15 +35,15 @@ function TeaserCard({ game }: { game: Game }) {
       <TiltWrapper>
         <article className="overflow-hidden rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.02]">
           <div className="bg-white/[0.03] px-8 pb-6 pt-8">
-            <div className="mb-3 flex items-start justify-between">
-              <div>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-gold/70">{game.genre}</p>
                 {/* Redacted title */}
                 <p className="select-none text-2xl font-black tracking-widest text-white/5" aria-label="Title under wraps">
                   ████████████
                 </p>
               </div>
-              <div className="mt-1 flex gap-2">
+              <div className="mt-1 flex shrink-0 gap-2">
                 <StatusBadge status={game.status} />
                 {game.year && (
                   <span className="rounded border border-white/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-pearl/40">
@@ -151,6 +152,7 @@ export function GamesView({ games }: { games: Game[]; config: StudioConfig }) {
   const navigateGame = (i: number, dir: number) => openGame(i, dir);
 
   const selectedGame = selectedIdx !== null ? partners[selectedIdx] : null;
+  const { enable3D } = useQuality();
 
   return (
     <>
@@ -191,7 +193,7 @@ export function GamesView({ games }: { games: Game[]; config: StudioConfig }) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: enable3D ? 0.25 : 0 }}
               className="relative border-l border-white/[0.07] pl-0"
             >
               {activeTab === 'originals' && (

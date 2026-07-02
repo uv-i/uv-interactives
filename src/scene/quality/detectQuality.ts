@@ -48,9 +48,14 @@ export function detectQuality(): QualityProfile {
     return { tier: 'low', reducedMotion, enable3D: false, maxPixelRatio: 1 };
   }
 
+  // ponytail: mobile kills WebGL entirely — too much heat, no gameplay loss
+  if (isMobile) {
+    return { tier: 'low', reducedMotion, enable3D: false, maxPixelRatio: 1 };
+  }
+
   const weak = cores <= 4 || deviceMemory <= 4;
 
-  if (isMobile || weak) {
+  if (weak) {
     return { tier: 'medium', reducedMotion, enable3D: true, maxPixelRatio: 1.5 };
   }
 

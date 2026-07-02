@@ -12,8 +12,8 @@ const STATUS_LABEL: Record<Game['status'], string> = {
 };
 
 const STATUS_COLOR: Record<Game['status'], string> = {
-  'live': 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  'in-development': 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+  'live': 'status-badge-live text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  'in-development': 'status-badge-dev text-amber-400 bg-amber-400/10 border-amber-400/20',
   'coming-soon': 'text-pearl/50 bg-white/5 border-white/10',
 };
 

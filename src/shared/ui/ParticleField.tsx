@@ -18,6 +18,7 @@ export function ParticleField() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.innerWidth < 768) return; // ponytail: no particle loop on mobile — saves rAF + compositing
 
     const isMobile = window.innerWidth < 768;
     const root     = document.documentElement;

@@ -20,7 +20,7 @@ const archivoBlack = Archivo_Black({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-display',
-  display: 'swap',
+  display: 'optional',
 });
 
 const spaceGrotesk = Space_Grotesk({

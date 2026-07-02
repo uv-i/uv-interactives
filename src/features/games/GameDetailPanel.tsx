@@ -108,7 +108,7 @@ export function GameDetailPanel({
         initial="hidden"
         animate="visible"
         exit="exit"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+        className="fixed inset-0 z-[70] flex items-end justify-center p-0 sm:items-center sm:p-4 md:p-8"
         style={{ backgroundColor: 'rgba(4,3,12,0.88)', backdropFilter: 'blur(10px)' }}
         onClick={onClose}
       >
@@ -118,7 +118,7 @@ export function GameDetailPanel({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="relative flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-violet-night"
+          className="game-detail-panel relative flex w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-violet-night sm:max-h-[90vh] sm:rounded-2xl" style={{ maxHeight: '95dvh' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

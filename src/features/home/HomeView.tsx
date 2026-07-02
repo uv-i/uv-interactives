@@ -25,7 +25,7 @@ export function HomeView({
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[88vh] items-start overflow-hidden pt-[clamp(5.5rem,8vw,6rem)]">
+      <section className="relative flex sm:min-h-[88vh] items-start overflow-hidden pt-[clamp(5.5rem,8vw,6rem)] pb-12 sm:pb-0">
         <Container className="flex flex-col items-center text-center">
           <h1
             className="max-w-2xl animate-fade-up font-bold leading-[1.08] tracking-tight drop-shadow-[0_2px_16px_rgba(8,4,20,0.55)] text-[clamp(1.6rem,7vw,3.75rem)]"
