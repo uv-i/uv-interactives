@@ -1,0 +1,80 @@
+---
+title: 'Casting — Numbers in Disguise'
+description: 'Chapter 6 — GameManager.cs and UIManager.cs: float to int, int to string, and why the timer never shows 42.73 seconds.'
+series: coin-rush
+part: 6
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: false
+---
+
+Short chapter, sneaky-important concept. Types don't convert themselves — every
+conversion is a decision, and the game makes them in three places.
+
+## Float → int: the timer
+
+`GameManager.cs` stores time as a `float` (it shrinks by fractional
+`Time.deltaTime` every frame), but no player wants to read `42.73`:
+
+```csharp
+private float _timeLeft;
+
+// CONCEPT: CASTING — _timeLeft is float. UI needs an int.
+public int TimeLeft => Mathf.CeilToInt(_timeLeft);
+```
+
+Note it's not `(int)_timeLeft`. A raw cast **truncates** — chops decimals toward zero.
+The three roundings are different tools:
+
+```csharp
+(int)3.9f              // 3   — truncate (raw cast)
+Mathf.RoundToInt(3.9f) // 4   — nearest
+Mathf.CeilToInt(3.2f)  // 4   — always up
+```
+
+Why `Ceil` for a countdown? Because with truncation, the timer shows `0` while
+`0.9` seconds still remain — the player sees zero and *keeps playing*. Ceiling means
+the display hits 0 exactly when the round actually ends. One method choice, one
+avoided bug report.
+
+## Int → string: the HUD
+
+`UIManager.cs` turns numbers into text every time an event fires:
+
+```csharp
+scoreText.text = $"Score: {GameManager.Instance.Score}";
+timerText.text = $"Time: {GameManager.Instance.TimeLeft}s";
+```
+
+The `$"..."` is **string interpolation** — it calls `.ToString()` on the value for
+you. Same thing, spelled explicitly: `"Score: " + score.ToString()`. Interpolation
+is just the readable spelling of an int→string conversion.
+
+## Implicit vs explicit — the rule
+
+```csharp
+float f = 3;        // int → float: implicit, no data can be lost, C# allows silently
+int   i = (int)3.7f; // float → int: EXPLICIT cast required — data WILL be lost
+```
+
+C#'s rule is consistent: **widening is silent, narrowing demands you say it out loud.**
+The `(int)` isn't syntax noise — it's you signing a waiver acknowledging the `.7`
+dies here.
+
+## Try it
+
+In `GameManager.cs`, change `Mathf.CeilToInt` to `(int)` and play a round. Watch the
+last visible second — the timer sits on `0` for almost a full second before the
+game-over fires. Now you've *seen* a truncation bug. Change it back.
+
+## Checkpoint
+
+- [ ] You can explain truncate vs round vs ceil with a countdown example
+- [ ] You know which conversions C# does silently and which need a cast, and why
+- [ ] You know what `$"..."` actually does to your numbers
+- [ ] You reproduced (and reverted) the frozen-zero timer bug
+
+**Next → Chapter 7: Enums** — `EnemyType` and the switch statement: how one dropdown
+in the Inspector becomes a whole state machine.

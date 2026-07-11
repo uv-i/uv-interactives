@@ -1,0 +1,95 @@
+---
+title: 'Enums — A State Machine in a Dropdown'
+description: 'Chapter 7 — EnemyController.cs: EnemyType, the switch statement, and how Patrol becomes Chaser the moment you get too close.'
+series: coin-rush
+part: 7
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: false
+---
+
+Back in Chapter 2 you created an EnemyData asset and picked `Chaser` from a dropdown.
+This chapter is about where that dropdown comes from — and how three lines of enum
+run an entire brain. Open **Scripts → Enemy → `EnemyController.cs`** and
+**Scripts → Data → `EnemyData.cs`**.
+
+## What an enum is
+
+```csharp
+public enum EnemyType
+{
+    Patrol,   // walks a fixed path, ignores player unless close
+    Chaser    // locks onto player and follows them
+}
+```
+
+An enum is a type whose only legal values are the ones you list. Compare the
+alternative — `int type` where 0 means patrol and 1 means chaser (until someone
+passes 7), or `string type` where `"chaser"`, `"Chaser"` and `"chasre"` are three
+different bugs. The enum makes invalid states **unrepresentable**: the compiler
+rejects anything that isn't `Patrol` or `Chaser`. And Unity draws every enum field
+as that Inspector dropdown for free.
+
+## The switch — a brain in ten lines
+
+```csharp
+private EnemyType _state;    // current state, copied from EnemyData in Start()
+
+private void Update()
+{
+    switch (_state)
+    {
+        case EnemyType.Patrol:
+            UpdatePatrol();
+            CheckForPlayer();
+            break;
+
+        case EnemyType.Chaser:
+            UpdateChase();
+            break;
+    }
+}
+```
+
+This is a **state machine** — the most load-bearing pattern in game AI. The enemy is
+always in exactly one state; the switch routes each frame to that state's behaviour;
+changing `_state` *is* the state transition. Patrol enemies also run `CheckForPlayer()`
+— get within `chaseRange` and it flips `_state` to `Chaser`. One assignment, whole
+new personality.
+
+Notice the layered design from earlier chapters: the *starting* state lives in the
+**ScriptableObject** (Ch2, designer's choice), the *current* state lives in the
+controller (runtime), and the switch does the thinking.
+
+## Why not if/else?
+
+An `if/else if` chain works — until it doesn't. The switch on an enum gives you two
+things `if` can't: the compiler *knows* the full list of cases (add a `Flee` state
+and you can find every switch that needs updating), and it reads as what it is —
+a routing table, not arbitrary branching.
+
+## Challenge — the Coward
+
+Add a third personality end-to-end. You'll touch every layer:
+
+1. `EnemyType.cs` (in EnemyData.cs): add `Coward` to the enum.
+2. Notice your EnemyData assets now offer Coward in the dropdown — for free.
+3. `EnemyController.cs`: add `case EnemyType.Coward:` that calls a new
+   `UpdateFlee()` — copy `UpdateChase()` but move *away* from the player
+   (hint: negate the direction).
+4. Create a `CowardData` asset, assign it to a new enemy, watch it run from you.
+
+If that took you under fifteen minutes, the architecture did its job — that's the
+"adding a state = adding a case" promise from the file's comments, kept.
+
+## Checkpoint
+
+- [ ] You can explain why an enum beats an int or string for states
+- [ ] You can trace the Patrol → Chaser transition in the code
+- [ ] You know where the starting state lives vs the current state
+- [ ] The Coward flees, and you know every file you touched to make it
+
+**Next → Chapter 8: Coroutines** — the timer, the spawn loop, and the invincibility
+flash: code that waits without freezing the game.

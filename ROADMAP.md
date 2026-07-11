@@ -79,9 +79,10 @@ being told it in an interview.
 
 Write in plain markdown first; engine renders whatever exists.
 
-- [~] 2 flagship series WRITTEN (Coin Rush ch0–4, OOP Pillars ch0–4), paired to real
-      GitHub packages, all `draft: true` — pending the Unity QA gate before publish.
-      Progress tracking (localStorage), chapter rail, and home/DevLab wiring all live.
+- [x] 2 flagship series COMPLETE & PUBLISHED (2026-07-11): Coin Rush ch0–9 (variables,
+      SOs, interfaces, events, collections, casting, enums, coroutines, singleton finale),
+      OOP Pillars ch0–4 (four pillars). All `draft: false` — owner approved publish;
+      Unity run-through still owed as post-publish QA. Progress tracking live.
 - [ ] Mandatory structure per tutorial:
   - **Chapter 0 — Prerequisites & setup:** Unity version, URP, project creation,
     terrain/environment building — every step the packages currently assume.
@@ -96,12 +97,15 @@ Write in plain markdown first; engine renders whatever exists.
 
 Website tutorials patch old packages; this stops producing broken ones.
 
-- [ ] Update `unity-teaching-package` skill/template — every new package must include:
-  - `Samples~/` complete demo scene importable via UPM, **or** a `SceneBootstrapper`
-    that procedurally builds the full playable environment (zero manual setup), and
-  - README "Chapter 0: from scratch" section that mirrors the web tutorial.
-- [ ] Retrofit existing published packages (worst offender first — the terrain one).
-- [ ] Each package README links to its web tutorial; each tutorial links back to repo.
+- [x] (2026-07-11) Skill upgraded → `unity-teaching-package.skill` DELIVERED (user must
+      install via the Save-skill button / Settings > Capabilities to replace the old one).
+      New rules: BuildScene() owns the COMPLETE environment; README Chapter 0 from-scratch
+      mandatory; package↔tutorial URL contract; no placeholder tokens; QA-gate final check.
+- [x] (2026-07-11) Retrofit READMEs written for both repos → `phase4-retrofit/` in this
+      repo (coin-rush + oop-pillars + RETROFIT-NOTES). USER ACTION: commit them into the
+      two GitHub repos, then delete phase4-retrofit/. Fixes the oop-pillars `[your-org]`
+      404 install URL. Optional follow-up: coin-rush menu labels "2." vs "1." order.
+- [x] Cross-linking done in both directions (site already matched by packageRepo).
 
 ## Phase 5 — Playable web games
 

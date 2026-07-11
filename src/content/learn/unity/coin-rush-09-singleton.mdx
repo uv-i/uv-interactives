@@ -1,0 +1,122 @@
+---
+title: 'Singleton & Properties — One Manager to Rule Them All'
+description: 'Chapter 9 (finale) — GameManager.Instance, read-only properties, PlayerPrefs high scores, and the map of everything the series taught you.'
+series: coin-rush
+part: 9
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: false
+---
+
+Last stop. Open **Scripts → Managers → `GameManager.cs`** — the script that owns the
+rules, and the home of the most famous (and most abused) pattern in Unity.
+
+## The Singleton
+
+```csharp
+public static GameManager Instance { get; private set; }
+
+private void Awake()
+{
+    // Enforce singleton — destroy any duplicate
+    if (Instance != null && Instance != this)
+    {
+        Destroy(gameObject);
+        return;
+    }
+    Instance = this;
+}
+```
+
+The promise: exactly **one** GameManager, reachable from anywhere as
+`GameManager.Instance` — no Inspector wiring needed. That's how `UIManager` reads
+the timer: `GameManager.Instance.TimeLeft`. The `Awake` guard keeps the promise
+honest: a second GameManager destroys itself on arrival.
+
+Spot the familiar shape in the property: `{ get; private set; }` — anyone can *read*
+Instance, only GameManager can *set* it. That's Chapter 1's SerializeField argument
+and OOP Pillars' encapsulation, again. It never stops being the same idea.
+
+## The honest warning
+
+Singletons are convenient, and convenience is exactly the danger: because *anything*
+can call `GameManager.Instance`, over time *everything* does, and you've built a god
+object with fifty secret dependencies. Two guardrails this codebase follows:
+
+1. **Reserve it for true one-of-a-kind managers** — game rules, audio, save system.
+   Never for coins, enemies, screens.
+2. **Prefer broadcasting over reaching in.** Notice the coin never calls
+   `GameManager.Instance.AddScore()` — it raises `OnCoinCollected` (Chapter 4) and
+   GameManager *listens*. The singleton exists, but the traffic still flows through
+   events. Loose coupling survived the convenience.
+
+## Properties — the read-only dashboard
+
+```csharp
+private int   _score = 0;
+private float _timeLeft;
+
+public int  Score    => _score;
+public int  TimeLeft => Mathf.CeilToInt(_timeLeft);   // Chapter 6's cast
+public bool IsActive => _gameActive;
+```
+
+Private fields, public read-only properties — outsiders can check the score but only
+GameManager can change it. `TimeLeft` even does the float→int ceiling on the way out,
+so every caller gets clean display-ready data from one place.
+
+## PlayerPrefs — the five-line save system
+
+```csharp
+int highScore = PlayerPrefs.GetInt("HighScore", 0);
+if (_score > highScore)
+{
+    PlayerPrefs.SetInt("HighScore", _score);
+    PlayerPrefs.Save();
+}
+```
+
+Key-value storage that survives closing the game. Right size for a high score;
+wrong size for real save games (inventory, progress) — that's JSON-to-file
+territory, a topic for a future series.
+
+## The map — what you actually built
+
+Every concept, where it lives, one line each:
+
+- **Variables & SerializeField** — `PlayerController.cs`: tweakable without being public
+- **ScriptableObjects** — `CoinData/EnemyData`: data as assets, designers tune, code reads
+- **Interfaces** — `ICollectable/IDamageable`: contracts between strangers
+- **Events** — `GameEvents.cs`: broadcast, don't reach
+- **Collections** — `CoinSpawner.cs`: List for the living, RemoveAll for the dead
+- **Casting** — `TimeLeft`: every conversion is a decision
+- **Enums** — `EnemyController.cs`: states you can't misspell
+- **Coroutines** — timer, spawner, i-frames: code that waits
+- **Singleton & Properties** — `GameManager.cs`: one owner, read-only windows
+
+That's not a trivia list — it's a working game where every piece justifies itself.
+You can now read 90% of the Unity scripts you'll meet in the wild.
+
+## Final challenge round
+
+No hints this time — you have everything:
+
+1. **Combo system:** collecting 3 coins within 2 seconds doubles their points
+   (coroutine + variable + event).
+2. **New collectable:** a Heart prefab implementing `ICollectable` that restores
+   1 life instead of scoring (interface + events + properties).
+3. **Sudden death mode:** an enum `GameMode { Classic, SuddenDeath }` on GameManager
+   — SuddenDeath ends the round on first hit (enum + singleton + events).
+
+## Checkpoint
+
+- [ ] You can write the singleton Awake guard from memory
+- [ ] You can argue *against* singletons for one minute (interviews love this)
+- [ ] You know what PlayerPrefs is for — and what it's not for
+- [ ] At least one final challenge shipped
+
+**Series complete.** If you haven't yet — **[OOP Pillars](/lab/csharp/oop-pillars-00-setup)**
+takes these fundamentals and builds the four pillars of object-oriented design on top.
+Same style, same rule: empty project to working system, no steps skipped.

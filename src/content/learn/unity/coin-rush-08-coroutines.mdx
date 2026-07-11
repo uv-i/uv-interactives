@@ -1,0 +1,115 @@
+---
+title: 'Coroutines — Code That Waits'
+description: 'Chapter 8 — the countdown timer, the spawn loop, and invincibility frames: three real coroutines, three different ways to wait without freezing the game.'
+series: coin-rush
+part: 8
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: false
+---
+
+Normal methods run start-to-finish in one frame — ask one to "wait 2 seconds" with a
+loop and the whole game freezes for 2 seconds. Coroutines are Unity's answer: methods
+that can **pause mid-body and resume later**, while the game keeps running. Coin Rush
+uses three, each showing a different waiting style.
+
+## Style 1 — wait one frame: the countdown
+
+`GameManager.cs`:
+
+```csharp
+private IEnumerator CountdownTimer()
+{
+    while (_timeLeft > 0f && _gameActive)
+    {
+        yield return null;               // wait one frame
+        _timeLeft -= Time.deltaTime;     // subtract elapsed time
+    }
+
+    if (_gameActive) EndRound();
+}
+```
+
+Read the anatomy: return type is **`IEnumerator`**, and **`yield return null`** means
+"pause here, resume next frame". The while loop *spans thousands of frames* without
+blocking any of them. Started with `StartCoroutine(CountdownTimer())` — never called
+like a normal method.
+
+## Style 2 — wait N seconds: the spawn loop
+
+`CoinSpawner.cs` waits a *variable* amount, shrinking as difficulty ramps:
+
+```csharp
+private IEnumerator SpawnLoop()
+{
+    while (_spawning)
+    {
+        _activeCoins.RemoveAll(c => c == null);   // Chapter 5's trick
+        // ...spawn a coin if under the limit...
+
+        yield return new WaitForSeconds(_currentInterval);
+
+        // Ramp difficulty: spawn a little faster each time
+        _currentInterval = Mathf.Max(minimumInterval,
+                                     _currentInterval - difficultyRamp);
+    }
+}
+```
+
+`WaitForSeconds` sleeps the coroutine — not the game — for that many seconds. And
+because the wait is a variable, the pause between coins shrinks from `2s` toward
+`0.5s`. That accelerating pressure you feel while playing? It's this one line pair.
+
+## Style 3 — a timed state: invincibility frames
+
+`PlayerHealth.cs` — set a flag, wait (while flashing), clear the flag:
+
+```csharp
+private IEnumerator InvincibilityFrames()
+{
+    _isInvincible = true;
+
+    float elapsed = 0f;
+    while (elapsed < invincibilityDuration)
+    {
+        rend.enabled = !rend.enabled;   // toggle visibility — the classic flash
+        // ...wait a slice, accumulate elapsed...
+    }
+
+    rend.enabled  = true;
+    _isInvincible = false;
+}
+```
+
+Meanwhile `TakeDamage()` just checks `if (_isInvincible) return;` — the coroutine
+manages the *time*, the flag communicates the *state*. This flag-wait-clear shape
+handles dashes, cooldowns, power-ups, reload timers... memorize it.
+
+## The rules that save you from coroutine bugs
+
+- **Keep the handle if you'll ever stop it:** `_spawnRoutine = StartCoroutine(...)`
+  then `StopCoroutine(_spawnRoutine)` — exactly what CoinSpawner does.
+- **Coroutines die with their GameObject** (and pause with `enabled = false` via
+  `StopAllCoroutines` patterns — see SplashScreen's `OnHide` in OOP Pillars).
+  A coroutine on a destroyed coin simply stops; nobody resumes it.
+- **`yield return null` ≈ Update, but with memory.** A coroutine remembers its local
+  variables across frames — `elapsed` above survives every pause. That's the
+  superpower Update doesn't have.
+
+## Challenge
+
+The coin already auto-despawns via `AutoDespawn()` in `Coin.cs` — read it, then make
+coins **blink for the final 3 seconds** before despawning (reuse the flash pattern
+from invincibility). Fair warning to players beats silent disappearing loot.
+
+## Checkpoint
+
+- [ ] You can name the three wait styles and where each lives in the code
+- [ ] You know what `IEnumerator` + `yield return` do to a method's execution
+- [ ] You can explain the flag-wait-clear pattern from memory
+- [ ] Blinking despawn warning works
+
+**Next → Chapter 9: Singleton & Properties** — `GameManager.Instance`, the pattern
+everyone uses, the trap everyone falls into, and the series finale.

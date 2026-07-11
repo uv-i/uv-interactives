@@ -449,7 +449,10 @@ QA gate: no tutorial ships unless empty Unity project → playable game using on
   Select the raw value, apply the fallback outside with a module-level constant.
 - Home order now: Hero → Stats ("Studio of one. Real impact.") → ForgeTeaser (live
   tutorials) → GamesSection → Services → OpenSourceBanner → BuildPicker.
-- Both series at 5 chapters (0–4), all `draft: true` pending Unity testing.
+- PUBLISHED (2026-07-11): Coin Rush ch0–9 + OOP Pillars ch0–4, all `draft: false`.
+  Coin Rush chapter map: 0 setup, 1 variables, 2 ScriptableObjects, 3 interfaces,
+  4 events, 5 collections, 6 casting, 7 enums, 8 coroutines, 9 singleton+finale.
+  Owner approved publish before Unity run-through — QA pass still owed.
 
 ## Session 4 (cont.) — home polish + hero click bug (2026-07-11)
 - **Hero CTA buttons:** both `variant="ghost"` (equal weight, deliberate — dual audience).
@@ -470,3 +473,57 @@ QA gate: no tutorial ships unless empty Unity project → playable game using on
 - **DevLabTabs/DevLabView + learn.ts corruption count:** DevLabView truncated 3× total,
   learn.ts 1× — ALWAYS rewrite these via bash heredoc, never the Edit tool.
 - Possible future: `?game=<id>` deep link to auto-open GameDetailPanel (same pattern).
+
+## Future package workflow (2026-07-11)
+Two-skill pipeline, one session, no re-explaining:
+1. `unity-teaching-package` (upgraded .skill installed by user) → builds the package
+   repo: scripts, bootstrapper (complete environment), README family incl. Chapter 0.
+2. `package-to-tutorial` (new .skill, delivered 2026-07-11) → give it the GitHub URL:
+   clones, reads real scripts, proposes a chapter map, writes MDX series into
+   `src/content/learn/<topic>/`, ensures teaching.ts githubUrl matches packageRepo.
+   Chapters land `draft: true`; owner reviews + QA-gates + flips.
+The skills encode the frontmatter contract, chapter voice, sandbox write rules, and
+the exact-URL matching — a new chat with this folder connected + both skills = full flow.
+
+## next-mdx-remote v6 (2026-07-11, deploy fix)
+- Bumped ^5 → ^6 (Vercel flagged v5 security advisory). v6 BLOCKS JS expressions in
+  MDX by default (`blockJS`/`blockDangerousJS: true`). Our chapters are pure markdown —
+  unaffected. If a future chapter needs JSX/`{expressions}`, pass `blockJS: false` in
+  mdxOptions consciously. NOTE: hashicorp archived the repo (Apr 2026) — v6 is the final
+  version; if it ever breaks with a Next upgrade, migrate to `@next/mdx` or `mdx-bundler`.
+
+# CURRENT STATUS (2026-07-11, end of session — read this block first when resuming)
+
+## Where the project stands
+- Phases 2, 3, 4 of ROADMAP.md: DONE. Phase 1 (case studies) and 5 (playable WebGL) open.
+- 15 tutorial chapters PUBLISHED (`draft: false`): Coin Rush ch0–9 (unity), OOP Pillars
+  ch0–4 (csharp). All grounded in the real repo scripts (cloned + read, never invented).
+- Site features live: progress tracking + chapter rail, package↔tutorial clubbed cards,
+  home Forge shortcuts (progress-aware), frosted NavBar, slim !fixed footer, games tab
+  deep-link (?tab=partners), uniform type scale, hero equal-weight ghost CTAs.
+- Deploys on Vercel. next-mdx-remote bumped ^6 (v5 security advisory) — pure-markdown
+  chapters unaffected; repo is archived upstream, migration path = @next/mdx if ever needed.
+
+## Deliverables handed to owner (in outputs / repo)
+- `unity-teaching-package.skill` — upgraded skill (complete-environment bootstrapper rule,
+  README Chapter 0 mandate, URL contract, placeholder ban, QA-gate final check).
+- `package-to-tutorial.skill` — NEW skill: GitHub repo URL → approved chapter map →
+  MDX series wired into site. Encodes frontmatter contract + chapter voice + sandbox rules.
+- `phase4-retrofit/` (in this repo) — commit-ready READMEs for both package repos
+  (Chapter 0 sections, tutorial cross-links, oop-pillars `[your-org]` 404 URL fixed).
+
+## Pending OWNER actions (the session's open loop)
+1. `npm install` on Windows (picks up next-mdx-remote ^6 and earlier MDX deps), then
+   `npm run dev` spot-check + `npm run build` before deploy.
+2. Install both .skill files (Save-skill button / Settings > Capabilities).
+3. Commit the two retrofit READMEs into their GitHub repos; delete `phase4-retrofit/`.
+4. Unity QA pass on both series (chapters published before the run-through — owed).
+5. Confirm with Skillmatics that the public listing is contract-safe.
+6. Optional: coin-rush menu label fix ("2." runs before "1.") → 1.0.1 tag.
+
+## Key contracts (do not drift)
+- Tutorial frontmatter `packageRepo` == `teaching.ts` `githubUrl`, exact string — this
+  match drives every package↔tutorial link on the site.
+- New chapters ALWAYS land `draft: true`; publishing is the owner's explicit act.
+- Identity line: "Game developer who teaches through games" / studio-of-one voice,
+  never "we/our team"; GuessIn10 = contract live-ops, never authorship.

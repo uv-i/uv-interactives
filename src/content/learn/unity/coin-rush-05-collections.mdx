@@ -1,0 +1,92 @@
+---
+title: 'Collections — Herding a Crowd of Coins'
+description: 'Chapter 5 — CoinSpawner.cs: arrays vs List<T>, tracking objects you create at runtime, and the null-cleanup trick every spawner needs.'
+series: coin-rush
+part: 5
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: false
+---
+
+Open **Packages → Coin Rush → Scripts → Managers → `CoinSpawner.cs`**. It creates
+coins forever — which means it needs to *remember* what it created. That's a
+collections problem.
+
+## Two containers, two jobs
+
+The spawner uses both of C#'s everyday containers, and the choice is deliberate:
+
+```csharp
+// CONCEPT: Array — fixed set of possible coin types.
+[SerializeField] private GameObject[] coinPrefabs;
+
+// CONCEPT: List<GameObject> — grows and shrinks at runtime.
+private List<GameObject> _activeCoins = new List<GameObject>();
+```
+
+- **Array (`GameObject[]`)** — fixed size, set in the Inspector, never changes during
+  play. Perfect for *the menu of things we could spawn*.
+- **`List<GameObject>`** — grows with `Add`, shrinks with `Remove`, counts itself.
+  Perfect for *the crowd of things we did spawn*, which changes every second.
+
+Rule of thumb: array for what's known before Play, List for what happens during Play.
+
+## Why track spawned coins at all?
+
+Read the comment block in the file — the List earns its keep three ways:
+
+1. **Cap the crowd:** `maxCoinsAtOnce = 15` — before spawning, check `_activeCoins.Count`.
+2. **Clean up the dead:** collected coins `Destroy()` themselves, but Destroy doesn't
+   reach into our List — the slot just becomes `null`.
+3. **End the round:** `StopSpawning()` loops the List and destroys every survivor.
+
+## The null-cleanup trick
+
+The most reusable line in the file, at the top of the spawn loop:
+
+```csharp
+_activeCoins.RemoveAll(c => c == null);
+```
+
+`RemoveAll` takes a *predicate* — a tiny function returning true for items to remove.
+`c => c == null` reads "any coin slot that's now null". Without this line the List
+grows forever, full of ghosts, and the `Count` check thinks the arena is full of
+coins that no longer exist — spawning stops, game quietly breaks. **Every spawner
+you ever write will need this pattern.**
+
+And the shutdown:
+
+```csharp
+foreach (GameObject coin in _activeCoins)
+{
+    if (coin != null) Destroy(coin);
+}
+_activeCoins.Clear();   // empty the list
+```
+
+Destroy the objects, then `Clear()` the bookkeeping. Two different things — a List
+holds *references*, not the objects themselves.
+
+## Try it
+
+Select the CoinSpawner in Play mode and drop `Max Coins At Once` to 3. Watch spawning
+pause at three coins and resume as you collect. That pause is the `Count` check
+reading your List.
+
+## Challenge
+
+Add a `Debug.Log($"Active coins: {_activeCoins.Count}")` right after the `RemoveAll`
+line. Play, and watch the count breathe as coins spawn and die. Then move the log
+*above* `RemoveAll` and compare the numbers — you'll see the ghosts.
+
+## Checkpoint
+
+- [ ] You can say when to use an array vs a List in one sentence
+- [ ] You can explain what `RemoveAll(c => c == null)` does and why it must run
+- [ ] You know why `Destroy` + `Clear()` are both needed at shutdown
+- [ ] The ghost-count experiment done — you saw the difference
+
+**Next → Chapter 6: Casting** — floats pretending to be ints, ints pretending to be
+strings, and where the game rounds its numbers.
