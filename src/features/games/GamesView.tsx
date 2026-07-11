@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuality } from '@/shared/providers/QualityProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Star, Handshake } from 'lucide-react';
@@ -141,6 +141,13 @@ function PartnerCard({ game, onClick }: { game: Game; onClick: () => void }) {
 // ── Main view ─────────────────────────────────────────────────────────────────
 export function GamesView({ games }: { games: Game[]; config: StudioConfig }) {
   const [activeTab, setActiveTab] = useState<'originals' | 'partners'>('originals');
+
+  // Deep link: /games?tab=partners lands on the partners tab
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'partners') {
+      setActiveTab('partners');
+    }
+  }, []);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [slideDir, setSlideDir]       = useState(0);
 
@@ -162,7 +169,7 @@ export function GamesView({ games }: { games: Game[]; config: StudioConfig }) {
           <Reveal>
             <div className="mb-12">
               <p className="mb-2 font-mono text-xs uppercase tracking-widest text-gold">Games · The Dry Docks</p>
-              <h1 className="text-4xl font-black sm:text-5xl">Set sail soon.</h1>
+              <h1 className="text-3xl font-bold sm:text-4xl">Set sail soon.</h1>
               <p className="mt-4 max-w-xl text-pearl/60">
                 Our own games are under construction. Below, a title we proudly help keep afloat.
               </p>

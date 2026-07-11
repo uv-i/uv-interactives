@@ -34,7 +34,7 @@ export function IdeaForge() {
   };
 
   return (
-    <div className="relative mb-14 overflow-hidden rounded-2xl border border-gold/30 bg-white/[0.03] p-7">
+    <div className="relative mt-20 overflow-hidden rounded-2xl border border-gold/30 bg-white/[0.03] p-7">
       <BrainCircuit className="pointer-events-none absolute -right-4 -top-4 h-32 w-32 text-gold/10" />
       <div className="relative">
         <h3 className="flex items-center gap-2 text-2xl font-bold">

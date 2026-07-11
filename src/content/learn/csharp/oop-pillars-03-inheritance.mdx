@@ -1,0 +1,103 @@
+---
+title: 'Inheritance — Four Screens, One Foundation'
+description: 'Chapter 3 — SplashScreen, LoadingScreen, GameplayHUD, GameEndScreen: what "IS A" buys you, and the override keyword that makes it work.'
+series: oop-pillars
+part: 3
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-oop-pillars'
+updated: '2026-07-11'
+draft: true
+---
+
+You know the contract (`abstract`, Chapter 2). Now meet the four classes that signed it.
+**Ctrl+Shift+F → "CONCEPT: INHERITANCE"** — this chapter lives in the four screen scripts.
+
+## The colon that does all the work
+
+Open `SplashScreen.cs`:
+
+```csharp
+public class SplashScreen : BaseScreen
+```
+
+That colon means **"SplashScreen IS A BaseScreen"** — and the inheritance is a
+one-way gift. SplashScreen receives, without writing a line of it:
+
+- `Show()` / `Hide()` and their guaranteed sequencing
+- `IsVisible` and its private-setter protection
+- The entire CanvasGroup wiring from `Awake()`
+
+Then it adds only what makes it *splash*:
+
+```csharp
+[SerializeField] private TextMeshProUGUI _titleText;
+[SerializeField] private GameData _gameData;
+
+protected override void OnShow()
+{
+    if (_titleText != null && _gameData != null)
+        _titleText.text = _gameData.gameTitle;
+
+    StartCoroutine(AutoAdvance());   // splash-only behaviour
+}
+```
+
+## The counterfactual — life without inheritance
+
+Four screens each need: CanvasGroup control, visibility state, show/hide sequencing.
+Without inheritance that's **four copies of the same ~40 lines** — and when you find
+a bug in one copy, you now have four places to fix it and you *will* forget one.
+With inheritance it's forty lines, written once, in `BaseScreen.cs`. Every screen
+inherits the fix the moment you make it.
+
+## override — and its evil twin
+
+```csharp
+protected override void OnShow()
+```
+
+`override` says: "this is *my* implementation of the method my base class declared."
+The base's abstract `OnShow()` and this one are the same method — one promise, this
+class's way of keeping it.
+
+Your scripts contain a teaching moment worth doing: change `override` to `new` in
+SplashScreen and read the warning. `new` doesn't replace the method — it *hides* it.
+Anyone holding the object as a `BaseScreen` still gets the base behaviour; only code
+that knows it's a `SplashScreen` gets yours. That split personality is almost never
+what you want — which is why the compiler warns. Change it back to `override`.
+
+## Compare all four
+
+Open the four screen scripts side by side and read only their `OnShow()` methods:
+
+- **SplashScreen** — sets the title, starts an auto-advance coroutine
+- **LoadingScreen** — animates a progress fill
+- **GameplayHUD** — resets the score, refreshes the labels (your Chapter 1 friend)
+- **GameEndScreen** — reports the final run
+
+Same signature. Four personalities. That's the setup for the punchline: something,
+somewhere, calls `OnShow()` on all of them *without knowing which is which*.
+
+## Challenge — build the PauseScreen you sketched
+
+In Chapter 2 you designed a `PauseScreen` on paper. Cash it in:
+
+1. New script: `public class PauseScreen : BaseScreen`
+2. The compiler immediately demands `OnShow()` and `OnHide()` — your Chapter 2 sketch
+   fills them (hint: `Time.timeScale = 0f` on show, `1f` on hide).
+3. Create a GameObject with a CanvasGroup (notice `RequireComponent` add it for you),
+   attach your screen, and add it to ScreenManager's list in the Inspector.
+
+If the game freezes and unfreezes, you extended a system by writing *only what's new* —
+which is inheritance's whole pitch.
+
+## Checkpoint
+
+- [ ] You can list three things SplashScreen gets from BaseScreen for free
+- [ ] You did the `override` → `new` experiment and can explain the warning
+- [ ] You read all four `OnShow()`s and can name each screen's specialisation
+- [ ] PauseScreen works: game freezes, game resumes
+
+**Next → Chapter 4: Polymorphism** — `ScreenManager.cs` and the `List<BaseScreen>`
+that treats your PauseScreen exactly like the four screens it was born with.

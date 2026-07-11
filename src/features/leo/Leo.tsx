@@ -139,7 +139,7 @@ export function Leo() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className={`fixed bottom-28 right-6 z-50 hidden max-w-[260px] cursor-pointer select-none rounded-2xl rounded-br-none border border-gold shadow-[0_0_20px_rgba(245,166,35,0.45)] backdrop-blur-xl md:block ${isDark ? 'bg-violet-night/70 text-pearl' : 'bg-white/70 text-ink'}`}
+            className={`fixed bottom-[9.5rem] right-6 z-50 hidden max-w-[260px] cursor-pointer select-none rounded-2xl rounded-br-none border border-gold shadow-[0_0_20px_rgba(245,166,35,0.45)] backdrop-blur-xl md:block ${isDark ? 'bg-violet-night/70 text-pearl' : 'bg-white/70 text-ink'}`}
             onClick={() => { dismiss(); fact.route ? go(fact.route) : setOpen(true); }}
           >
             {/* X dismiss */}
@@ -203,7 +203,7 @@ export function Leo() {
         type="button"
         aria-label={open ? 'Close Leo' : 'Open Leo, the guide'}
         onClick={() => { setOpen((o) => !o); setShowBubble(false); }}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gold text-xl text-ink shadow-glow transition-transform hover:scale-105"
+        className="fixed bottom-16 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gold text-xl text-ink shadow-glow transition-transform hover:scale-105"
       >
         {open ? <X className="h-6 w-6" /> : '🦁'}
       </button>
@@ -215,7 +215,7 @@ export function Leo() {
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
-            className={`fixed bottom-24 right-6 z-50 flex h-[28rem] w-[min(22rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border shadow-glow ${panel}`}
+            className={`fixed bottom-[8.5rem] right-6 z-50 flex h-[28rem] w-[min(22rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border shadow-glow ${panel}`}
           >
             <header className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
               <span className="text-lg">🦁</span>

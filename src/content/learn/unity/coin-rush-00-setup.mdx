@@ -1,0 +1,92 @@
+---
+title: 'Install & Play: Coin Rush'
+description: 'Chapter 0 — create a URP project, install the Coin Rush package, build the scene and prefabs, and play the finished game before we rebuild it script by script.'
+series: coin-rush
+seriesTitle: 'Coin Rush'
+part: 0
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: true
+---
+
+Coin Rush is a top-down 3D collector: grab coins, dodge enemies, watch your score
+climb. It exists to teach C# fundamentals — every script in the package is annotated
+with the concept it demonstrates. This chapter takes you from **nothing installed**
+to **playing the game**. The rest of the series then rebuilds it, concept by concept.
+
+## What you need
+
+- Unity Hub with **Unity 6000.0 or newer** installed
+- **TextMeshPro** (ships with Unity — nothing extra to install)
+- No C# knowledge yet — that's what the series is for
+
+## 1. Create the project
+
+1. Unity Hub → **New project** → pick the **Universal 3D** template.
+2. Name it `CoinRush`, choose a location, **Create project**.
+
+> **Why the Universal 3D template?** The package targets URP. On the Built-in
+> pipeline the materials render pink — pink means wrong pipeline, not a broken
+> download.
+
+## 2. Get and install the package
+
+1. Download the package: [github.com/uv-interactives/uvi-learn-coin-rush](https://github.com/uv-interactives/uvi-learn-coin-rush)
+   — **Code → Download ZIP**, then unzip somewhere outside your project folder
+   (or `git clone` it if you're comfortable with git).
+2. In Unity: **Window → Package Manager → + → Add package from disk…**
+3. Select the `package.json` inside the unzipped folder.
+
+Unity imports the package and a new **CoinRush** menu appears in the menu bar.
+No menu? Check the Console for import errors before continuing.
+
+## 3. Bootstrap the game
+
+Order matters here — data first, then the scene:
+
+1. **CoinRush → 2. Create Default ScriptableObjects** — creates the `CoinData`
+   and `EnemyData` assets (the tunable numbers behind the game).
+2. **File → New Scene**, then **CoinRush → 1. Build Scene** — builds the
+   arena, player, spawner objects, and lighting.
+
+## 4. Create the two prefabs
+
+The package deliberately leaves two things for your hands — prefab creation is a
+skill the later chapters assume:
+
+**Coin prefab**
+1. Hierarchy → **3D Object → Cylinder**, name it `Coin`, scale it flat (Y ≈ 0.1).
+2. Add the `Coin.cs` component (Add Component → search "Coin").
+3. On its Capsule Collider, tick **Is Trigger**.
+4. Assign the `CoinData` asset to the component's data slot.
+5. Drag `Coin` from the Hierarchy into the Project window to make it a prefab,
+   then delete it from the Hierarchy.
+
+**Enemy prefab**
+1. Hierarchy → **3D Object → Sphere**, name it `Enemy`.
+2. Add `EnemyController.cs`, assign the `EnemyData` asset.
+3. Same drill: drag to Project window, delete from Hierarchy.
+
+## 5. Wire the spawners and UI
+
+1. Select **CoinSpawner** in the Hierarchy → drag the Coin prefab into its slot.
+2. Select **EnemySpawner** → drag the Enemy prefab in.
+3. **GameObject → UI → Canvas**, add two **Text - TextMeshPro** fields
+   (score + health). First TMP element prompts to import TMP Essentials — accept.
+4. Select the **UIManager** object → drag each text field into its matching slot.
+
+## 6. Press Play
+
+Move with WASD. Coins pull your score up; enemies knock your health down.
+
+## Checkpoint — all true before Chapter 1
+
+- [ ] Project on the **Universal 3D (URP)** template
+- [ ] **CoinRush** menu visible, no Console errors after import
+- [ ] Coin + Enemy prefabs exist and are assigned to their spawners
+- [ ] Score and health UI update while playing
+
+**Next → Chapter 1: Variables & SerializeField** — open `PlayerController.cs`
+and meet the numbers that make the game feel good.

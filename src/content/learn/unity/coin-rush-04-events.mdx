@@ -1,0 +1,105 @@
+---
+title: 'Events — Broadcasting Without Knowing Who Listens'
+description: 'Chapter 4 — GameEvents.cs: how a coin announces "I was collected!" while knowing nothing about the score, the UI, or the audio that react to it.'
+series: coin-rush
+part: 4
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: true
+---
+
+Open **Packages → Coin Rush → Scripts → Managers → `GameEvents.cs`**. This file is the
+nervous system of the whole game — and it contains no game logic at all.
+
+## The problem — tight coupling
+
+Without events, collecting a coin looks like this:
+
+```csharp
+// inside Coin.cs — the "everyone knows everyone" version
+FindFirstObjectByType<GameManager>().AddScore(points);
+FindFirstObjectByType<UIManager>().RefreshScore();
+FindFirstObjectByType<AudioManager>().PlayCoinSound();
+```
+
+The coin must know every system that cares about it. Add an achievements system next
+month? Edit `Coin.cs`. Remove the audio manager? `Coin.cs` breaks. Every arrow points
+*from* the coin *to* the world — and each arrow is a dependency you maintain forever.
+
+## The fix — a radio broadcast
+
+Your `GameEvents.cs`, nearly in full:
+
+```csharp
+public static class GameEvents
+{
+    // Fired when a coin is collected; carries the point value
+    public static event Action<int> OnCoinCollected;
+
+    // Fired when the player takes damage; carries remaining health
+    public static event Action<int> OnPlayerDamaged;
+
+    // Fired when the player dies
+    public static event Action OnPlayerDied;
+
+    public static void RaiseCoinCollected(int points) =>
+        OnCoinCollected?.Invoke(points);
+}
+```
+
+Read the pieces:
+
+- **`Action<int>`** — a delegate type meaning "any method that takes one int".
+  The event is a *list* of such methods.
+- **`event`** — the keyword restricts who can *raise* it (only this class); anyone
+  can subscribe with `+=` and unsubscribe with `-=`.
+- **`?.Invoke(...)`** — the null-conditional guard. An event with zero subscribers
+  is `null`; invoking it directly would crash. `?.` means "if anyone's listening, tell them."
+
+Now the coin broadcasts and walks away:
+
+```csharp
+GameEvents.RaiseCoinCollected(data.pointValue);   // from Coin.cs
+```
+
+The coin doesn't know the score exists. The score doesn't know coins exist. Both know
+only the radio station.
+
+## The subscriber's side — and the golden rule
+
+Find the pattern in `UIManager.cs` or `GameManager.cs`:
+
+```csharp
+private void OnEnable()  => GameEvents.OnCoinCollected += HandleCoinCollected;
+private void OnDisable() => GameEvents.OnCoinCollected -= HandleCoinCollected;
+```
+
+**The golden rule: every `+=` has a matching `-=`.** Your events are `static` — they
+outlive scenes. A destroyed object that never unsubscribed leaves a dead reference in
+the event's list, and the next broadcast calls a corpse (`MissingReferenceException`,
+or worse: silent leaks). `OnEnable`/`OnDisable` pairing makes the cleanup automatic.
+
+## This pattern has a name
+
+One broadcaster, many independent listeners — the **Observer pattern**, easily the
+most-used pattern in game development. UI frameworks, achievement systems, analytics,
+audio — all of them are observers of gameplay. You now know it by its C# spelling.
+
+## Challenge — the wire-tap
+
+Prove the decoupling. Create `CollectionLogger.cs`, subscribe to `OnCoinCollected`,
+and `Debug.Log($"Coin heard! +{points}")`. Add it to any GameObject. Coins now notify
+your logger — **and you never touched `Coin.cs` or anyone else**. That's the whole
+pitch in one script. Then delete the logger and confirm nothing breaks.
+
+## Checkpoint
+
+- [ ] You can explain the radio metaphor without notes
+- [ ] You know what `?.Invoke` guards against
+- [ ] You can recite the golden rule and say which Unity methods pair with it
+- [ ] The wire-tap logger worked, then was deleted with zero fallout
+
+**Next → Chapter 5: Collections** — `CoinSpawner.cs` and `List<T>`: keeping track
+of a crowd of coins you spawn at runtime.

@@ -1,0 +1,111 @@
+---
+title: 'Interfaces — Contracts Between Strangers'
+description: 'Chapter 3 — ICollectable and IDamageable: how completely unrelated objects get collected and damaged the same way, without knowing each other.'
+series: coin-rush
+part: 3
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: true
+---
+
+Open **Packages → Coin Rush → Scripts → Interfaces**. Two tiny files, and they carry
+one of the biggest ideas in C#.
+
+## ICollectable — the whole file
+
+```csharp
+public interface ICollectable
+{
+    // How many points does collecting this give?
+    int GetPointValue();
+
+    // Called the moment the player touches it.
+    void OnCollected();
+}
+```
+
+That's everything. No fields, no bodies, no logic. An interface is a **contract**:
+any class that implements `ICollectable` *promises* to have these two methods.
+What it does inside them is entirely its own business.
+
+## A class signs the contract
+
+Open `Coin.cs` and look at the class declaration:
+
+```csharp
+public class Coin : MonoBehaviour, ICollectable
+```
+
+The comma list reads: Coin *is a* MonoBehaviour, and Coin *can be* collected.
+Scroll down to where the promise is kept:
+
+```csharp
+// ── ICollectable ────────────────────────────────────
+public int GetPointValue()
+{
+    return data != null ? data.pointValue : 0;
+}
+```
+
+Notice the chapters stacking: the interface method returns a value from the
+**ScriptableObject** you built in Chapter 2. Nothing you learn here gets thrown away.
+
+## Why not just a base class?
+
+Fair question — Chapter 2's `CoinData`/`EnemyData` both extend `ScriptableObject`,
+so why don't collectibles extend some `CollectableBase`?
+
+Because **C# allows only one base class, but any number of interfaces**. Coin already
+spent its one inheritance slot on `MonoBehaviour` (it must — it lives on a GameObject).
+Interfaces are how a class takes on *additional* capabilities: collectable, damageable,
+saveable, poolable — stack as many contracts as the design needs.
+
+## The second contract — IDamageable
+
+```csharp
+public interface IDamageable
+{
+    int CurrentHealth { get; }     // interfaces can require properties too
+    void TakeDamage(int amount);
+    void Die();
+}
+```
+
+Who signs it? Open `PlayerHealth.cs`:
+
+```csharp
+public class PlayerHealth : MonoBehaviour, IDamageable
+{
+    public int CurrentHealth { get; private set; }
+```
+
+The enemy that hits the player calls `TakeDamage()` — it neither knows nor cares that
+the thing it hit was a player. It found something damageable; it damaged it. Tomorrow
+you add destructible crates: implement `IDamageable` on the crate, and every enemy in
+the game can already break them. **Zero enemy code changes.**
+
+## Break the contract on purpose
+
+Delete `GetPointValue()` from `Coin.cs`. Read the error:
+*"'Coin' does not implement interface member 'ICollectable.GetPointValue()'"*.
+Same enforcement you'll meet with abstract classes in OOP Pillars — the compiler is
+the contract's lawyer. Undo.
+
+## Challenge — the Gem
+
+Create `Gem.cs` implementing `ICollectable`: a Capsule prefab, 25 points, no bobbing
+(gems are dignified). Wire the same trigger pattern as Coin's `OnTriggerEnter`.
+If the score climbs when you touch it, you've proven the point: the game's scoring
+system accepted a brand-new object it has never heard of.
+
+## Checkpoint
+
+- [ ] You can define an interface in one sentence without the word "interface"
+- [ ] You know why Coin implements `ICollectable` instead of extending a base class
+- [ ] You broke the contract and read the compiler's objection
+- [ ] Gem exists, gets collected, scores 25
+
+**Next → Chapter 4: Events** — `GameEvents.cs`: how the coin announces "I was
+collected!" without knowing that a UI, a game manager, and an audio system are listening.

@@ -1,0 +1,113 @@
+---
+title: 'Variables & SerializeField'
+description: 'Chapter 1 — open PlayerController.cs and meet the numbers that make the game feel good: fields, SerializeField vs public, and frame-rate independent movement.'
+series: coin-rush
+part: 1
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: true
+---
+
+You played the game in Chapter 0. Now open the first script and find out where the
+*feel* of the game lives. In your Project window, navigate to the package:
+**Packages → Coin Rush → Scripts → Player → `PlayerController.cs`** and open it.
+
+## The variables that matter
+
+At the top of the class:
+
+```csharp
+[Header("Movement")]
+[SerializeField] private float moveSpeed = 6f;
+
+[Header("Camera")]
+[SerializeField] private Transform cameraRig;
+
+// CONCEPT: Cache GetComponent in Awake — never call it every frame
+private Rigidbody _rb;
+```
+
+Three variables, three different jobs:
+
+- `moveSpeed` — a **value** (`float`). This one number decides how fast the game feels.
+- `cameraRig` — a **reference** (`Transform`). It doesn't hold data, it points at another object.
+- `_rb` — a **cached component reference**. Fetched once in `Awake()`, reused forever.
+
+## SerializeField vs public — the interview classic
+
+Both make a field show up in the Inspector. So why does every script here use
+`[SerializeField] private` instead of `public`?
+
+```csharp
+[SerializeField] private float moveSpeed = 6f;  // Inspector: yes. Other scripts: no.
+public float moveSpeed = 6f;                    // Inspector: yes. Other scripts: full access.
+```
+
+`public` means *any* script can do `player.moveSpeed = 9999f`. `[SerializeField] private`
+gives the designer Inspector access while keeping code access closed. You get tweakability
+without giving up control — this exact distinction comes up in Unity interviews constantly.
+
+### Try it — the fun part
+
+1. Select the **Player** in the Hierarchy while in **Play mode**.
+2. Drag `Move Speed` from 6 to 12. The game changes *live*.
+3. Stop Play mode — the value snaps back. Play-mode changes never save. Every Unity
+   developer loses work to this once; consider this your one warning.
+
+## Why movement is multiplied by time
+
+Look at `Move()` — the movement uses `Time.fixedDeltaTime` for rotation and runs in
+`FixedUpdate`:
+
+```csharp
+private void FixedUpdate()
+{
+    Move();   // Rigidbody movement belongs in FixedUpdate, not Update
+}
+```
+
+`Update` runs once per rendered frame — 30 times a second on a weak laptop, 240 on a
+gaming rig. If you moved the player per-frame without accounting for time, the game
+would literally be faster on faster computers. `FixedUpdate` runs on a fixed physics
+clock (50/s by default), which is why the Rigidbody work lives there.
+
+One more lifecycle detail from the same file:
+
+```csharp
+private void LateUpdate()
+{
+    if (cameraRig != null)
+        cameraRig.position = transform.position;
+}
+```
+
+`LateUpdate` runs after every `Update` — the camera follows *after* the player has
+finished moving, so it never lags a frame behind.
+
+## Unity 6 note
+
+```csharp
+_rb.linearVelocity = new Vector3(direction.x * moveSpeed, _rb.linearVelocity.y, ...);
+```
+
+Older tutorials use `_rb.velocity` — Unity 6 renamed it to `linearVelocity`. Same thing.
+Note it preserves `y`: overwrite the Y velocity and gravity stops working. Try it if
+you don't believe it — set `0f` there and watch the player float.
+
+## Challenge
+
+Add a sprint: a second `[SerializeField] private float sprintSpeed = 10f;` and use it
+in `Move()` while `Input.GetKey(KeyCode.LeftShift)` is held. You'll touch a variable,
+an Inspector field, and the input system in one line of logic.
+
+## Checkpoint
+
+- [ ] You can explain `SerializeField` vs `public` in one sentence each
+- [ ] You changed `moveSpeed` live and watched the value reset on Stop
+- [ ] You know why Rigidbody movement is in `FixedUpdate`, camera in `LateUpdate`
+- [ ] Sprint challenge works
+
+**Next → Chapter 2: ScriptableObjects** — why `CoinData` is an asset in your Project
+window instead of numbers hard-coded in a script.

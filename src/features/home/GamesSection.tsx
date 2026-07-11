@@ -27,8 +27,8 @@ export function GamesSection({ games }: { games: Game[] }) {
           <div className="flex items-start justify-between gap-4 mb-10">
             <SectionHeader
               eyebrow="Our work"
-              title="Games we've shipped."
-              subtitle="Partner titles we maintain and originals we're building."
+              title="Games we build & maintain."
+              subtitle="Live-ops for partner titles under contract — and originals of our own in the works."
             />
             <Link
               href="/games"
@@ -42,7 +42,12 @@ export function GamesSection({ games }: { games: Game[] }) {
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {preview.map((g, i) => (
             <Reveal as="li" key={g.id} delay={i * 0.08}>
-              <div className="flex h-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-gold/30">
+              <div className="relative flex h-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-gold/30">
+                <Link
+                  href={g.ownership === 'partner' ? '/games?tab=partners' : '/games'}
+                  aria-label={`${g.title} — view details`}
+                  className="absolute inset-0 z-[1] rounded-2xl"
+                />
                 {/* Genre + status */}
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold uppercase tracking-widest text-pearl/45">
@@ -67,7 +72,7 @@ export function GamesSection({ games }: { games: Game[] }) {
                         href={g.links.partnerUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-xs text-pearl/40 hover:text-pearl/70 transition-colors"
+                        className="relative z-[2] flex items-center gap-1 text-xs text-pearl/40 hover:text-pearl/70 transition-colors"
                       >
                         {g.attribution}
                         <ExternalLink size={11} />

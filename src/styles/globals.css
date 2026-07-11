@@ -288,7 +288,7 @@ html[data-theme='dawn'] [class*='text-gold'] {
 
 /* Navbar flips light on dawn — scoped to fixed nav header only */
 html[data-theme='dawn'] header.fixed {
-  background-color: rgba(247, 244, 237, 0.85) !important;
+  background-color: rgba(247, 244, 237, 0.65) !important;
   border-color: rgba(20, 16, 44, 0.1) !important;
 }
 html[data-theme='dawn'] header.fixed a,
@@ -360,3 +360,40 @@ html[data-theme='dawn'] .forge-tag {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Learn prose (MDX tutorials) ─────────────────────────────────────
+   Theme-aware via --c-pearl / --c-gold channel vars: dusk = light text,
+   dawn = dark ink automatically (pearl flips in html[data-theme='dawn']). */
+.learn-prose {
+  --tw-prose-body: rgb(var(--c-pearl) / 0.85);
+  --tw-prose-headings: rgb(var(--c-pearl));
+  --tw-prose-lead: rgb(var(--c-pearl) / 0.75);
+  --tw-prose-links: rgb(var(--c-gold));
+  --tw-prose-bold: rgb(var(--c-pearl));
+  --tw-prose-counters: rgb(var(--c-gold) / 0.9);
+  --tw-prose-bullets: rgb(var(--c-gold) / 0.7);
+  --tw-prose-hr: rgb(var(--c-pearl) / 0.15);
+  --tw-prose-quotes: rgb(var(--c-pearl) / 0.9);
+  --tw-prose-quote-borders: rgb(var(--c-gold) / 0.5);
+  --tw-prose-captions: rgb(var(--c-pearl) / 0.6);
+  --tw-prose-code: rgb(var(--c-gold-warm));
+  --tw-prose-pre-code: #e2e2ee;
+  --tw-prose-pre-bg: rgba(10, 6, 24, 0.85);
+  --tw-prose-th-borders: rgb(var(--c-pearl) / 0.25);
+  --tw-prose-td-borders: rgb(var(--c-pearl) / 0.15);
+}
+.learn-prose pre {
+  border: 1px solid rgb(var(--c-pearl) / 0.12);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  background: rgba(10, 6, 24, 0.85); /* code stays dark in both themes */
+}
+.learn-prose :not(pre) > code {
+  background: rgb(var(--c-pearl) / 0.08);
+  padding: 0.15em 0.4em;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+.learn-prose code::before,
+.learn-prose code::after { content: none; }

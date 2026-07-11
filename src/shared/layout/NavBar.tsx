@@ -97,7 +97,7 @@ export function NavBar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-[60] h-20 border-b border-white/5 bg-[rgba(22,11,50,0.72)]">
+    <header className="fixed inset-x-0 top-0 z-[60] h-20 border-b border-white/5 bg-[rgba(22,11,50,0.55)] backdrop-blur-xl backdrop-saturate-150">
       <Container className="flex h-full items-center justify-between">
         <Link
           href="/"

@@ -1,0 +1,100 @@
+---
+title: 'Abstraction — A Promise With No Body'
+description: 'Chapter 2 — back into BaseScreen.cs: why the class is abstract, what the two abstract methods enforce, and how a contract makes four screens interchangeable.'
+series: oop-pillars
+part: 2
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-oop-pillars'
+updated: '2026-07-11'
+draft: true
+---
+
+Same file as Chapter 1 — `BaseScreen.cs` — different pillar. Encapsulation was about
+*hiding the how*. Abstraction is about *declaring the what*.
+**Ctrl+Shift+F → "CONCEPT: ABSTRACTION"** to see every site.
+
+## The two keywords
+
+```csharp
+public abstract class BaseScreen : MonoBehaviour
+{
+    public void Show()
+    {
+        SetVisibility(true);
+        OnShow();          // ← calls a method that has no body in this class
+    }
+
+    protected abstract void OnShow();
+    protected abstract void OnHide();
+}
+```
+
+Two different `abstract`s doing two different jobs:
+
+- **`abstract class`** — BaseScreen can never be instantiated. `new BaseScreen()` won't
+  compile, and Unity won't let you add it as a component. It exists only as a foundation
+  to build on. It's the difference between "a screen" (concept) and "the splash screen" (thing).
+- **`abstract method`** — a promise with no body. BaseScreen says: *"I don't know HOW to
+  show myself, but I know THAT showing must happen."* Every subclass MUST fill in the
+  body or the code won't compile.
+
+## The contract is enforced by the compiler
+
+Prove it to yourself:
+
+1. Open `SplashScreen.cs`, delete the entire `OnShow()` method.
+2. Read the error: *"'SplashScreen' does not implement inherited abstract member
+   'BaseScreen.OnShow()'"*.
+
+That error is the feature. Nobody can add a fifth screen and *forget* to define what
+showing means for it — the contract is checked at compile time, not discovered as a
+bug at runtime. Undo the delete.
+
+## Why Show() and OnShow() are separate
+
+Look at the shape again — this is the **template method pattern** (you've now met your
+first design pattern, quietly):
+
+```csharp
+public void Show()        // public, concrete: the SEQUENCE — same for everyone
+{
+    SetVisibility(true);  // step 1: always
+    OnShow();             // step 2: subclass's unique behaviour
+}
+```
+
+`Show()` owns the *order of operations* — visibility always flips before the subclass
+reacts. `OnShow()` owns the *personality* — SplashScreen starts an auto-advance
+coroutine, GameplayHUD resets the score. The base class guarantees the skeleton;
+subclasses fill the muscle. Neither can break the other.
+
+## Where abstraction pays off
+
+Peek ahead at `ScreenManager.cs`:
+
+```csharp
+[SerializeField] private List<BaseScreen> _allScreens = new List<BaseScreen>();
+```
+
+ScreenManager holds four wildly different screens in a list typed as `BaseScreen` —
+because that's all it needs to know. It calls `Show()` and `Hide()` on the contract,
+never on a concrete screen. Without abstraction it would need an `if`/`else if` chain
+per screen type, updated every time a screen is added. That list is where abstraction
+becomes polymorphism — which is Chapter 4's whole story.
+
+## Challenge
+
+Sketch (on paper, no code) a `PauseScreen`. What goes in `OnShow()`? What in `OnHide()`?
+What do you get from BaseScreen without writing it? If your answer to the last one is
+"CanvasGroup wiring, IsVisible, Show/Hide sequencing" — abstraction has clicked.
+
+## Checkpoint
+
+- [ ] You can explain `abstract class` vs `abstract method` in your own words
+- [ ] You deleted `OnShow()` from SplashScreen and read the compiler enforce the contract
+- [ ] You can say why `Show()` is concrete but `OnShow()` is abstract
+- [ ] Paper PauseScreen sketched
+
+**Next → Chapter 3: Inheritance** — the four screen scripts: what "IS A" buys you,
+`override` vs `new`, and why four screens share one foundation without four copies of it.

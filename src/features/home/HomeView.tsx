@@ -9,7 +9,7 @@ import { StatsSection } from '@/features/home/StatsSection';
 import { BuildPicker } from '@/features/home/BuildPicker';
 import { GamesSection } from '@/features/home/GamesSection';
 import { OpenSourceBanner } from '@/features/home/OpenSourceBanner';
-import { ForgeTeaser } from '@/features/home/ForgeTeaser';
+import { ForgeTeaser, type ForgeTutorial } from '@/features/home/ForgeTeaser';
 import { PlatformStrip } from '@/features/home/PlatformStrip';
 import { useIslandStore } from '@/scene/islandStore';
 
@@ -17,10 +17,12 @@ export function HomeView({
   config,
   services,
   games,
+  tutorials = [],
 }: {
   config: StudioConfig;
   services: Service[];
   games: Game[];
+  tutorials?: ForgeTutorial[];
 }) {
   return (
     <>
@@ -43,7 +45,7 @@ export function HomeView({
             className="mt-[clamp(0.75rem,3vw,2.25rem)] flex animate-fade-up justify-center gap-[clamp(0.5rem,2vw,1rem)]"
             style={{ animationDelay: '240ms' }}
           >
-            <Button href="/lab" className="text-[clamp(0.75rem,3.2vw,1rem)] px-[clamp(0.875rem,3.5vw,1.5rem)] py-[clamp(0.45rem,1.5vw,0.75rem)]">Explore free learning</Button>
+            <Button href="/lab" variant="ghost" className="text-[clamp(0.75rem,3.2vw,1rem)] px-[clamp(0.875rem,3.5vw,1.5rem)] py-[clamp(0.45rem,1.5vw,0.75rem)]">Explore free learning</Button>
             <Button href="/games" variant="ghost" className="text-[clamp(0.75rem,3.2vw,1rem)] px-[clamp(0.875rem,3.5vw,1.5rem)] py-[clamp(0.45rem,1.5vw,0.75rem)]">See what we&apos;re building</Button>
             {/* <Button
               variant="ghost"
@@ -62,6 +64,12 @@ export function HomeView({
 
       {/* ── Stats ── */}
       <StatsSection />
+
+      {/* ── Forge: live tutorials first — real content before promises ── */}
+      <ForgeTeaser tutorials={tutorials} />
+
+      {/* ── Our work (Games) ── */}
+      <GamesSection games={games} />
 
       {/* ── What we do (Services) ── */}
       <section className="py-20 frost-panel">
@@ -86,17 +94,11 @@ export function HomeView({
         </Container>
       </section>
 
-      {/* ── Games preview ── */}
-      <GamesSection games={games} />
-
-      {/* ── Build picker ── */}
-      <BuildPicker />
-
       {/* ── Open source banner ── */}
       <OpenSourceBanner />
 
-      {/* ── Forge teaser ── */}
-      <ForgeTeaser />
+      {/* ── What we build (Build picker) ── */}
+      <BuildPicker />
     </>
   );
 }

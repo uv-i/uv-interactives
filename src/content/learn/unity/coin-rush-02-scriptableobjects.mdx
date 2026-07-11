@@ -1,0 +1,116 @@
+---
+title: 'ScriptableObjects — Data as Assets'
+description: 'Chapter 2 — why CoinData lives in your Project window instead of being hard-coded, and how designers tune a game without touching a script.'
+series: coin-rush
+part: 2
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-coin-rush'
+updated: '2026-07-11'
+draft: true
+---
+
+In Chapter 0 you ran **CoinRush → 2. Create Default ScriptableObjects** and two assets
+appeared in your Project. This chapter explains what you actually created — and why
+it's one of Unity's most important patterns.
+
+## The problem it solves
+
+Imagine coin values hard-coded in `Coin.cs`:
+
+```csharp
+public class Coin : MonoBehaviour
+{
+    private int pointValue = 10;      // want 20? edit code, recompile
+    private float rotateSpeed = 90f;  // designer wants faster spin? file a ticket
+}
+```
+
+Every tweak is a code change. Now open
+**Packages → Coin Rush → Scripts → Data → `CoinData.cs`**:
+
+```csharp
+[CreateAssetMenu(menuName = "CoinRush/Coin Data", fileName = "CoinData")]
+public class CoinData : ScriptableObject
+{
+    [Header("Identity")]
+    public string coinName = "Gold Coin";
+
+    [Header("Points")]
+    public int pointValue = 10;
+
+    [Header("Visuals")]
+    public Color coinColor = Color.yellow;
+    public float rotateSpeed = 90f;   // degrees per second
+    public float bobHeight   = 0.25f; // metres up and down
+    public float bobSpeed    = 2f;    // bobs per second
+
+    [Header("Lifetime")]
+    public float lifetime = 15f;
+}
+```
+
+A ScriptableObject is a **data container that lives as an asset in your Project — not
+on a GameObject in the scene**. The class defines the *shape* of the data; each asset
+you create from it is one *filling* of that shape.
+
+## Try it — make a Golden Coin
+
+1. Right-click in the Project window → **Create → CoinRush → Coin Data**
+   (that menu entry comes from the `CreateAssetMenu` attribute — first line of the class).
+2. Name it `GoldenCoin`. Set `Point Value = 50`, `Coin Color` to something loud,
+   `Rotate Speed = 360`.
+3. Select your Coin prefab → swap its data slot from the default `CoinData` to `GoldenCoin`.
+4. Play. Same prefab, same script — completely different coin. **Zero code changed.**
+
+## The play-mode surprise
+
+Remember Chapter 1's warning — component values reset when you stop Play mode?
+ScriptableObjects **don't**. Change `pointValue` on the asset during Play mode, stop,
+and the change *sticks* — assets are files, and you edited the file.
+
+Powerful and dangerous in equal measure: great for tuning game feel live,
+terrible when you forget you did it. Now the warning runs both directions.
+
+## Enums ride along
+
+Open `EnemyData.cs` in the same folder:
+
+```csharp
+public enum EnemyType
+{
+    Patrol,   // walks a fixed path, ignores player unless close
+    Chaser    // locks onto player and follows them
+}
+
+[CreateAssetMenu(menuName = "CoinRush/Enemy Data", fileName = "EnemyData")]
+public class EnemyData : ScriptableObject
+{
+    public string    enemyName = "Guard";
+    public EnemyType type      = EnemyType.Patrol;
+    public int       damageOnContact = 1;
+    public float     moveSpeed = 2f;
+    public float     chaseRange = 6f;
+}
+```
+
+`EnemyType` shows up as a **dropdown** in the Inspector — designers pick behaviour from
+a list. `EnemyController.cs` switches its whole state machine on that one field.
+We dissect that properly in the Enum chapter; for now, create a second EnemyData asset
+with `type = Chaser` and assign it to your Enemy prefab. Same sphere, new personality.
+
+## Challenge
+
+Add a `[Header("Audio")] public float pitchVariance = 0.1f;` field to `CoinData`.
+Watch it appear on every CoinData asset automatically — one class, all assets updated.
+(It won't *do* anything yet — wiring it up is part of the coroutine chapter.)
+
+## Checkpoint
+
+- [ ] You can explain where a ScriptableObject lives vs a MonoBehaviour
+- [ ] `GoldenCoin` exists and behaves differently from the default coin
+- [ ] You know which values survive exiting Play mode, and why
+- [ ] Second EnemyData asset with `Chaser` type assigned and tested
+
+**Next → Chapter 3: Interfaces** — `ICollectable` and `IDamageable`: the contracts
+that let completely unrelated objects be collected and damaged the same way.

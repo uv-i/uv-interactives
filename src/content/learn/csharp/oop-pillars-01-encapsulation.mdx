@@ -1,0 +1,106 @@
+---
+title: 'Encapsulation — One Door In'
+description: 'Chapter 1 — open BaseScreen.cs and GameplayHUD.cs to see why every field is private, and why that is a feature, not paranoia.'
+series: oop-pillars
+part: 1
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-oop-pillars'
+updated: '2026-07-11'
+draft: true
+---
+
+Screen Shift is running from Chapter 0. Open the first pillar:
+**Packages → OOP Pillars → Scripts → `BaseScreen.cs`**. Every concept in this package
+is findable with **Ctrl+Shift+F → "CONCEPT: ENCAPSULATION"** — the scripts annotate
+themselves. This chapter walks the two best examples.
+
+## The rule in one sentence
+
+**Encapsulation = your data is private, and there's exactly one door to change it.**
+
+## Example 1 — BaseScreen's visibility
+
+```csharp
+private CanvasGroup _canvasGroup;
+
+public bool IsVisible { get; private set; }
+
+public void Show()
+{
+    SetVisibility(true);
+    OnShow();
+}
+
+private void SetVisibility(bool visible)
+{
+    IsVisible = visible;
+    _canvasGroup.alpha = visible ? 1f : 0f;
+    _canvasGroup.interactable = visible;
+    _canvasGroup.blocksRaycasts = visible;
+}
+```
+
+Walk the access levels:
+
+- `_canvasGroup` is **private** — no script outside this class can touch it. If it were
+  public, anything could set `alpha = 0` mid-transition and desync the screen state.
+- `IsVisible` uses **`get; private set;`** — the outside world can *ask* ("is this
+  screen visible?") but never *tell*. Read access: everyone. Write access: this class only.
+- `Show()` / `Hide()` are the **only doors**. And look what the door does: it changes
+  three CanvasGroup values AND fires the lifecycle event, always together, always in order.
+
+That last point is the whole argument. Encapsulation isn't about secrecy — it's about
+**keeping related state in sync by forcing every change through one place**.
+
+## Example 2 — GameplayHUD's score
+
+Open `GameplayHUD.cs`:
+
+```csharp
+private int _score;
+
+public int Score => _score;   // read-only property
+
+public void AddScore(int amount)
+{
+    if (amount <= 0) return;  // validate
+
+    _score += amount;
+    RefreshUI();              // display never goes stale
+    CheckWinCondition();      // win check can never be skipped
+}
+```
+
+Try to cheat from another script:
+
+```csharp
+hud._score = 100;   // ← compile error: '_score' is inaccessible
+hud.Score = 100;    // ← compile error: property has no setter
+hud.AddScore(100);  // ← the one legal move
+```
+
+And `AddScore` earns its position as the only door: it validates the input, updates
+the label, and checks the win — three things that must always happen together.
+
+## Break it on purpose
+
+The fastest way to *feel* encapsulation is to remove it:
+
+1. In `GameplayHUD.cs`, change `private int _score;` to `public int _score;`
+2. In `CoinPickup.cs`, replace the `AddScore(...)` call with `hud._score += 1;`
+3. Play. Collect coins.
+
+Score climbs internally — but the label never updates and the win never fires,
+because nothing forces the bookkeeping to happen. Now undo both edits and appreciate
+the compile error that was protecting you.
+
+## Checkpoint
+
+- [ ] You can state the one-sentence rule from memory
+- [ ] You know what `get; private set;` gives you and when to reach for it
+- [ ] You broke the score on purpose and watched the UI desync
+- [ ] Ctrl+Shift+F "CONCEPT: ENCAPSULATION" — you visited every hit
+
+**Next → Chapter 2: Abstraction** — same file, `BaseScreen.cs`: why the class is
+`abstract`, and what a "promise with no body" buys the whole screen system.

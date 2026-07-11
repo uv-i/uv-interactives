@@ -135,8 +135,11 @@ export function LandmarkOverlay() {
     if (!isHome || isIsland) return;
     const onScroll = () => {
       if (!wrapperRef.current) return;
-      wrapperRef.current.style.opacity    = window.scrollY > 80 ? '0' : '1';
-      wrapperRef.current.style.pointerEvents = window.scrollY > 80 ? 'none' : '';
+      const hidden = window.scrollY > 80;
+      wrapperRef.current.style.opacity    = hidden ? '0' : '1';
+      // visibility (not pointerEvents) — hides hit-testing for the cards too,
+      // and never clobbers the wrapper's own pointer-events: none.
+      wrapperRef.current.style.visibility = hidden ? 'hidden' : 'visible';
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);

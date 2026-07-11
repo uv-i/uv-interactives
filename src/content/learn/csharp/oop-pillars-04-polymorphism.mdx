@@ -1,0 +1,103 @@
+---
+title: 'Polymorphism — One Call, Many Shapes'
+description: 'Chapter 4 — ScreenManager.cs: the List<BaseScreen> loop that runs your PauseScreen without ever knowing it exists. The pillar the other three were building toward.'
+series: oop-pillars
+part: 4
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-oop-pillars'
+updated: '2026-07-11'
+draft: true
+---
+
+Three chapters of setup pay off here. Open
+**Packages → OOP Pillars → Scripts → `ScreenManager.cs`** — the shortest important
+file in the package.
+
+## The list that shouldn't work
+
+```csharp
+[SerializeField] private List<BaseScreen> _allScreens = new List<BaseScreen>();
+```
+
+One list. Typed `BaseScreen` — a class that (Chapter 2) **can never be instantiated**.
+So what's actually in there? A SplashScreen, a LoadingScreen, a GameplayHUD, a
+GameEndScreen — and your PauseScreen from Chapter 3. Five different classes in a
+container that claims to hold one type.
+
+That's the first half of polymorphism: **a base-class reference can hold any subclass**.
+Check the Inspector: you dragged five differently-named GameObjects in, and Unity shows
+them all as BaseScreen. Polymorphism isn't just in code — it's in the editor.
+
+## The dispatch — where it gets good
+
+```csharp
+public void ShowScreen(int index)
+{
+    if (_currentScreen != null)
+        _currentScreen.Hide();
+
+    _currentScreen = _allScreens[index];
+    _currentScreen.Show();          // ← the magic line
+}
+```
+
+`_currentScreen` is typed `BaseScreen`. Calling `.Show()` runs BaseScreen's `Show()` —
+which calls `OnShow()` — and *that* dispatches to whichever override the actual object
+carries: the splash starts its timer, the HUD resets its score, your pause screen
+freezes time. **The caller never changes. Only the result does.**
+
+Prove it: each screen's `OnShow()` already has a `Debug.Log` with its class name.
+Play, watch the Console — one line of calling code, four different log messages.
+
+## The counterfactual — read it and wince
+
+Without polymorphism, `ShowScreen` looks like this, forever:
+
+```csharp
+if (screen is SplashScreen s)      s.Show();
+else if (screen is LoadingScreen l) l.Show();
+else if (screen is GameplayHUD h)   h.Show();
+else if (screen is GameEndScreen g) g.Show();
+// add PauseScreen? edit this. add SettingsScreen? edit this. forever.
+```
+
+Every new screen means reopening this file. With polymorphism, `HideAll()` is:
+
+```csharp
+foreach (BaseScreen screen in _allScreens)
+    screen.Hide();
+```
+
+Your PauseScreen was hidden by that loop the moment you added it to the list —
+**ScreenManager's code hasn't changed since before your screen existed.** Systems
+that grow without being edited: that's the closed-for-modification, open-for-extension
+idea you'll later meet formally as the Open/Closed Principle.
+
+## The four pillars, one sentence each
+
+- **Encapsulation** (Ch1) — data is private; one door to change it.
+- **Abstraction** (Ch2) — the contract says *what*, never *how*.
+- **Inheritance** (Ch3) — subclasses get the foundation free, add only what's new.
+- **Polymorphism** (Ch4) — one call on the contract, each subclass answers in its own voice.
+
+Notice they stack: polymorphism needs inheritance, inheritance needs the abstract
+contract, and the contract stays trustworthy because encapsulation guards the state.
+It was never four separate tricks — it's one design, seen from four sides.
+
+## Challenge — the interview answer
+
+Close the editor. Write, in four sentences, how ScreenShift uses each pillar —
+naming the actual file where each lives. If you can do that, you don't just know
+OOP definitions; you've *shipped* them. Keep the paragraph — it's interview gold.
+
+## Checkpoint
+
+- [ ] You watched one `Show()` call produce different Console logs per screen
+- [ ] You can explain why PauseScreen worked without editing ScreenManager
+- [ ] The four-sentence pillar summary is written and saved
+- [ ] Ctrl+Shift+F "CONCEPT: POLYMORPHISM" — every hit visited
+
+**Series complete.** You built the screens, broke the rules on purpose, and extended
+the system without touching it. Next stop: the Dev Lab — Coin Rush covers events,
+coroutines, and ScriptableObjects if you haven't done it; more packages are on the way.

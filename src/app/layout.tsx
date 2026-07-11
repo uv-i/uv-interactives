@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SceneBackdrop className="pointer-events-none fixed inset-0 -z-10" />
           <NavBar />
           <PageTransition>
-            <main id="main">{children}</main>
+            <main id="main" className="pb-12">{children}</main>
           </PageTransition>
           <Footer />
         </Providers>

@@ -23,7 +23,7 @@ export function StatsSection() {
     <section className="frost-panel py-20">
       <Container>
         <Reveal>
-          <SectionHeader eyebrow="By the numbers" title="Small team. Real impact." />
+          <SectionHeader eyebrow="By the numbers" title="Studio of one. Real impact." />
         </Reveal>
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s, i) => (

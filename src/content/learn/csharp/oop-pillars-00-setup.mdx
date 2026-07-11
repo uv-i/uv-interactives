@@ -1,0 +1,76 @@
+---
+title: 'Install & Run: OOP Pillars'
+description: 'Chapter 0 — install the OOP Pillars package, bootstrap the Screen Shift scene, and watch all four screens work before we dissect the four pillars of OOP.'
+series: oop-pillars
+seriesTitle: 'OOP Pillars'
+part: 0
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-oop-pillars'
+updated: '2026-07-11'
+draft: true
+---
+
+The OOP Pillars package contains **Screen Shift** — a coin-collecting mini-game built around the thing you'll write in
+every real project: a **UI screen management system**. Splash, Loading, Gameplay HUD,
+Game End — four screens, one `BaseScreen` family, and hiding inside it all four
+pillars of Object-Oriented Programming. This chapter gets it installed and running.
+
+## Before you start
+
+This series assumes Unity basics — creating projects, prefabs, the Inspector.
+If any of that is fuzzy, do **[Coin Rush](/lab/unity/coin-rush-00-setup)** first;
+this package lists it as its prerequisite.
+
+- Unity **6000.0+**, **URP** template (Universal 3D)
+
+## 1. Create the project
+
+Unity Hub → **New project** → **Universal 3D** template → name it `ScreenShift`.
+
+## 2. Install straight from GitHub
+
+No download needed this time — UPM can pull from a git URL:
+
+1. **Window → Package Manager → + → Add package from git URL…**
+2. Paste:
+
+```text
+https://github.com/uv-interactives/uvi-learn-oop-pillars.git
+```
+
+Prefer editing files? Add this line to `Packages/manifest.json` instead:
+
+```json
+"com.uvinteractives.learn.oop-pillars": "https://github.com/uv-interactives/uvi-learn-oop-pillars.git"
+```
+
+A **ScreenShift** menu appears in the menu bar once the import finishes.
+
+## 3. Bootstrap the scene (~2 minutes)
+
+1. **ScreenShift → Step 1 → Create ScriptableObjects** — creates
+   `Assets/ScreenShift/Data/GameData.asset`, the single source for all game values.
+2. **ScreenShift → Step 2 → Build Scene** — builds the entire scene: player,
+   coins, and all four screen objects.
+3. One manual wire: select each screen GameObject (Splash, Loading, GameplayHUD,
+   GameEnd) and drag `GameData.asset` into its `_gameData` slot in the Inspector.
+
+> **Why the manual drag?** Because seeing four different screens share one data
+> asset *is* the first OOP lesson — one contract, many implementations. We
+> exploit that on purpose in Chapter 4.
+
+## 4. Press Play — watch the screen flow
+
+Splash fades in → Loading fills → HUD tracks your coins → Game End reports your
+run. That flow is one `ScreenManager` holding a `List<BaseScreen>` and never
+caring which screen is which. Remember that sentence; it's Chapter 4.
+
+## Checkpoint — all true before Chapter 1
+
+- [ ] **ScreenShift** menu visible, Console clean after import
+- [ ] `GameData.asset` assigned on **all four** screen GameObjects
+- [ ] Full flow plays: Splash → Loading → Gameplay → Game End
+
+**Next → Chapter 1: Encapsulation** — open `BaseScreen.cs` and find out why
+every field in it is private, and why that's a feature.

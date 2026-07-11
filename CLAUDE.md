@@ -258,8 +258,8 @@ Next.js 15 + R3F site for **UV Interactives**. Active 3D world = **ArchipelagoSc
 - **Vercel Speed Insights** — `@vercel/speed-insights/next` `<SpeedInsights />` added to `app/layout.tsx` alongside `<Analytics />`.
 
 ## Still TODO
-- **T2** — Sanity CMS: port `sanityClient`, GROQ queries, `useGamesData`/`useDevLabData` with 1hr
-  localStorage cache + silent fallback. Keys: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`.
+- ~~T2 Sanity CMS~~ — **CANCELLED** (2026-07-11): solo dev author, git MDX won. See ROADMAP.md.
+- Review + test the two draft tutorials in Unity, then flip `draft: false` to publish.
 - Optional: run `npm run build` on Windows to confirm prod bundle (sandbox SWC missing).
 
 ## AI / env note
@@ -376,3 +376,97 @@ GLB without running Three.js: `buf.readUInt32LE(12)` = JSON chunk length,
 `buf.slice(20, 20+jsonLen)` = the GLTF JSON. Parse and walk `nodes` array by name.
 
 **Ocean prepass + Three.js layers:** The worldY prepass must use a dedicated `OrthographicCamera` (not the main camera) or foam maps to screen-space and creates square/triangular artifacts that track camera movement. Any rotating/non-terrain mesh (e.g. `LighthouseBeam`) captured in the prepass appears as a rotating foam shape. Fix: `mesh.layers.set(2)` on the offending mesh + `prepassCam.layers.disableAll(); prepassCam.layers.enable(0)`. Then add `camera.layers.enable(2)` in that component so the main render camera can still see it. Default camera mask = layer 0 only — `layers.set(2)` makes a mesh invisible to the main camera unless you explicitly enable layer 2 on it.
+
+# Session 3+ — Learn engine, Dev Lab merge, fixed chrome (2026-07-11)
+
+**Strategy lives in `ROADMAP.md` (repo root) — read it alongside this file.** Key decisions:
+site = one-person studio ("studio of one", never fake-corporate "we"); content = MDX in git
+(Sanity cancelled); GuessIn10 (Skillmatics) is *contract live-ops*, never imply authorship;
+QA gate: no tutorial ships unless empty Unity project → playable game using only the tutorial.
+
+## Learn/tutorial engine (DONE)
+- **Content:** `src/content/learn/<topic>/<slug>.mdx`. Frontmatter: `title, description,
+  series, part (0 = setup chapter), level, unityVersion, packageRepo, updated, draft`.
+  `draft: true` → visible in dev, hidden in prod builds. Topics registry `TOPICS` in
+  `src/features/learn/learn.ts` (unity/csharp/uefn/verse; future subjects = add key + folder).
+- **Engine:** `src/features/learn/learn.ts` — fs + gray-matter at build time, `server-only`.
+  `getPostsByTopic`, `getAllPosts`, `getPost`, `getSeriesNav` (prev/next by `part`).
+- **Routes:** `/lab/[topic]/[slug]` article (MDXRemote RSC + rehype-slug + rehype-pretty-code
+  `github-dark-dimmed`), `/lab/[topic]` listing. `generateStaticParams` + `dynamicParams=false`.
+- **Clubbed with packages:** `app/lab/page.tsx` builds `tutorialsByRepo()` — matches tutorial
+  series to packages **by exact `packageRepo` frontmatter == `pkg.githubUrl`** → PackageCard
+  shows "Start the tutorial — N chapters" CTA (DevLabTabs). Separate LearnSection was
+  built then DELETED — packages and tutorials are one card now. IdeaForge moved below tabs (`mt-20`).
+- **3D gate:** `SceneBackdrop.tsx` returns `null` when `pathname.startsWith('/lab/')`
+  (deeper than /lab = reading page = flat + no WebGL). `/lab` itself keeps the 3D.
+- **Prose theming:** `.learn-prose` in globals.css overrides `--tw-prose-*` with
+  `rgb(var(--c-pearl)/…)` + gold → auto dusk/dawn flip. Code blocks stay dark in both themes.
+- **Deps added** (npm install MUST run on Windows, never in sandbox — clobbers win32 SWC):
+  next-mdx-remote, gray-matter, rehype-pretty-code, rehype-slug, shiki, server-only,
+  @tailwindcss/typography (+ plugin in tailwind.config.ts).
+- **Tutorials:** `unity/coin-rush-00-setup.mdx`, `csharp/oop-pillars-00-setup.mdx` — both
+  `draft: true`, written from real repo READMEs, UNTESTED in Unity. Learning path:
+  Coin Rush → OOP Pillars (aka "Screen Shift" — naming mismatch pending user decision).
+  Repo bug reported to user: oop-pillars README install URL has `[your-org]` placeholder.
+
+## Site chrome (DONE)
+- **NavBar frosted:** `bg-[rgba(22,11,50,0.55)] backdrop-blur-xl backdrop-saturate-150`;
+  dawn override in globals.css at 0.65 alpha.
+- **Footer = slim fixed status bar:** `h-12`, `frost-panel !fixed inset-x-0 bottom-0 z-[60]`,
+  single row. `main` has `pb-12` clearance (= footer height exactly). Leo launcher/teaser/window
+  all shifted +40px up (`bottom-16` / `bottom-[9.5rem]` / `bottom-[8.5rem]`) to clear it.
+- **Typography scale (uniform):** page/section titles `text-3xl sm:text-4xl font-bold`;
+  eyebrows `text-xs uppercase tracking-widest text-gold`; body `text-pearl/65`.
+  Home hero intentionally bigger (display type). Don't reintroduce `font-black` page titles.
+
+## New gotchas (hard-won)
+- **`.frost-panel` sets `position: relative`** and loads after Tailwind utilities → it BEATS
+  the `fixed` class. Any positioned frost element needs `!fixed` (or wrapper). Bit us on Footer.
+- **Sandbox corruption modes confirmed this session:** package.json truncated mid-write;
+  NavBar.tsx null-byte corrupted (fix: `git checkout HEAD --` when net change is zero);
+  sitemap.ts trailing nulls (`tr -d '\000'`); DevLabView/SceneBackdrop truncated (heredoc rewrite).
+  ALWAYS null-check + tail-check every written file: python `b'\x00' in bytes` — plain
+  `grep -qP '\x00'` MISSES them.
+- **`.git/index` can corrupt too** ("bad signature 0x00000000"). Fix: `rm .git/index && git reset`.
+  If rm says "Operation not permitted", call the cowork `allow_cowork_file_delete` tool first —
+  it unlocks deletion for the whole mounted folder (also required for deleting any repo file).
+- **Never `git reset --hard` to clean up** — tracked-file edits from other sessions die.
+  Surgical `git checkout HEAD -- <paths>` only.
+- **`tsconfig` includes `.next/types`** — stale/corrupt build cache breaks `tsc --noEmit`;
+  `rm -rf .next` is safe (regenerates).
+- **SectionHeader props are `eyebrow/title/subtitle`** (not `description`).
+
+## Session 4 additions (2026-07-11, progress tracking)
+- **Tutorial progress system:** `src/features/learn/progress.ts` (zustand persist,
+  key `uvi_learn_progress`, "visited = completed") + `ChapterRail.tsx` (left index rail
+  xl+, inline bar below xl). CTAs on DevLab cards + home Forge cards are progress-aware
+  via `useSeriesCta` (Start → Continue — Chapter X → Completed). SSR-safe via `useMounted`.
+- **`backdrop-filter` creates a containing block for `position: fixed` descendants** —
+  anything `fixed` inside `.frost-panel` scrolls with the page. Fix: `createPortal(..., document.body)`
+  (ChapterRail) or put the fixed element outside frost ancestors. Same trap as transform/filter.
+- **Zustand selector must not fabricate values:** `useStore((s) => s.x ?? [])` returns a
+  fresh `[]` each read → React "getSnapshot should be cached" infinite-loop warning.
+  Select the raw value, apply the fallback outside with a module-level constant.
+- Home order now: Hero → Stats ("Studio of one. Real impact.") → ForgeTeaser (live
+  tutorials) → GamesSection → Services → OpenSourceBanner → BuildPicker.
+- Both series at 5 chapters (0–4), all `draft: true` pending Unity testing.
+
+## Session 4 (cont.) — home polish + hero click bug (2026-07-11)
+- **Hero CTA buttons:** both `variant="ghost"` (equal weight, deliberate — dual audience).
+  They link to /lab and /games via `Button href`.
+- **LandmarkOverlay click-shield bug (major):** its scroll handler did
+  `style.pointerEvents = ''` near scroll-top, which ERASES React's inline
+  `pointer-events: none` → invisible fixed inset-0 z-50 div swallowed all hero clicks.
+  Fix: wrapper keeps `pointer-events: none` always; fade-on-scroll now toggles
+  `visibility` (also correctly disables placard hit-testing when hidden).
+  Lesson: `el.style.x = ''` clears the whole inline property, including what React set.
+- **Home game cards → /games:** overlay-link pattern (absolute inset-0 z-[1] Link inside
+  relative card; attribution <a> gets z-[2]) — avoids nested-anchor invalid HTML.
+  Partner cards deep-link `/games?tab=partners`.
+- **Games tab deep link:** GamesView reads `?tab=partners` via `window.location` in a
+  `useEffect` (NOT `useSearchParams` — that hook forces a Suspense boundary on static pages).
+- **GamesSection header honesty:** "Games we've shipped." → "Games we build & maintain."
+  + live-ops subtitle. Never imply authorship of GuessIn10 anywhere.
+- **DevLabTabs/DevLabView + learn.ts corruption count:** DevLabView truncated 3× total,
+  learn.ts 1× — ALWAYS rewrite these via bash heredoc, never the Edit tool.
+- Possible future: `?game=<id>` deep link to auto-open GameDetailPanel (same pattern).

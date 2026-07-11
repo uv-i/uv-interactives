@@ -1,12 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Github, BookOpen, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { Github, BookOpen, Clock, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Reveal } from '@/animation/Reveal';
 import type { TeachingPackage } from '@/content/models';
+import type { TutorialLink } from '@/features/devlab/DevLabView';
+import { useSeriesCta } from '@/features/learn/progress';
 
-function PackageCard({ pkg, index }: { pkg: TeachingPackage; index: number }) {
+function PackageCard({ pkg, index, tutorial }: {
+  pkg: TeachingPackage;
+  index: number;
+  tutorial?: TutorialLink;
+}) {
+  const cta = useSeriesCta(tutorial);
   if (pkg.status === 'coming-soon') {
     return (
       <Reveal as="li" delay={index * 0.08}>
@@ -66,24 +74,44 @@ function PackageCard({ pkg, index }: { pkg: TeachingPackage; index: number }) {
           ))}
         </div>
 
-        {/* CTA */}
-        <a
-          href={pkg.githubUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 inline-flex items-center gap-2 font-semibold text-gold transition-transform group-hover:translate-x-1"
-        >
-          <Github size={15} />
-          View on GitHub
-        </a>
+        {/* CTAs — tutorial first (progress-aware), then the source */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-6 gap-y-2">
+          {cta && (
+            <Link
+              href={cta.href}
+              className="inline-flex items-center gap-2 font-semibold text-gold transition-transform group-hover:translate-x-1"
+            >
+              <GraduationCap size={16} />
+              {cta.label}
+            </Link>
+          )}
+          {cta && tutorial && (
+            <Link
+              href={tutorial.topicHref}
+              className="text-xs text-pearl/50 underline-offset-2 transition-colors hover:text-gold hover:underline"
+            >
+              {cta.done}/{cta.total} chapters — view all
+            </Link>
+          )}
+          <a
+            href={pkg.githubUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-pearl/70 transition-colors hover:text-gold"
+          >
+            <Github size={15} />
+            View on GitHub
+          </a>
+        </div>
       </div>
     </Reveal>
   );
 }
 
-export function DevLabTabs({ grouped, categories }: {
+export function DevLabTabs({ grouped, categories, tutorials = {} }: {
   grouped: Record<string, TeachingPackage[]>;
   categories: string[];
+  tutorials?: Record<string, TutorialLink>;
 }) {
   const [active, setActive] = useState(categories[0] ?? '');
   const packages = grouped[active] ?? [];
@@ -118,7 +146,7 @@ export function DevLabTabs({ grouped, categories }: {
           className="grid gap-5 md:grid-cols-2"
         >
           {packages.map((pkg, i) => (
-            <PackageCard key={pkg.id} pkg={pkg} index={i} />
+            <PackageCard key={pkg.id} pkg={pkg} index={i} tutorial={tutorials[pkg.githubUrl]} />
           ))}
         </motion.ul>
       </AnimatePresence>
