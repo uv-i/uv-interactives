@@ -1,0 +1,100 @@
+---
+title: 'Scene Building — Terrain, Post-Processing & Persistence'
+description: 'Chapter 4 (Module 04) — sculpt a terrain, grade it like a film, load scenes asynchronously, and meet DontDestroyOnLoad.'
+series: unity-fundamentals
+part: 4
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+A scene is a level. This module makes yours *look* like one — then teaches you to
+move between several without losing your managers on the way.
+
+## Terrain — digital clay
+
+Open **`Module04_SceneBuilding/Scenes/01_Terrain`**. Create a Terrain
+(**GameObject → 3D Object → Terrain**) and just… sculpt for ten minutes. Raise/Lower,
+Smooth, then **Paint Texture** with a Terrain Layer (grass, rock). The Terrain
+Collider comes free — characters walk on whatever you sculpt.
+
+Then light it: a **Directional Light** is the sun, and only its *rotation* matters —
+position is irrelevant for a "infinitely far away" light. Rotate for sun angle;
+recolour for mood. Deep orange = sunset, cold blue = moonlight. Two clicks, entire
+scene transformed.
+
+## Post-processing — the gasp demo
+
+Open **`02_PostProcessing`**. In URP: add a **Volume** to the scene, create a
+Profile, add overrides — **Bloom** (bright things glow), **Color Adjustments**
+(saturation, contrast), **Vignette** (darkened edges).
+
+Do the before/after toggle. This is the single most dramatic visual moment of the
+course: the same grey scene becomes *cinematic* with three checkboxes. Then push it:
+saturation −100 for noir, blue shadows + orange highlights for the Hollywood look.
+Same level, entirely different film.
+
+## Scene management — moving between levels
+
+Open **`03_Transitions`**. Three tools from `SceneLoader.cs` and `FadeTransition.cs`:
+
+```csharp
+SceneManager.LoadScene("Level2");            // instant switch (hitches on big scenes)
+SceneManager.LoadSceneAsync("Level2");       // loads in background; progress 0→1
+```
+
+Async loading is how loading bars exist: read `operation.progress` while the current
+scene keeps rendering. And the rule you already hit in Chapter 0: **a scene must be
+in File → Build Settings or loading it silently fails.**
+
+## DontDestroyOnLoad — the survivors
+
+Everything in a scene dies when the next scene loads. Except:
+
+```csharp
+DontDestroyOnLoad(gameObject);   // this object now survives ALL scene loads
+```
+
+`PersistentManager.cs` uses it with a singleton guard — the pattern for audio
+managers (music that doesn't restart at every level) and game state (score that
+survives the transition). The guard matters: load the first scene twice and you'd
+have two managers without it. Also the warning that comes with the power: everything
+persistent is effectively a global — use it for the few true managers, nothing else.
+
+<InstructorNotes>
+
+- Terrain: 10 unstructured minutes first. It's the most tactile tool in Unity —
+  structured teaching before play wastes the excitement.
+- Post-processing before/after generates the loudest reaction of the course. Do it
+  early in the session, screenshots encouraged.
+- Set the colour-grading challenge: "make golden hour, then make horror" — 5 minutes
+  each, compare results across the class.
+- DontDestroyOnLoad: whiteboard the scene stack (Scene A dies, persistent layer
+  floats above) BEFORE showing code. The duplicate-manager bug is worth staging.
+
+</InstructorNotes>
+
+## Try it
+
+Build the fade: hook `FadeTransition` before the scene load, so the screen dips to
+black, loads, and fades back in. Every polished game does this; yours does now too.
+
+## Interview corner
+
+**LoadScene vs LoadSceneAsync?** Sync freezes the frame until loaded; async loads in
+the background exposing progress — required for loading screens.
+
+**Risks of DontDestroyOnLoad?** Duplicates on scene reload (guard with a singleton
+check) and hidden global state — keep the persistent set tiny.
+
+## Checkpoint
+
+- [ ] Sculpted terrain with at least two painted textures
+- [ ] Before/after post-processing toggle witnessed and screenshotted
+- [ ] A scene transition with fade works
+- [ ] You can explain the duplicate-manager bug and its guard
+
+**Next → Chapter 5: UI Development** — anchors (the skill), health bars, and why
+your menu looks broken on every phone until this chapter.

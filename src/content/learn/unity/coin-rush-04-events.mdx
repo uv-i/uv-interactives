@@ -67,6 +67,9 @@ GameEvents.RaiseCoinCollected(data.pointValue);   // from Coin.cs
 The coin doesn't know the score exists. The score doesn't know coins exist. Both know
 only the radio station.
 
+<EventFanout source="Coin.Raise()" hub="GameEvents" listeners="GameManager,UIManager,AudioManager" note="the coin never learns who was listening" />
+
+
 ## The subscriber's side — and the golden rule
 
 Find the pattern in `UIManager.cs` or `GameManager.cs`:

@@ -1,0 +1,111 @@
+---
+title: 'Introduction to Unity — Editor, Game Loop & First Scripts'
+description: 'Chapter 1 (Module 01) — the five Editor panels, GameObjects in the Hierarchy, the Awake→Start→Update heartbeat, and the Play-mode trap.'
+series: unity-fundamentals
+part: 1
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+Open scene **`Module01_Intro/Scenes/01_EditorTour`**. Nothing to build yet — this
+chapter is about learning to *see* the Editor.
+
+## The five panels
+
+Unity's Editor is five windows working together, and you'll use all five in every
+session for the rest of your career:
+
+- **Hierarchy** — everything in your scene, as a tree. The cast list of a film.
+- **Scene view** — your 3D workspace, where you build.
+- **Game view** — what the *player* sees, through the camera.
+- **Inspector** — every detail of whatever you've selected. The Wikipedia page of the object.
+- **Project** — your files. Scripts, materials, scenes, everything on disk.
+
+Lost a panel? **Window → Layouts → Default** resets everything.
+
+## GameObjects — everything is one
+
+A new scene contains two GameObjects: a **Main Camera** and a **Directional Light**.
+Click each in the Hierarchy and watch the Inspector change. Here's the core insight of
+Unity's entire architecture: a GameObject *by itself does nothing* — the **components**
+attached to it give it behaviour. The camera object is just a GameObject wearing a
+Camera component. This idea carries the whole series.
+
+## The Play-mode trap (learn it now, thank us forever)
+
+Press **▶**. The Editor dims slightly — that dimming is a warning:
+
+> **Any Inspector change you make during Play mode is LOST when you stop.**
+
+Prove it: enter Play mode, change something (move the camera), press stop — it snaps
+back. Every Unity developer has lost real work to this. Make the warning impossible
+to miss: **Edit → Preferences → Colors → Playmode Tint** → set it to something loud.
+
+## The game loop — the heartbeat
+
+Open scene **`02_GameLoop`**, then follow its panel: create an empty GameObject,
+add the `GameLoopDemo` component, press Play, open the Console
+(**Window → General → Console**).
+
+You'll see the three lifecycle methods fire in order:
+
+```csharp
+private void Awake()  { }  // runs once, the moment the object is created
+private void Start()  { }  // runs once, just before the first frame
+private void Update() { }  // runs EVERY frame, ~60 times per second, forever
+```
+
+The rule that prevents a whole category of bugs: **set yourself up in Awake(),
+talk to other objects in Start()**. Awake order between objects isn't guaranteed —
+reaching for another object in Awake() risks grabbing it before it exists.
+
+A game is a flipbook: input → logic → physics → render, sixty pages a second.
+`Update()` is your code's slot in every page. Every mechanic you will ever build
+is timed around this heartbeat.
+
+<CycleDiagram steps="Input|key presses,Logic|game rules,Physics|forces,Render|draw frame" note="loops ~60 times a second until the game ends" />
+
+
+<InstructorNotes>
+
+- Give students 2–3 minutes of silent exploration before naming any panel — let
+  them discover the layout first.
+- Do the Play-mode data-loss demo *deliberately and theatrically*. They won't
+  believe it until they see the value snap back.
+- Console during the lifecycle demo: point at the Awake line, then Start, then the
+  repeating Update flood. Toggle "Log Every Frame" off and discuss why production
+  games never spam the Console.
+- Whiteboard the loop and leave it visible all session.
+
+</InstructorNotes>
+
+## Try it
+
+In `01_EditorTour`: create a Cube (**GameObject → 3D Object → Cube**), select it,
+and *count its components* in the Inspector. Four: Transform, Mesh Filter,
+Mesh Renderer, Box Collider. Delete the Mesh Renderer component — the cube vanishes
+from view but still exists in the Hierarchy. Undo. You've just proven the
+GameObject-vs-component split with your own hands.
+
+## Interview corner
+
+**Awake() vs Start()?** Awake runs at object creation, before any Start in the scene;
+Start runs just before the first frame after all Awakes finish. Self-setup in Awake,
+cross-object references in Start.
+
+**Update() vs FixedUpdate()?** Update runs once per rendered frame (variable rate);
+FixedUpdate runs on a fixed physics clock (50/s default). Physics belongs in
+FixedUpdate; input polling in Update so no key press is missed.
+
+## Checkpoint
+
+- [ ] You can name all five panels and their jobs without looking
+- [ ] You changed something in Play mode and watched it revert
+- [ ] `GameLoopDemo` ran and you can explain the Console output order
+- [ ] Playmode tint is set to something you cannot miss
+
+**Next → Chapter 2: GameObjects & Components** — prefabs, physics, and the
+component system that makes Unity feel like LEGO.

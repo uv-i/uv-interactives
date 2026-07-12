@@ -1,0 +1,111 @@
+---
+title: '3D Development — CharacterController, NavMesh AI & Cinemachine'
+description: 'Chapter 7 (Module 07) — a third-person controller with camera-relative movement, a patrol/chase/attack enemy on a baked NavMesh, and melee hitboxes.'
+series: unity-fundamentals
+part: 7
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+The 3D module assembles a real game slice: a controllable character, a camera that
+follows properly, and an enemy with a brain. Three systems, three industry-standard
+tools.
+
+## CharacterController — the deliberate physics cheat
+
+Open **`Module07_3D/Scenes/01_ThirdPerson`**. `ThirdPersonController.cs` does NOT
+use a Rigidbody. A **CharacterController** is a capsule that moves *exactly* where
+told, auto-handles steps and slopes, and exposes `isGrounded` for free. The trade:
+you simulate gravity yourself —
+
+```csharp
+_velocity.y += gravity * Time.deltaTime;
+_controller.Move(_velocity * Time.deltaTime);
+```
+
+The design rule: **Rigidbody = realistic object. CharacterController = character who
+politely ignores physics for playability.** Players don't want realistic movement;
+they want *responsive* movement.
+
+**Camera-relative movement** is the second half: pressing W must mean "toward where
+the camera looks", not world-north. The angle math adds the camera's Y rotation to
+the input angle, smoothed with `SmoothDampAngle`. Try commenting the camera term out
+— movement instantly feels broken. That's the lesson.
+
+The camera itself: **Cinemachine**. Create → Cinemachine Camera, set Follow and
+Look At to the player — done. No camera code, no jitter, no wall-clipping. (Unity 6
+uses Cinemachine 3.x: the component is `CinemachineCamera`, not the older
+`CinemachineVirtualCamera` you'll see in old tutorials.)
+
+## NavMesh — giving the world a map
+
+Open **`02_NavMeshAI`**. Pathfinding in three steps:
+
+1. Mark floors/obstacles **Navigation Static**.
+2. **Window → AI → Navigation → Bake** — the blue overlay that appears IS the map
+   of everywhere an agent can walk.
+3. Put a **NavMeshAgent** on the enemy and call `agent.SetDestination(target)` —
+   Unity plans the path, walks it, and avoids other agents.
+
+`EnemyAI3D.cs` runs a state machine on top — the enum + switch pattern:
+**Patrol** (walk waypoints) → **Chase** (player within the yellow Gizmo sphere) →
+**Attack** (player within the red one). Distance checks drive the transitions. This
+exact structure — an enum, a switch, transition conditions — is how most game AI
+below AAA-scale actually ships.
+
+<StateDiagram states="Patrol|walk waypoints,Chase|run at player,Attack|stop and swing" transitions="0-1|yellow sphere,1-2|red sphere,1-0|player lost" note="draw this before reading the code — it will read like the drawing" />
+ (You'll formalise it in Coin Rush's enum chapter.)
+
+Waypoints are just empty GameObjects dragged into the agent's array — place 3–4
+around the level and watch it loop.
+
+## Melee combat — the hitbox pattern
+
+Open **`03_Combat`**. `MeleeAttack.cs` implements the hitbox used in every action
+game: an empty child object at the hand with a **trigger SphereCollider that stays
+disabled**. Attacking enables it for 0.2 seconds (a coroutine — Module 3 again),
+`OnTriggerEnter` deals damage through the same `HealthSystem` from Module 3, then it
+disables. Why not always-on? An enabled hitbox damages everything near you every
+frame — the enable-window IS the attack timing.
+
+<InstructorNotes>
+
+- CharacterController vs Rigidbody is a genuine design discussion — let students
+  argue it for five minutes before giving the rule.
+- The NavMesh bake is a magic moment: blue carpet appears from nothing. Bake live.
+- Agent radius must match the capsule radius or agents clip walls — the #1 NavMesh
+  support question.
+- Draw the AI state machine on the whiteboard before opening the script. Boxes,
+  arrows, conditions. The code then reads like the diagram.
+- Point out HealthSystem being reused across modules 3, 6, 7 — modular design paying
+  rent visibly.
+
+</InstructorNotes>
+
+## Try it
+
+Add a fourth state: **Flee** — when the enemy's own health drops below 30%, it runs
+*away* from the player (SetDestination in the opposite direction). One enum entry,
+one case, one condition. If that felt easy, the state machine did its job.
+
+## Interview corner
+
+**CharacterController vs Rigidbody for players?** Controller: precise, steps/slopes
+free, immune to forces. Rigidbody: physical realism, pushable. Players usually want
+the controller.
+
+**What does baking a NavMesh do?** Pre-computes walkable polygons from static
+geometry into an asset agents query at runtime; re-bake when static geometry changes.
+
+## Checkpoint
+
+- [ ] Third-person movement is camera-relative and you know why the offset matters
+- [ ] NavMesh baked; enemy patrols, chases, and attacks with visible Gizmo ranges
+- [ ] Hitbox deals damage only during the attack window
+- [ ] Flee state works
+
+**Next → Chapter 8: Animation & VFX** — Blend Trees, particles, and the 30 minutes
+of "juice" that make your combat feel better than most student games ever do.

@@ -51,6 +51,9 @@ a bug in one copy, you now have four places to fix it and you *will* forget one.
 With inheritance it's forty lines, written once, in `BaseScreen.cs`. Every screen
 inherits the fix the moment you make it.
 
+<TreeDiagram root="BaseScreen|abstract — the contract" leaves="SplashScreen,LoadingScreen,GameplayHUD,GameEndScreen" note="forty lines written once, inherited four times" />
+
+
 ## override — and its evil twin
 
 ```csharp

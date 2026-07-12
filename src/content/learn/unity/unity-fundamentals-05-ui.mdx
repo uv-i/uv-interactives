@@ -1,0 +1,113 @@
+---
+title: 'UI Development — Canvas, Anchors & Panels That Behave'
+description: 'Chapter 5 (Module 05) — Canvas scaling, the anchor skill, TextMeshPro, CanvasGroup panel management, and settings that persist.'
+series: unity-fundamentals
+part: 5
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+UI is where players judge your polish first — and where beginners' games visibly
+break on any screen that isn't their monitor. One concept prevents that: anchors.
+
+## Canvas — the stage
+
+Open **`Module05_UI/Scenes/01_HUD`**. All UI lives inside a **Canvas**. First thing,
+every time: set **Canvas Scaler → Scale With Screen Size**, reference resolution
+1920×1080. Now your UI scales proportionally on every display. Skip this and your UI
+is a fixed pixel size — enormous on phones, microscopic on 4K.
+
+## Anchors — THE skill of this module
+
+An anchor ties a UI element to a point on its parent. Health bar anchored top-left
+*stays* top-left on every aspect ratio. The workflow that saves hours:
+
+1. **Set the anchor BEFORE positioning** the element.
+2. Use the anchor preset grid in the Inspector — and hold **Alt+Shift** while
+   clicking a preset to set anchor *and* snap position in one click.
+
+Break it on purpose: place a button centred with default anchors, then drag the Game
+view to a phone aspect ratio — watch it drift off-screen. Re-anchor to centre — fixed.
+The break teaches more than the rule.
+
+## TextMeshPro — always
+
+Legacy Text blurs when scaled; **TextMeshPro** renders via signed distance fields and
+stays crisp at any size. Use `TextMeshProUGUI` for UI text, always:
+
+```csharp
+using TMPro;
+
+[SerializeField] private TextMeshProUGUI scoreText;
+scoreText.text = $"Score: {score}";
+```
+
+`HealthBar.cs` and `ScoreDisplay.cs` in this module drive TMP elements — and notice
+who tells them to update: the UnityEvents you wired in Module 3. Modules stack.
+
+## CanvasGroup — panels that toggle cleanly
+
+Open **`02_GameOverPanel`**. To hide a panel, beginners reach for `SetActive(false)`
+— which fires lifecycle events and rebuilds layout every toggle. `UIManager.cs`
+uses **CanvasGroup** instead:
+
+```csharp
+panel.alpha = 0f;              // invisible
+panel.interactable = false;    // buttons dead
+panel.blocksRaycasts = false;  // clicks pass through
+```
+
+Three floats to hide, three to show — no lifecycle churn. (Your Game Over panel wires
+to `HealthSystem.OnDeath`, Module 3's event, doing exactly what it promised.)
+
+Buttons: the **OnClick()** list in the Inspector — drag in an object, pick a public
+method. The Restart button calls a method that reloads the scene *and resets
+`Time.timeScale = 1`* — a bug-in-waiting if the game was paused when it died.
+
+## Settings that survive — sliders, dB, PlayerPrefs
+
+Open **`03_Settings`**. Two real-world lessons in `SettingsUI.cs`:
+
+**Volume is logarithmic.** A 0–1 slider can't feed an AudioMixer directly —
+perceived loudness is log-scale: `Mathf.Log10(Mathf.Clamp(v, 0.0001f, 1f)) * 20f`.
+Slider 0.5 ≈ −6dB, *not* half volume. Every game's audio slider uses this formula.
+
+**PlayerPrefs persists settings:** `PlayerPrefs.SetFloat("MasterVol", v)` survives
+closing the game. Settings only — not save games, not secrets.
+
+<InstructorNotes>
+
+- Anchors: show the UI BREAKING first (resize Game view), then fix together.
+  Breakage-first is the only way anchors stick.
+- CanvasGroup vs SetActive: mention it when the first student's panel flickers or
+  resets state — the bug arrives on schedule.
+- The Log10 curve deserves two minutes on a whiteboard: why 0.5 isn't half volume.
+  It's real signal maths and students feel smart learning it.
+
+</InstructorNotes>
+
+## Try it
+
+Resize the Game view through phone, tablet, ultrawide. Fix every element that moves
+somewhere stupid — anchor by anchor — until nothing does. That exercise *is* UI work.
+
+## Interview corner
+
+**Why CanvasGroup over SetActive for panels?** No OnEnable/OnDisable churn, no layout
+rebuild, cheaper for frequent toggles — alpha + interactable + blocksRaycasts.
+
+**Why do volume sliders use Log10?** Hearing is logarithmic; linear 0.5 must map to
+≈−6dB for perceived half-loudness, so `Log10(v) * 20`.
+
+## Checkpoint
+
+- [ ] Canvas Scaler configured; UI survives three aspect ratios
+- [ ] You know the Alt+Shift anchor shortcut by muscle memory
+- [ ] Game Over panel shows via CanvasGroup, wired from OnDeath
+- [ ] Volume slider converts to dB and persists across Play sessions
+
+**Next → Chapter 6: 2D Development** — tilemaps, and the two invisible features
+(coyote time, jump buffering) that separate good platformers from frustrating ones.

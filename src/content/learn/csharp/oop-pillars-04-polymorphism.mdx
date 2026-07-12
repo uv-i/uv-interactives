@@ -47,6 +47,9 @@ which calls `OnShow()` — and *that* dispatches to whichever override the actua
 carries: the splash starts its timer, the HUD resets its score, your pause screen
 freezes time. **The caller never changes. Only the result does.**
 
+<EventFanout source="ShowScreen(i)" hub="BaseScreen.Show()" listeners="SplashScreen,LoadingScreen,GameplayHUD,GameEndScreen,PauseScreen" note="one call, five different answers" />
+
+
 Prove it: each screen's `OnShow()` already has a `Debug.Log` with its class name.
 Play, watch the Console — one line of calling code, four different log messages.
 

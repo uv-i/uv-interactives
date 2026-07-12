@@ -1,0 +1,96 @@
+---
+title: '2D Development — Tilemaps & the Feel of a Good Jump'
+description: 'Chapter 6 (Module 06) — slice a sprite sheet, paint a level, and build a platformer controller with coyote time, jump buffering, and variable jump height.'
+series: unity-fundamentals
+part: 6
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+Unity's 2D side is a parallel universe: its own physics (`Rigidbody2D`, `Collider2D`
+— the 3D and 2D systems never interact), its own level editor, and its own dark art:
+*game feel*. This module builds a platformer that feels right, and teaches you why.
+
+## Tilemaps — painting levels
+
+Open **`Module06_2D/Scenes/01_Tilemap`**. The 2D level pipeline, start to finish:
+
+1. Import a sprite sheet (free: kenney.nl's Platformer Pack) → Inspector →
+   **Sprite Mode: Multiple** (the step everyone forgets).
+2. **Sprite Editor → Slice → Grid By Cell Size** — one image becomes many sprites.
+3. Drag them into a **Tile Palette** (**Window → 2D → Tile Palette**), then paint
+   your level onto a Tilemap like Photoshop with collision.
+
+Then the collider trick that separates working games from janky ones: add **Tilemap
+Collider 2D**, then **Composite Collider 2D** (its Rigidbody2D set to *Static*), and
+tick **Used By Composite** on the tilemap collider. Without it, every tile has its own
+tiny collider and characters *catch on the seams* between tiles. Composite merges them
+into one smooth outline.
+
+## The controller — three invisible features
+
+Open **`02_PlayerController`** and read `PlayerController2D.cs`. Three mechanisms,
+none of which players ever see — and all of which they *feel*:
+
+**Coyote time.** After walking off a ledge you get a 0.15s window where jump still
+works — named for Wile E. Coyote hovering past the cliff edge. Human reaction time
+means players press jump a few frames "too late" constantly; without this grace
+window the game feels unfairly slippery. A timer resets while grounded and counts
+down in the air; jump is allowed while it's positive.
+
+**Jump buffering.** Press jump slightly *before* landing and a 0.1s buffer remembers
+it, executing the jump the frame you touch down. Without it, early presses vanish
+and the controls feel unresponsive.
+
+**Variable jump height.** Release the jump key early → upward velocity halves →
+short hop. Hold → full jump. One `if` statement, in Super Mario Bros since 1985.
+
+Ground detection here uses `Physics2D.OverlapCircle` — a circle at the feet checking
+a ground layer. More forgiving than a single ray on uneven tile terrain.
+
+## The full scene
+
+Open **`03_FullScene`**: `EnemyPatrol2D` (walks a range, flips at the edges — watch
+its Gizmo line in Scene view), `Collectible2D` (bobs on a sine wave —
+`Mathf.Sin(Time.time * speed) * height`, a pattern you'll reuse forever), and
+`DeathZone2D` (a wide trigger under the level that reloads the scene — every
+platformer's out-of-bounds handler, in its simplest form).
+
+<InstructorNotes>
+
+- Coyote time demo order: WITHOUT first. Walk to the edge, jump, fall. The groan is
+  the lesson. Then enable it and repeat.
+- "Coyote time is invisible to players who have it. They only notice when it's missing."
+- Sprite slicing: walk the full import pipeline slowly — Multiple mode is missed by
+  half the class every time.
+- Composite Collider: demonstrate the seam-catch jitter first, then fix it live.
+
+</InstructorNotes>
+
+## Try it
+
+Set coyote time to 0 in the Inspector and play your own level for two minutes. Then
+set it to 0.15 and play again. You now understand game feel at a level most players
+never will — and you'll never ship a platformer without it.
+
+## Interview corner
+
+**What is coyote time and why implement it?** A 100–200ms post-ledge jump grace
+window compensating for human reaction time; without it edges feel slippery and
+unfair.
+
+**Why Composite Collider 2D on tilemaps?** Per-tile colliders create micro-seams
+that catch characters; Composite merges them into one smooth polygon.
+
+## Checkpoint
+
+- [ ] Sprite sheet sliced and a level painted with tiles
+- [ ] Seam-catching demonstrated, then fixed with Composite Collider
+- [ ] You played with and without coyote time and felt the difference
+- [ ] Coins collected, death zone respawns, enemy patrols
+
+**Next → Chapter 7: 3D Development** — CharacterController vs Rigidbody, AI that
+navigates the world, and a camera you don't have to write.

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Archivo_Black, Space_Grotesk } from 'next/font/google';
+import { Archivo_Black, Space_Grotesk, Caveat } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import '@/styles/globals.css';
@@ -29,9 +29,17 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 
+/* Handwritten accent — teacher margin notes, diagram callouts. Never body text. */
+const caveat = Caveat({
+  weight: ['500', '600'],
+  subsets: ['latin'],
+  variable: '--font-hand',
+  display: 'swap',
+});
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${archivoBlack.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${archivoBlack.variable} ${spaceGrotesk.variable} ${caveat.variable}`}>
       <body className="min-h-screen antialiased">
         <JsonLd data={organizationLd(studioConfig)} />
         <JsonLd data={personLd(studioConfig)} />

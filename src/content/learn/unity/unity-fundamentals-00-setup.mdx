@@ -1,0 +1,95 @@
+---
+title: 'Install & Generate: Your Learning Project'
+description: 'Chapter 0 — create a URP project, import the Unity Fundamentals template, install four packages, and generate all 30 teaching scenes. Zero prerequisites.'
+series: unity-fundamentals
+seriesTitle: 'Unity Fundamentals'
+part: 0
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+This is the start of the whole track — the series that assumes you know *nothing*
+about Unity. By the end of this chapter you'll have a project containing 30 teaching
+scenes across 10 modules, each with a blue instruction panel telling you what to build.
+By the end of the series you'll have built a third-person game with pathfinding AI,
+dynamic music, and controller support.
+
+## What you need
+
+- **Unity Hub** with **Unity 6000.0 or newer** installed
+- ~5 GB free disk space
+- No prior Unity or programming experience
+
+## 1. Create the project
+
+1. Unity Hub → **New project** → pick the **Universal 3D** template (this is URP —
+   Unity's modern render pipeline; the whole series targets it).
+2. Name it `UnityFundamentals`, **Create project**. First open takes a few minutes.
+
+## 2. Import the teaching project
+
+1. Download the template: [github.com/uv-interactives/uvi-learn-unity-fundamentals](https://github.com/uv-interactives/uvi-learn-unity-fundamentals)
+   — **Code → Download ZIP**, unzip it.
+2. Copy everything inside its `Assets/` folder into **your project's** `Assets/` folder
+   (drag it into the Project window, or copy in your file explorer while Unity is closed).
+3. Let Unity import. Expect a few Console warnings about missing packages — the next
+   step fixes them.
+
+## 3. Install the four packages
+
+**Window → Package Manager → + → Add package by name**, one at a time:
+
+```text
+com.unity.inputsystem
+com.unity.cinemachine
+com.unity.probuilder
+com.unity.ai.navigation
+```
+
+> **The Editor will ask to restart after installing Input System — this is normal,
+> click yes.** It looks alarming the first time; it's routine.
+
+## 4. Two settings before scene generation
+
+1. **Window → TextMeshPro → Import TMP Essential Resources** — the scene instruction
+   panels are TMP text; without this they render as empty pink boxes.
+2. **Edit → Project Settings → Player → Active Input Handling → Both** — early modules
+   use the classic input, Module 10 upgrades you to the new Input System.
+
+## 5. Generate all 30 scenes
+
+Menu bar → **Teaching Project → Create All Module Scenes**.
+
+Watch the Project window: every `ModuleXX` folder gets its scenes, each pre-loaded
+with a README canvas. This menu comes from `TeachingSceneCreator.cs` — an *editor
+script* included in the template. By Module 3 you'll understand how it works.
+
+## 6. Add scenes to Build Settings
+
+**File → Build Settings** → drag all 30 scenes into "Scenes in Build" (or open each
+and click Add Open Scenes). Module 4 explains *why* — scenes not registered here
+can't be loaded by code.
+
+<InstructorNotes title="running this as a course">
+
+- Lock the entire class to the SAME Unity version before day one. Version
+  fragmentation causes cryptic, demoralising bugs — non-negotiable.
+- Have students install Unity Hub + the editor BEFORE the first session; the
+  download eats 30+ minutes of class time.
+- The Input System restart prompt panics students — warn them before step 3.
+- `SCENE_SETUP_GUIDE.md` in the repo is your scene-by-scene teaching reference.
+
+</InstructorNotes>
+
+## ✅ Checkpoint — all true before Chapter 1
+
+- [ ] Project on the **Universal 3D (URP)** template
+- [ ] All four packages installed; Editor restarted once without drama
+- [ ] **Teaching Project** menu visible in the menu bar
+- [ ] 30 scenes generated; `Module01/01_EditorTour` opens with a readable blue panel
+
+**Next → Chapter 1: Introduction to Unity** — the five panels of the Editor, the
+game loop heartbeat, and the Play-mode trap that has burned every developer alive.

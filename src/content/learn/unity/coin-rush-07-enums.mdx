@@ -63,6 +63,9 @@ Notice the layered design from earlier chapters: the *starting* state lives in t
 **ScriptableObject** (Ch2, designer's choice), the *current* state lives in the
 controller (runtime), and the switch does the thinking.
 
+<StateDiagram states="Patrol|walk waypoints,Chaser|follow player" transitions="0-1|player within chaseRange,1-0|player escapes" note="one enum assignment = a whole new personality" />
+
+
 ## Why not if/else?
 
 An `if/else if` chain works — until it doesn't. The switch on an enum gives you two

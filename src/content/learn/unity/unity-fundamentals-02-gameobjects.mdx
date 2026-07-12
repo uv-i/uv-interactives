@@ -1,0 +1,112 @@
+---
+title: 'GameObjects & Components — Unity as LEGO'
+description: 'Chapter 2 (Module 02) — the component system, prefabs and their superpower, triggers vs colliders, and a physics playground.'
+series: unity-fundamentals
+part: 2
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+Open **`Module02_GameObjects/Scenes/01_ComponentSystem`**. Chapter 1 told you
+"everything is a GameObject + components" — this chapter makes you *feel* it.
+
+## Components are the bricks
+
+A Sphere in Unity is an empty GameObject wearing three hats: **Mesh Filter** (holds
+the shape data), **Mesh Renderer** (draws it), and a **Collider** (its physical
+shape). Add a **Rigidbody** and it obeys gravity. Add your script and it obeys *you*.
+Any combination, any object — no inheritance chains, just stacking bricks.
+
+<TreeDiagram root="Sphere|just a GameObject" leaves="Mesh Filter,Mesh Renderer,Collider,Rigidbody,YourScript.cs" note="the Inspector IS this diagram, live" />
+
+
+Run the scene: `ComponentShowcase.cs` adds and removes a Rigidbody with the **R** and
+**D** keys *while the game runs*. Behaviour added and removed at runtime — that's the
+component system's whole pitch.
+
+## Prefabs — the cookie cutter
+
+Open **`02_Prefabs`**. A **Prefab** is a GameObject template saved in your Project:
+drag an object from the Hierarchy into the Project window and its icon turns blue.
+Each copy you drag back into a scene is an *instance*.
+
+The superpower: **edit the Prefab source and every instance everywhere updates.**
+Double-click the Prefab, change its material colour, exit — every instance in the
+scene just changed. A hundred enemies rebalanced by editing one asset. This is how
+real games manage thousands of objects.
+
+From code, `PrefabSpawner.cs` shows the runtime side:
+
+```csharp
+Instantiate(prefabToSpawn, position, rotation);  // clone into the scene
+Destroy(gameObject);                             // remove from the scene
+```
+
+Space spawns, C clears. Enemies, bullets, pickups, explosions — everything that
+appears during gameplay comes through `Instantiate`.
+
+## Triggers vs Colliders — the ghost wall
+
+Open **`01_ComponentSystem`** again and run `TriggerColliderDemo.cs`. The distinction
+confuses everyone for weeks, so nail it now:
+
+- **Collider (Is Trigger OFF)** — solid. Blocks movement. Fires `OnCollisionEnter`.
+- **Collider (Is Trigger ON)** — a ghost wall. Objects pass through, but it *knows*
+  they did. Fires `OnTriggerEnter`.
+
+Triggers are your pickups, damage zones, checkpoints, and detection areas.
+One rule to remember: **trigger and collision events need at least one Rigidbody
+involved** — two static colliders touching fire nothing.
+
+## Physics playground
+
+Open **`03_PhysicsPlayground`** and follow its panel: floor plane, five shapes, a
+Rigidbody on each. Run `PhysicsPlayground.cs` — **Space** jumps, **E** detonates an
+explosion force, **G** toggles gravity.
+
+The physics golden rule, first of many callbacks to it: **never set
+`transform.position` on a Rigidbody object.** You apply forces
+(`rb.AddForce(direction * power)`) and let the engine calculate where things end up.
+Teleporting a physics object fights the simulation — jitter, wall-tunnelling, chaos.
+
+<InstructorNotes>
+
+- Do the Prefab override demo LIVE — change the source, watch all instances flip.
+  This is the reliable "aha" moment of the module.
+- Physics: let them press Play and watch things fall BEFORE explaining Rigidbody.
+  Observation first, concept second.
+- Show the drag slider live: drag 10 → objects float like feathers; drag 0 → they
+  slide forever. Immediate visual feedback beats definitions.
+- The missing-Rigidbody trigger bug will hit half the class — let one student debug
+  it publicly; it's a better lesson than the warning.
+
+</InstructorNotes>
+
+## Try it
+
+Make a Physics Material (**Project → Create → Physics Material**), set Bounciness
+to 0.9, assign it to one sphere's Collider. Play. One bouncy sphere among the dead
+ones — and you changed zero code.
+
+## Interview corner
+
+**Why not set transform.position on a Rigidbody?** The physics engine owns that
+object's motion; manual position writes teleport it past collision checks. Use
+`rb.MovePosition()` or forces.
+
+**OnCollisionEnter vs OnTriggerEnter?** Collision = physical contact between solid
+colliders, gives contact points. Trigger = overlap notification through a ghost
+collider, no physical response.
+
+## Checkpoint
+
+- [ ] You can list the components that make a "Sphere" a sphere
+- [ ] You edited a Prefab source and watched instances update
+- [ ] You can explain the ghost-wall analogy and the one-Rigidbody rule
+- [ ] Bouncy sphere bounces
+
+**Next → Chapter 3: C# Scripting** — the biggest module: lifecycle, player movement,
+UnityEvents, health systems, and coroutines. This is where hobbyists become developers.

@@ -397,3 +397,86 @@ html[data-theme='dawn'] .forge-tag {
 }
 .learn-prose code::before,
 .learn-prose code::after { content: none; }
+
+/* ── Learn Shell ────────────────────────────────────────────────────── */
+/* Teacher notes hidden for students; the toggle flips html[data-teacher] */
+html[data-teacher='0'] .instructor-notes,
+html:not([data-teacher]) .instructor-notes { display: none; }
+
+/* Chalk on slate (dusk) */
+.instructor-notes {
+  margin: 1.5rem 0;
+  padding: 0.85rem 1.1rem;
+  border-radius: 0.75rem;
+  background: #1d2430;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.instructor-notes-label {
+  margin: 0 0 0.2rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgb(var(--c-gold));
+}
+.instructor-notes-body,
+.instructor-notes-body p,
+.instructor-notes-body li {
+  font-family: var(--font-hand), cursive;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  color: #eef2f7;
+}
+.instructor-notes-body ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+.instructor-notes-body li { margin: 0.15rem 0; }
+.instructor-notes-body li::marker { color: rgb(var(--c-gold) / 0.7); }
+
+/* Marker on whiteboard (dawn) */
+html[data-theme='dawn'] .instructor-notes {
+  background: #fdfcf8;
+  border-color: #d8d0bc;
+}
+html[data-theme='dawn'] .instructor-notes-label { color: #a06a10; }
+html[data-theme='dawn'] .instructor-notes-body,
+html[data-theme='dawn'] .instructor-notes-body p,
+html[data-theme='dawn'] .instructor-notes-body li { color: #185fa5; }
+
+/* Diagram frame */
+.learn-diagram {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem 0.5rem;
+  border-radius: 0.75rem;
+  background: rgb(var(--c-pearl) / 0.03);
+  border: 1px solid rgb(var(--c-pearl) / 0.1);
+}
+.learn-diagram svg { width: 100%; height: auto; display: block; }
+
+/* Notebook checklist — GFM task lists get hand-drawn checkboxes */
+.learn-prose ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.25rem;
+  border-left: 2px solid rgb(var(--c-gold) / 0.35);
+  padding-left: 1rem;
+}
+.learn-prose ul.contains-task-list li { margin: 0.35rem 0; }
+.learn-prose ul.contains-task-list input[type='checkbox'] {
+  appearance: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-right: 0.55rem;
+  vertical-align: -0.2rem;
+  border: 1.5px solid rgb(var(--c-gold) / 0.65);
+  border-radius: 0.3rem;
+  transform: rotate(-2deg);
+  background: transparent;
+  cursor: default;
+}
+.learn-prose ul.contains-task-list li:nth-child(even) input[type='checkbox'] {
+  transform: rotate(1.5deg);
+}
+
+/* Shell header (learn pages) — dawn skin, mirrors the NavBar override */
+html[data-theme='dawn'] .shell-header {
+  background-color: rgba(247, 244, 237, 0.7) !important;
+  border-color: rgba(20, 16, 44, 0.1) !important;
+}

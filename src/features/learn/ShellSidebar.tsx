@@ -1,19 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMounted, useProgress, type ChapterRef } from '@/features/learn/progress';
 
-// Stable fallback — a fresh [] per read makes useSyncExternalStore loop.
 const NO_PARTS: number[] = [];
 
-/** Google-Docs-style chapter index — fixed left rail on xl+, inline bar below.
- *  Also marks the current chapter as completed on mount (visited = done). */
-export function ChapterRail({ series, topic, part, chapters }: {
+/** Full-height chapter sidebar (xl+) + inline progress bar (below xl).
+ *  Marks the current chapter completed on mount (visited = done). */
+export function ShellSidebar({ series, seriesTitle, topic, part, chapters }: {
   series: string;
+  seriesTitle: string;
   topic: string;
   part: number;
   chapters: ChapterRef[];
@@ -26,33 +25,27 @@ export function ChapterRail({ series, topic, part, chapters }: {
     markDone(series, part);
   }, [series, part, markDone]);
 
-  if (!mounted) return null;
-
   const sorted = [...chapters].sort((a, b) => a.part - b.part);
-  const doneCount = sorted.filter((c) => doneParts.includes(c.part)).length;
+  const doneCount = mounted ? sorted.filter((c) => doneParts.includes(c.part)).length : 0;
 
-  const rail = (
-      <nav
-        aria-label="Chapter index"
-        className="fixed left-6 top-1/2 z-40 hidden w-56 -translate-y-1/2 xl:block"
-      >
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gold">
-          {doneCount}/{sorted.length} completed
-        </p>
-        <ol className="space-y-1 border-l border-white/10">
+  return (
+    <>
+      {/* Sidebar — wide screens */}
+      <nav aria-label="Chapters" className="sticky top-36 hidden max-h-[calc(100vh-10.5rem)] self-start overflow-y-auto pr-2 xl:block">
+        <p className="mb-0.5 text-xs font-semibold uppercase tracking-widest text-gold">{seriesTitle}</p>
+        <p className="mb-4 text-xs text-pearl/45">{doneCount}/{sorted.length} completed</p>
+        <ol className="space-y-0.5">
           {sorted.map((c) => {
             const isCurrent = c.part === part;
-            const isDone = doneParts.includes(c.part);
+            const isDone = mounted && doneParts.includes(c.part);
             return (
               <li key={c.part}>
                 <Link
                   href={`/lab/${topic}/${c.slug}`}
                   aria-current={isCurrent ? 'page' : undefined}
                   className={clsx(
-                    '-ml-px flex items-center gap-2 border-l-2 py-1.5 pl-3 text-xs transition-colors',
-                    isCurrent
-                      ? 'border-gold font-semibold text-gold'
-                      : 'border-transparent text-pearl/55 hover:text-pearl',
+                    'flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors',
+                    isCurrent ? 'bg-gold/10 font-semibold text-gold' : 'text-pearl/55 hover:text-pearl',
                   )}
                 >
                   <span
@@ -70,20 +63,13 @@ export function ChapterRail({ series, topic, part, chapters }: {
           })}
         </ol>
       </nav>
-  );
-
-  return (
-    <>
-      {/* Fixed left rail (portaled to body — frost-panel's backdrop-filter would
-          otherwise become its containing block and scroll it with the page) */}
-      {createPortal(rail, document.body)}
 
       {/* Inline progress — smaller screens */}
       <div className="mb-8 flex items-center gap-3 xl:hidden">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-gold transition-all"
-            style={{ width: `${(doneCount / sorted.length) * 100}%` }}
+            style={{ width: `${(doneCount / Math.max(sorted.length, 1)) * 100}%` }}
           />
         </div>
         <span className="shrink-0 text-xs text-pearl/55">{doneCount}/{sorted.length} completed</span>

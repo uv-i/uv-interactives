@@ -1,0 +1,119 @@
+---
+title: 'Input & Interaction — Action Maps and the Interface Finale'
+description: 'Chapter 10 (finale) — the new Input System that gives you controller support for free, the IInteractable pattern behind every RPG, and the capstone that connects all ten modules.'
+series: unity-fundamentals
+part: 10
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+The finale earns its position: one system that makes your game work on any device,
+and one pattern that makes it infinitely extensible. Then everything connects.
+
+## The new Input System — devices become irrelevant
+
+Open **`Module10_Input/Scenes/01_InputSystem`**. The old way,
+`Input.GetKey(KeyCode.W)`, hard-codes the keyboard. The new way inverts it:
+
+1. Create an **Input Actions** asset → Action Map "Gameplay" → Actions: `Move`
+   (Value/Vector2), `Jump` (Button), `Interact` (Button).
+2. Bind `Move` to BOTH the WASD composite and the gamepad left stick.
+3. Tick **Generate C# Class** — Unity writes the typed wrapper for you.
+
+Your code reads the *action*, never the device:
+
+```csharp
+Vector2 input = _actions.Gameplay.Move.ReadValue<Vector2>();
+```
+
+Plug in a controller mid-game: it just works, zero code changes. `InputHandler.cs`
+also shows the event style — and its golden rule, an old friend from Coin Rush's
+events chapter:
+
+```csharp
+private void OnEnable()  => _actions.Gameplay.Jump.performed += OnJump;
+private void OnDisable() => _actions.Gameplay.Jump.performed -= OnJump;
+```
+
+Every `+=` has its `-=`. Mobile bonus: **On-Screen Stick** components virtually press
+gamepad bindings — touch support with zero new input code.
+
+## IInteractable — the most important pattern in the course
+
+Open **`02_Interaction`** and read the shortest file in the module:
+
+```csharp
+public interface IInteractable
+{
+    void Interact(GameObject interactor);
+    string GetPromptText();
+}
+```
+
+An **interface** is a contract with no body. `InteractionSystem.cs` raycasts from the
+camera, and if the hit object implements `IInteractable`, shows its prompt and calls
+`Interact()` on **E**. Here's the part to sit with: the player script imports neither
+`Door.cs` nor `Chest.cs` — it has *no idea what it's interacting with*. The door
+swings, the chest spawns loot, and the player code is identical for both.
+
+Add an NPC, a lever, a terminal next month: implement the interface, done — the
+interaction system is *never edited again*. Systems that grow without being modified:
+you met this idea as polymorphism in OOP Pillars; here it wears its industry name,
+**programming to an interface**, and it powers every RPG interaction prompt you've
+ever seen.
+
+## The capstone — all ten modules, one game
+
+Look at what's running in this final scene and where each part was born: a terrain
+(4) with a third-person controller (7) whose input comes from Action Maps (10),
+animated by Blend Trees (8), hunted by NavMesh AI (7) that damages a HealthSystem (3)
+shown on an anchored HUD (5), with hits that shake, freeze, burst (8) and sound (9),
+music that tightens near enemies (9), doors and chests behind one interface (10),
+everything spawned from prefabs (2) inside an editor you can navigate blindfolded (1).
+
+That's not a course summary. That's a *game*, and you built every layer of it.
+
+<InstructorNotes>
+
+- IInteractable is the hardest concept of the course — go slow. Draw:
+  InteractionSystem ←→ IInteractable ←→ Door / Chest / NPC. The player never
+  touches the right side.
+- Show Door.cs and Chest.cs side by side: same contract, opposite behaviours.
+- The final demo: keyboard + USB controller + on-screen stick all driving the
+  character simultaneously. It lands.
+- End with the capstone walk-through above — name each module as you point at its
+  system on screen. That's the course sticking.
+
+</InstructorNotes>
+
+## Final challenge
+
+Build one new interactable, end to end, without any guide: a **Campfire** — prompt
+"Rest", restores the player's HealthSystem to full, triggers the Module 8 particle
+fire and a Module 9 sound. Every skill in the course, one object, your design.
+
+## Interview corner
+
+**Biggest advantage of the new Input System?** Actions abstract devices — bind
+keyboard, gamepad, and touch to one action; code reads the action, so new devices
+cost zero code.
+
+**How does IInteractable enable extensibility?** The interaction system depends only
+on the contract; new interactable types implement it without touching existing code —
+the Open/Closed Principle in practice.
+
+## Checkpoint
+
+- [ ] One action drives keyboard AND gamepad simultaneously
+- [ ] Door and chest both work through the same raycast + interface
+- [ ] You can explain "programming to an interface" without notes
+- [ ] The Campfire works — and you designed it yourself
+
+**Series complete — you know Unity.** Where next: **[Coin Rush](/lab/unity/coin-rush-00-setup)**
+deep-dives the C# these modules used everywhere, then
+**[OOP Pillars](/lab/csharp/oop-pillars-00-setup)** turns you into someone who
+*architects* games rather than assembles them. Same rule as always: empty project,
+no steps skipped.

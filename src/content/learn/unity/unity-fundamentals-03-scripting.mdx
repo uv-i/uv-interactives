@@ -1,0 +1,140 @@
+---
+title: 'C# Scripting — MonoBehaviour, Events & Coroutines'
+description: 'Chapter 3 (Module 03) — the full lifecycle, a Rigidbody player controller, UnityEvents and decoupled health, and coroutines. The longest, most important module.'
+series: unity-fundamentals
+part: 3
+level: beginner
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+Module 03 is the spine of the course — four scenes, seven scripts, and the concepts
+every later module leans on. Take your time here; this is the module that separates
+hobbyists from developers.
+
+## Scene 01 — the full lifecycle
+
+Open **`Module03_Scripting/Scenes/01_Lifecycle`**, run `MonoBehaviourLifecycle.cs`,
+and watch the Console:
+
+**Awake → OnEnable → Start → Update (forever) → OnDisable → OnDestroy**
+
+Disable the component in the Inspector mid-play — `OnDisable` fires. Re-enable —
+`OnEnable`. You override the methods you need; Unity calls them automatically.
+While you're here, meet your best friend:
+
+```csharp
+Debug.Log($"Health is now {currentHealth}");   // string interpolation prints values
+Debug.LogWarning("Low health!");               // yellow
+Debug.LogError("This should never happen");    // red
+```
+
+The Console is information, not judgement. Developers who read errors fix bugs in
+minutes; developers who fear them suffer for hours.
+
+## Scene 02 — the player controller
+
+Open **`02_PlayerController`**. `PlayerController.cs` demonstrates three professional
+habits in forty lines:
+
+**1. Cache your components:**
+
+```csharp
+private Rigidbody _rb;
+
+private void Awake()
+{
+    _rb = GetComponent<Rigidbody>();   // fetch ONCE
+}
+```
+
+Calling `GetComponent` every frame in Update works — and wastes performance forever.
+Cache in Awake. Fundamental habit, interview favourite.
+
+**2. The right method for the right job:** physics movement in `FixedUpdate()`,
+jump *input* in `Update()` (a single-frame key press can slip between fixed steps),
+camera follow in `LateUpdate()`. Say it as a mantra: *physics in FixedUpdate,
+input in Update, camera in LateUpdate.*
+
+**3. Raycast ground checks:** the game fires an invisible laser downward and asks
+"did I hit floor within half a metre?" — `Physics.Raycast(origin, Vector3.down,
+distance, groundLayer)`. Turn on Gizmos in the Scene view toolbar to *see* the ray.
+
+## Scene 03 — health, events, and the decoupling lesson
+
+Open **`03_HealthSystem`**. `HealthSystem.cs` carries two ideas that will follow you
+through every project:
+
+**Encapsulation:** health is a property with a private setter —
+`public int CurrentHealth { get; private set; }` — readable by anyone, changeable
+only through `TakeDamage()`. If any script could write health directly, no bug
+involving health would ever be findable.
+
+**UnityEvents:** HealthSystem exposes `OnDeath` — an event you wire in the
+*Inspector*. Drag the UIManager in, pick `ShowGameOver()`, done. HealthSystem never
+knows the UI exists. Kill the player: the game-over panel appears, and the two
+scripts have never heard of each other. That's decoupling, and it's the design idea
+underneath every clean codebase you'll ever read.
+
+## Scene 04 — coroutines
+
+Open **`04_Spawner`**. A normal method runs start-to-finish inside one frame — asking
+it to "wait three seconds" freezes the game. A **coroutine** pauses itself and lets
+the game keep running:
+
+```csharp
+private IEnumerator SpawnLoop()
+{
+    while (true)
+    {
+        SpawnEnemy();
+        yield return new WaitForSeconds(3f);   // pause HERE, resume in 3s
+    }
+}
+```
+
+`EnemySpawner.cs`: **S** starts the loop, **X** stops it. Note the stop pattern —
+store the handle (`_routine = StartCoroutine(...)`) or you can't stop that specific
+coroutine later. The bookmark analogy: a coroutine puts a bookmark in its own page,
+lets the world turn, and resumes exactly where it paused.
+
+<InstructorNotes>
+
+- Budget 5–6 hours. Rushing Module 3 bankrupts every later module.
+- Show the anti-patterns FIRST: GetComponent in Update ("what's wrong here?"),
+  public health field, Thread.Sleep. Let them smell the smoke before the fire drill.
+- Wire the OnDeath event live in the Inspector — the no-code connection is the
+  moment UnityEvents click.
+- Spend 10 full minutes on NullReferenceException: read the message, find the line,
+  check what's unassigned in the Inspector. It's 80% of their next month's bugs.
+
+</InstructorNotes>
+
+## Try it
+
+In `03_HealthSystem`, change `CurrentHealth`'s `private set` to a plain public field
+and try writing `health.CurrentHealth = 999` from another script. It compiles — and
+that's the problem. Change it back and watch the compiler *refuse*. The error is the
+feature (OOP Pillars, our other series, is built on this exact idea).
+
+## Interview corner
+
+**Why can't you `new` a MonoBehaviour?** Unity manages their lifecycle; they must be
+attached to a GameObject via AddComponent or the Editor. `new` gives an orphan with
+no engine context.
+
+**UnityEvent vs C# Action?** UnityEvent is Inspector-wireable (designer-friendly,
+slight overhead); Action is code-only and fast. Designer-facing hooks → UnityEvent;
+hot-path gameplay events → Action.
+
+## Checkpoint
+
+- [ ] You can recite the lifecycle order and the FixedUpdate/Update/LateUpdate mantra
+- [ ] You wired OnDeath → UI in the Inspector with zero code
+- [ ] You can explain `{ get; private set; }` in one sentence
+- [ ] Spawner starts and stops on command, and you know why the handle matters
+
+**Next → Chapter 4: Scene Building** — terrain sculpting, post-processing that makes
+students gasp, and the objects that survive scene changes.

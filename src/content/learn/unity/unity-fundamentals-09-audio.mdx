@@ -1,0 +1,100 @@
+---
+title: 'Audio — AudioManager, Mixer Math & Dynamic Music'
+description: 'Chapter 9 (Module 09) — a singleton AudioManager with named clips, AudioMixer groups and the dB formula, and music that shifts when enemies approach.'
+series: unity-fundamentals
+part: 9
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+Audio is half the experience and 10% of most tutorials. This module builds the
+three-layer system real games use: one manager, one mixer, one dynamic brain.
+
+## AudioManager — one door for all sound
+
+Open **`Module09_Audio/Scenes/01_AudioManager`**. `AudioManager.cs` is a singleton
+(the `_Shared/Singleton.cs` base class — Module 4's persistence plus Module 3's
+pattern) holding a dictionary of named clips. The payoff, from any script in the game:
+
+```csharp
+AudioManager.Instance.PlaySFX("jump");
+```
+
+No AudioClip references scattered through gameplay code; add sounds in one Inspector
+list. Two details worth stealing:
+
+- **`PlayOneShot`, not `Play`, for SFX** — `Play()` cuts off the current clip
+  (rapid coin pickups sound broken); `PlayOneShot()` overlaps naturally.
+- **Pitch variance** — `pitch = Random.Range(0.9f, 1.1f)` before each shot. Identical
+  repeated sounds read as robotic; ±10% pitch reads as organic. Cheapest polish in audio.
+
+## The Mixer — and the logarithm
+
+Open **`02_MixerSettings`**. An **AudioMixer** routes sound through groups
+(Master → Music / SFX) — set each AudioSource's *Output* to its group and one slider
+controls a whole category. Right-click a group volume → **Expose Parameter** → now
+scripts control it: `mixer.SetFloat("MusicVol", db)`.
+
+The formula from Module 5's settings panel returns, now with its full meaning:
+
+```csharp
+float db = Mathf.Log10(Mathf.Clamp(slider, 0.0001f, 1f)) * 20f;
+```
+
+Hearing is logarithmic — slider 0.5 must land at ≈−6dB (perceived half), not −40dB.
+The clamp guards `Log10(0)` = negative infinity = permanent silence. `PlayerPrefs`
+stores the 0–1 slider value, not the dB (`AudioSettingsController.cs`).
+
+## Dynamic music — tension before the player sees why
+
+Open **`03_DynamicMusic`**. **Mixer Snapshots** save complete mixer states — build a
+**Calm** snapshot (clean, quiet) and a **Combat** one (louder, reverb up, low-pass
+engaged), then blend between them in one line:
+
+```csharp
+combatSnapshot.TransitionTo(2f);   // 2-second smooth blend of EVERYTHING
+```
+
+`DynamicMusicController.cs` measures distance to everything tagged "Enemy": one
+within range → Combat; none for 5 seconds → Calm. Drop it into Module 7's combat
+scene and the music tightens *before the player sees the enemy* — the trick The Last
+of Us and every modern stealth game uses. Players feel it; they never notice it.
+
+<InstructorNotes>
+
+- Demo Play vs PlayOneShot with rapid presses — the cut-off version sounds broken
+  and the lesson teaches itself.
+- Graph the Log10 curve for two minutes. "Why isn't 0.5 half volume?" is the best
+  physics moment of the course.
+- Run dynamic music inside the Module 7 scene — crossing systems between modules is
+  the real demonstration of architecture.
+- "The player should feel the tension before they see the enemy."
+
+</InstructorNotes>
+
+## Try it
+
+Wire `AudioManager.Instance.PlaySFX("hit")` into Module 8's juice stack. Shake +
+freeze + particles + sound: the full impact recipe, assembled across three modules.
+
+## Interview corner
+
+**Play vs PlayOneShot?** Play replaces the current clip (music); PlayOneShot overlays
+(stackable SFX).
+
+**What's a Mixer Snapshot?** A saved complete mixer state; `TransitionTo(t)` blends
+all parameters to it smoothly — the standard mechanism for dynamic music and
+underwater/pause audio effects.
+
+## Checkpoint
+
+- [ ] Any script can play a named sound through the manager
+- [ ] Volume slider uses the dB formula and persists via PlayerPrefs
+- [ ] Calm/Combat snapshots transition on enemy proximity
+- [ ] The full juice stack now includes sound
+
+**Next → Chapter 10: Input & Interaction** — the finale: controller support for free,
+and the interface pattern that ties all ten modules into one game.

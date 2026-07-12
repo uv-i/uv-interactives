@@ -527,3 +527,64 @@ the exact-URL matching — a new chat with this folder connected + both skills =
 - New chapters ALWAYS land `draft: true`; publishing is the owner's explicit act.
 - Identity line: "Game developer who teaches through games" / studio-of-one voice,
   never "we/our team"; GuessIn10 = contract live-ops, never authorship.
+
+## Session 5 — Unity Fundamentals track (2026-07-12)
+- User provided C:\Users\hunti\Downloads\Unity6 (mounted): Unity6Guidebook.jsx (10-module
+  course, dual student/teacher voice), unity_teaching_guide.jsx (earlier version),
+  UnityTeachingProject_Assets.zip (real project: 10 modules, 30 scenes via
+  TeachingSceneCreator, 43 annotated scripts).
+- **NEW SERIES: unity-fundamentals** (topic unity, 11 chapters ch0–ch10, ALL `draft: true`
+  — owner must review + flip). One chapter per module. New format elements: collapsible
+  `<details>` "📋 Instructor notes" (his teaching voice — differentiator) + "Interview
+  corner" (2 Q&As per chapter from the guidebook's interview banks).
+  ⚠️ VERIFY on next dev run: `<details>` renders through next-mdx-remote v6 (blockJS
+  default) — if it strips, fallback = blockquote format.
+- **teaching.ts**: added unity-fundamentals package entry FIRST in array (category
+  "Unity Basics", githubUrl https://github.com/uv-interactives/uvi-learn-unity-fundamentals).
+  Repo DOES NOT EXIST YET — user must create it (repo-prep-unity-fundamentals/ has
+  README + REPO-SETUP.md). It's a project TEMPLATE repo (copy-into-Assets), NOT a UPM
+  package — no package.json, no meta-commit requirement.
+- Learning path now: Unity Fundamentals → Coin Rush → OOP Pillars (cross-linked in
+  ch10 finale + repo README).
+- Pending owner: create+push the GitHub repo, review 11 chapters, flip drafts, delete
+  repo-prep folder. Until repo exists, the card 404s on GitHub link (tutorial link works).
+
+## Session 6 — Learn Shell + canonical tutorial format (2026-07-12)
+**Design decisions (discussed + locked):** tabs REJECTED for chapters (journeys not
+references; SEO/ctrl-F/anchors) → sticky "on this page" TOC instead. Handwritten font
+for BODY text rejected (readability/credibility) → hand accents only.
+
+- **Learn Shell** (`/lab/[topic]/[slug]` rewritten): grid `220px | content(max 820) | 180px`.
+  No frost-panel (flat themed body). Components in `src/features/learn/`:
+  `ShellSidebar.tsx` (sticky chapter list + ticks, absorbs old ChapterRail incl. the
+  markDone-on-mount; ChapterRail.tsx DELETED), `PageToc.tsx` (h2 scroll-spy via
+  IntersectionObserver; ids mirrored by a local slugify of `## ` lines — must match
+  rehype-slug), `teacher.tsx` (useTeacher zustand persist `uvi_teacher_view` +
+  TeacherToggle; sets `html[data-teacher]`).
+- **Instructor notes:** `<InstructorNotes title?>` component (in `mdx-components.tsx`) —
+  chalk-on-slate dusk / marker-on-whiteboard dawn, **Caveat** font (`--font-hand`, added
+  in layout.tsx via next/font). Hidden unless `html[data-teacher='1']` (CSS in globals).
+  All 11 fundamentals chapters converted from `<details>` to the component.
+- **Diagram components** (same file, SERVER-safe, **string props only** — JSX
+  expressions are blocked by next-mdx-remote v6 blockJS default; string attrs pass, so
+  security defaults stay ON): `EventFanout`, `StateDiagram`, `CycleDiagram`,
+  `TreeDiagram`. Item DSL: `Label|sublabel` comma-separated; `note` prop renders in
+  the hand font (teacher-marking-the-slide). 7 diagrams inserted: coin-rush ch4+ch7,
+  oop ch3+ch4, fundamentals ch1+ch2+ch7. Rule: only when concept has shape, 2–4/series.
+- **Notebook checklists:** remark-gfm ADDED (package.json — needs `npm install` on
+  Windows!) + wired in article page remarkPlugins. `- [ ]` task lists now render;
+  styled as hand-drawn tilted checkboxes with a gold margin rule (globals.css).
+- **Canonical chapter format** (one concept, hook→code→counterfactual→diagram?→
+  InstructorNotes→try-it→challenge→interview corner→GFM checkpoint→next teaser)
+  encoded in `package-to-tutorial-v2.skill` (outputs) — user must REINSTALL over v1.
+- VERIFY on next dev run: remark-gfm installed, diagrams render, teacher toggle,
+  TOC ids match rehype-slug output, Caveat loads.
+
+## Session 6 (cont.) — sticky shell chrome
+- **Shell header**: breadcrumb + TeacherToggle now a `sticky top-20 z-40` frosted bar
+  (`.shell-header`, dawn override in globals) directly under the NavBar — toggle
+  reachable at any scroll depth. Content Container gets `pt-8`.
+- **GOTCHA — grid stretch kills sticky:** grid items stretch to full track height by
+  default, so a `sticky` grid item has no room to move and silently never sticks.
+  Fix: `self-start` on sticky grid children (ShellSidebar nav + PageToc), sticky
+  offsets now `top-36` (NavBar 80px + shell header 48px).

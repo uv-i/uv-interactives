@@ -1,0 +1,106 @@
+---
+title: 'Animation & VFX — Blend Trees, Particles & Juice'
+description: 'Chapter 8 (Module 08) — Animator state machines, Blend Trees that never snap, particle systems from scratch, and the camera-shake-plus-freeze-frame recipe.'
+series: unity-fundamentals
+part: 8
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals'
+updated: '2026-07-12'
+draft: true
+---
+
+This module is about *perceived* quality. The same mechanic with and without this
+chapter's content is the difference between "student project" and "wait, you made
+this?".
+
+## Animator — a state machine for motion
+
+Open **`Module08_AnimationVFX/Scenes/01_Animator`**. An **Animator Controller** is
+a state machine (you know the shape from Module 7's AI): states are animation clips,
+transitions fire on parameter conditions, and your script only touches parameters:
+
+```csharp
+animator.SetFloat("Speed", velocity.magnitude);   // AnimatorDriver.cs does this
+```
+
+One warning that will save you an hour someday: **parameter names are case-sensitive
+strings — a typo fails silently.** No error, no animation, no clue.
+
+## Blend Trees — never snap again
+
+Direct Idle→Walk→Run transitions visibly *snap*. A **1D Blend Tree** interpolates
+instead: one Speed parameter, three clips at thresholds (Idle 0, Walk 2, Run 6), and
+the character flows smoothly through every speed in between. This is how every
+professional character moves; once you see the side-by-side you can't unsee snapping
+in student games.
+
+**Animation Events** are the pro detail: a function call pinned to an exact frame of
+a clip — the frame the foot touches ground calls `OnFootstep()`, the frame the sword
+reaches full swing enables the Module 7 hitbox. More accurate than any timer, because
+it's tied to the animation itself.
+
+## Particles — fire, hits, everything
+
+Open **`02_Particles`**. A Particle System is five modules doing everything:
+**Emission** (how many), **Shape** (from where), **Velocity** (where to),
+**Color over Lifetime** (fade), **Size over Lifetime** (shrink). Default system →
+orange → cone shape → you have fire. Iterate one slider at a time.
+
+The one-shot recipe (`HitEffect.cs` uses it): Emission rate 0 + one **Burst** of 20
+at t=0 + Duration 0.1 + **Stop Action: Destroy**. Instantiate it on impact — it
+bursts and cleans itself up. Bullet hits, footstep dust, magic sparkles: same recipe.
+
+## Juice — the 30 minutes that change everything
+
+Open **`03_GameJuice`**. Two tiny scripts with static entry points:
+
+```csharp
+CameraShake.Shake(0.2f, 0.15f);   // random camera offsets, then settle
+FreezeFrame.Freeze(0.05f);        // Time.timeScale = 0 for 50ms, then restore
+```
+
+The freeze uses `WaitForSecondsRealtime` — regular `WaitForSeconds` is itself frozen
+by `timeScale = 0`, a delicious chicken-and-egg bug to know about. Fifty milliseconds
+is imperceptible as a pause but registers as *weight* — Street Fighter II invented it
+in 1991 and every action game since has copied it.
+
+Now stack the module: hit an enemy with shake + freeze + particle burst + (next
+chapter) a sound. Same damage number as before. Completely different game.
+
+<InstructorNotes>
+
+- Record the before/after juice comparison — highest-impact demo of the course,
+  students share it unprompted.
+- Blend Trees need hands-on time; the Inspector preview slider during Play mode is
+  the fastest way to make blending click.
+- "The code took 30 minutes. The FEEL took 30 minutes. Both are equally important."
+- Homework that lands: pick any indie game, list every juice element in one
+  hit-reaction. They come back seeing games differently.
+
+</InstructorNotes>
+
+## Try it
+
+The case-sensitivity trap, on purpose: rename the Animator parameter to "speed"
+(lowercase) but keep `SetFloat("Speed", ...)` in the script. Play. Nothing breaks,
+nothing animates, nothing errors. Now you know the shape of a silent failure —
+fix it and move on, forever suspicious of string parameters.
+
+## Interview corner
+
+**Why Blend Trees over transitions for locomotion?** Trees interpolate continuously
+by parameter — no snapping; transitions are binary switches between clips.
+
+**How does a freeze frame work?** `timeScale = 0` + `WaitForSecondsRealtime(0.05)` +
+restore; realtime wait because scaled time is frozen.
+
+## Checkpoint
+
+- [ ] Blend Tree flows Idle→Walk→Run with no visible snap
+- [ ] One-shot hit burst spawns and destroys itself
+- [ ] Shake + freeze wired into the Module 7 melee hit
+- [ ] You triggered (and can describe) the silent parameter-name failure
+
+**Next → Chapter 9: Audio** — the AudioManager everything talks to, the logarithm
+your volume slider needs, and music that knows when you're in danger.

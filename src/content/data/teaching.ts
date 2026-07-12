@@ -2,6 +2,18 @@ import type { TeachingPackage } from '@/content/models';
 
 export const teaching: TeachingPackage[] = [
   {
+    id: 'unity-fundamentals',
+    title: 'Unity Fundamentals',
+    summary:
+      'The complete Unity 6 starter track — 10 modules, 30 scenes, 43 annotated scripts. Editor, physics, C#, UI, 2D, 3D with NavMesh AI, animation, audio, and the new Input System. The place to start.',
+    engine: 'Unity',
+    category: 'Unity Basics',
+    level: 'Beginner',
+    tags: ['Unity', 'C#', 'URP', 'Complete Course', 'Beginner'],
+    githubUrl: 'https://github.com/uv-interactives/uvi-learn-unity-fundamentals',
+    status: 'active',
+  },
+  {
     id: 'coin-rush',
     title: 'Coin Rush',
     summary:
