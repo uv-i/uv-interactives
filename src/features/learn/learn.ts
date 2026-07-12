@@ -3,8 +3,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 
-/** Learn content engine — reads MDX from src/content/learn/<topic>/<slug>.mdx.
- *  Build-time only (fs). Add a topic: extend TOPICS + drop files in a folder. */
+/* ── Learn content engine ────────────────────────────────────────────────
+   Layout: src/content/learn/<topic>/<series>/<slug>.mdx  (preferred)
+           src/content/learn/<topic>/<slug>.mdx           (flat, still supported)
+   Slugs are filename-based — moving a file between layouts never changes URLs.
+
+   Module boundaries (keep them):
+   - CONTENT SOURCE (loadTopic/readPost): the only code that touches fs.
+   - DOMAIN (getPostsByTopic/getSeriesList/getSeriesNav): pure functions over
+     loaded data. Swapping fs for a CMS later = replace loadTopic only (DIP).
+   Server-only; pages consume via the exported functions, never fs directly.   */
 
 export const TOPICS = {
   unity:  { label: 'Unity',  blurb: 'Engine workflows, scenes, terrain, gameplay systems.' },
@@ -41,15 +49,18 @@ export interface LearnPost {
 }
 
 const ROOT = path.join(process.cwd(), 'src', 'content', 'learn');
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 export function isTopic(t: string): t is LearnTopic {
   return t in TOPICS;
 }
 
-function readPost(topic: LearnTopic, file: string): LearnPost {
-  const raw = fs.readFileSync(path.join(ROOT, topic, file), 'utf8');
+/* ── Content source ─────────────────────────────────────────────────── */
+
+function readPost(topic: LearnTopic, relFile: string): LearnPost {
+  const raw = fs.readFileSync(path.join(ROOT, topic, relFile), 'utf8');
   const { data, content } = matter(raw);
-  const slug = file.replace(/\.mdx?$/, '');
+  const slug = path.basename(relFile).replace(/\.mdx?$/, '');
   return {
     meta: {
       topic,
@@ -69,14 +80,42 @@ function readPost(topic: LearnTopic, file: string): LearnPost {
   };
 }
 
-export function getPostsByTopic(topic: LearnTopic): LearnMeta[] {
+/** Parse cache — a static build touches every chapter dozens of times
+ *  (generateStaticParams, per-page series nav, sitemap, home, dev lab).
+ *  Prod-only: dev must re-read so MDX edits show without a restart. */
+const topicCache = new Map<LearnTopic, LearnPost[]>();
+
+function loadTopic(topic: LearnTopic): LearnPost[] {
+  if (IS_PROD && topicCache.has(topic)) return topicCache.get(topic)!;
+
   const dir = path.join(ROOT, topic);
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => /\.mdx?$/.test(f))
-    .map((f) => readPost(topic, f).meta)
-    .filter((m) => !m.draft || process.env.NODE_ENV === 'development')
+  const posts: LearnPost[] = [];
+  if (fs.existsSync(dir)) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isFile() && /\.mdx?$/.test(entry.name)) {
+        posts.push(readPost(topic, entry.name));
+      } else if (entry.isDirectory()) {
+        for (const f of fs.readdirSync(path.join(dir, entry.name))) {
+          if (/\.mdx?$/.test(f)) posts.push(readPost(topic, path.join(entry.name, f)));
+        }
+      }
+    }
+  }
+  if (IS_PROD) topicCache.set(topic, posts);
+  return posts;
+}
+
+/* ── Domain queries (pure over loaded data) ─────────────────────────── */
+
+/** Drafts are dev-only; production never serves them. */
+function visible(m: LearnMeta): boolean {
+  return !m.draft || !IS_PROD;
+}
+
+export function getPostsByTopic(topic: LearnTopic): LearnMeta[] {
+  return loadTopic(topic)
+    .map((p) => p.meta)
+    .filter(visible)
     .sort((a, b) =>
       a.series && a.series === b.series
         ? (a.part ?? 0) - (b.part ?? 0)
@@ -89,10 +128,8 @@ export function getAllPosts(): LearnMeta[] {
 }
 
 export function getPost(topic: LearnTopic, slug: string): LearnPost | null {
-  const file = path.join(ROOT, topic, `${slug}.mdx`);
-  if (!fs.existsSync(file)) return null;
-  const post = readPost(topic, `${slug}.mdx`);
-  if (post.meta.draft && process.env.NODE_ENV !== 'development') return null;
+  const post = loadTopic(topic).find((p) => p.meta.slug === slug);
+  if (!post || !visible(post.meta)) return null;
   return post;
 }
 
@@ -118,19 +155,18 @@ export function getSeriesList(): SeriesInfo[] {
     map.set(m.series, list);
   }
   return [...map.entries()].map(([series, list]) => {
-    const first = [...list].sort((a, b) => (a.part ?? 0) - (b.part ?? 0))[0];
+    const sorted = [...list].sort((a, b) => (a.part ?? 0) - (b.part ?? 0));
+    const first = sorted[0];
     return {
       series,
       title: first.seriesTitle ?? series.replace(/-/g, ' '),
       topic: first.topic,
-      chapters: list.length,
+      chapters: sorted.length,
       firstSlug: first.slug,
       packageRepo: first.packageRepo,
       level: first.level,
       description: first.description,
-      chapterRefs: [...list]
-        .sort((a, b) => (a.part ?? 0) - (b.part ?? 0))
-        .map((m) => ({ part: m.part ?? 0, slug: m.slug, title: m.title })),
+      chapterRefs: sorted.map((m) => ({ part: m.part ?? 0, slug: m.slug, title: m.title })),
     };
   });
 }

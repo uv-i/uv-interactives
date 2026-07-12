@@ -78,7 +78,7 @@ export default async function LabArticlePage({ params }: { params: Params }) {
   const headings = extractHeadings(content);
 
   return (
-    <section className="relative min-h-screen pt-20 pb-20">
+    <section className="relative min-h-screen pt-20 pb-36 sm:pb-20">
       <JsonLd
         data={{
           '@context': 'https://schema.org',
@@ -92,8 +92,8 @@ export default async function LabArticlePage({ params }: { params: Params }) {
       />
       {/* Shell header — sticks under the NavBar so the teacher toggle is always in reach */}
       <div className="shell-header sticky top-20 z-40 border-b border-white/5 bg-[rgba(22,11,50,0.7)] backdrop-blur-xl backdrop-saturate-150">
-        <Container className="flex h-12 items-center justify-between gap-3">
-          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm text-pearl/60">
+        <Container className="flex min-h-12 items-center justify-between gap-2 py-1.5">
+          <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden whitespace-nowrap text-sm text-pearl/60">
             <Link
               href="/lab"
               className="inline-flex shrink-0 items-center gap-1.5 font-semibold text-gold transition-transform hover:-translate-x-0.5"
@@ -101,8 +101,8 @@ export default async function LabArticlePage({ params }: { params: Params }) {
               <ArrowLeft size={15} />
               Dev Lab
             </Link>
-            <span aria-hidden>/</span>
-            <Link href={`/lab/${topic}`} className="shrink-0 hover:text-gold">{TOPICS[topic].label}</Link>
+            <span aria-hidden className="hidden sm:inline">/</span>
+            <Link href={`/lab/${topic}`} className="hidden shrink-0 hover:text-gold sm:inline">{TOPICS[topic].label}</Link>
             <span aria-hidden>/</span>
             <span className="truncate text-pearl/80">{meta.title}</span>
           </nav>

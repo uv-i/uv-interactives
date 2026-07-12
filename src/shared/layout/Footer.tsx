@@ -9,15 +9,15 @@ export function Footer() {
 
   return (
     <footer className="frost-panel !fixed inset-x-0 bottom-0 z-[60] h-12 border-t border-white/5 text-xs text-pearl/60">
-      <Container className="flex h-full items-center justify-between gap-4">
-        <p className="truncate">
+      <Container className="flex h-full items-center justify-between gap-3">
+        <p className="min-w-0 truncate">
           <span className="font-semibold text-pearl/90">{studio}</span>
           <span className="mx-2 hidden md:inline">·</span>
           <span className="hidden italic md:inline">{motto}</span>
           <span className="mx-2">·</span>© {year}
         </p>
-        <nav aria-label="Footer">
-          <ul className="flex items-center gap-4">
+        <nav aria-label="Footer" className="shrink-0">
+          <ul className="flex items-center gap-3 sm:gap-4">
             <li>
               <a className="hover:text-gold" href={`mailto:${contactEmail}`}>Email</a>
             </li>
@@ -31,7 +31,7 @@ export function Footer() {
                 <a className="hover:text-gold" href={socials.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
               </li>
             ) : null}
-            <li>
+            <li className="hidden sm:block">
               <Link className="hover:text-gold" href="/lab">Dev Lab</Link>
             </li>
           </ul>

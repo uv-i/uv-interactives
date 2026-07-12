@@ -588,3 +588,19 @@ for BODY text rejected (readability/credibility) → hand accents only.
   default, so a `sticky` grid item has no room to move and silently never sticks.
   Fix: `self-start` on sticky grid children (ShellSidebar nav + PageToc), sticky
   offsets now `top-36` (NavBar 80px + shell header 48px).
+
+## Session 7 — content reorg + engine hardening (2026-07-12)
+- **MDX layout now series-foldered:** `src/content/learn/<topic>/<series>/<file>.mdx`
+  (coin-rush/, unity-fundamentals/, oop-pillars/). Engine reads BOTH nested and flat.
+  **Slugs are filename-based** — folder moves never change URLs. Skill v2 path updated
+  (user must reinstall package-to-tutorial-v2.skill again).
+- **learn.ts hardened:** split into CONTENT SOURCE (loadTopic/readPost — only fs code;
+  swap for CMS = replace loadTopic only) and DOMAIN (pure queries). Added prod-only
+  parse cache (topicCache Map) — builds previously re-read/re-parsed every chapter
+  dozens of times (params+nav+sitemap+home+lab). Dev skips cache so MDX edits show live.
+- **Architecture stance (owner asked for OOP/SOLID everywhere):** SOLID applied as it
+  maps to React — SRP (module boundaries), OCP (MDX/diagram component registries),
+  LSP (SceneEnvironment contract), DIP (content repository + loadTopic seam).
+  REJECTED: class hierarchies, DI containers, barrel-file churn — anti-patterns here.
+  Existing patterns already in place: repository (content/), observer (zustand stores,
+  GameEvents-style), strategy (activeEnvironment swap), registry (learnMdxComponents).

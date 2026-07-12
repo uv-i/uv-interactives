@@ -34,14 +34,15 @@ export function TeacherToggle() {
       type="button"
       onClick={toggle}
       aria-pressed={mounted ? teacher : false}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+      aria-label="Toggle teacher view"
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors sm:px-3 ${
         mounted && teacher
           ? 'border-gold/60 bg-gold/15 text-gold'
           : 'border-white/20 text-pearl/60 hover:border-gold/40 hover:text-gold'
       }`}
     >
-      <GraduationCap size={13} />
-      Teacher view{mounted && teacher ? ': on' : ''}
+      <GraduationCap size={14} />
+      <span className="hidden sm:inline">Teacher view{mounted && teacher ? ': on' : ''}</span>
     </button>
   );
 }
