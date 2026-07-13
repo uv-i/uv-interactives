@@ -1,0 +1,108 @@
+---
+title: 'Movement & Collision — CharacterController.Move()'
+description: 'Chapter 1 — PlayerController.cs: why one CharacterController.Move() call replaces hand-written collision math against the ruin''s walls and rubble.'
+series: ember-hollow
+part: 1
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → Player → `PlayerController.cs`**.
+
+## The problem — moving a capsule through a ruin
+
+The player needs to walk through corridors, get stopped by walls and rubble, and
+never clip through geometry — without us writing sphere-cast or raycast collision
+resolution by hand. A `Rigidbody` pushed with `AddForce` would fight physics for the
+precise, no-slide-on-slopes control a survival explorer needs.
+
+## The fix — CharacterController.Move()
+
+```csharp
+[RequireComponent(typeof(CharacterController))]
+public class PlayerController : MonoBehaviour
+{
+    private CharacterController _controller;
+
+    private void Awake()
+    {
+        _controller = GetComponent<CharacterController>();
+    }
+```
+
+`[RequireComponent]` guarantees `GetComponent<CharacterController>()` never returns
+`null` — Unity adds the component automatically if it's missing. Cached once in
+`Awake()`, because calling `GetComponent` every frame is a measurable cost on
+something read 60+ times a second.
+
+The movement itself, every `Update()`:
+
+```csharp
+if (_controller.isGrounded && _verticalVelocity < 0f)
+    _verticalVelocity = -2f; // small downward stick so isGrounded stays true on slopes
+_verticalVelocity += gravity * Time.deltaTime;
+
+Vector3 motion = moveDir.normalized * targetSpeed + Vector3.up * _verticalVelocity;
+_controller.Move(motion * Time.deltaTime);
+```
+
+`_controller.Move()` sweeps a capsule through the scene and resolves every collision
+with static and dynamic colliders in that one call. This is what stops the player
+walking through rubble and walls — no manual raycasting anywhere in this file.
+
+## The counterfactual
+
+Delete the `CharacterController` and replace it with raw `transform.position +=`
+and the player walks straight through the walls SceneBootstrapper built — nothing
+in Unity stops a bare transform move. The `Move()` call isn't decoration; it's the
+only thing making collision exist at all.
+
+## Try it — break it on purpose
+
+Comment out the `if (_controller.isGrounded && ...)` stick line and Play. Walk to a
+slope. You'll see the player stutter or briefly leave the ground each frame — that
+tiny downward stick is what keeps `isGrounded` reporting true on angled ground. Put
+it back once you've seen the stutter.
+
+<InstructorNotes>
+
+- Let students break the isGrounded stick live — the stutter is subtle but visible,
+  and "why does removing 3 lines cause THIS" lands better than explaining upfront.
+- Point out that `Camera.main` is used to get movement direction — ask what happens
+  if there's no camera tagged `MainCamera` in the scene (silent `Vector3.forward`
+  fallback, not a crash).
+- Compare against Coin Rush's Rigidbody-based movement if students took that series
+  first — same goal, different tool, different trade-off.
+
+</InstructorNotes>
+
+## Challenge
+
+Add a crouch: halve `walkSpeed`/`runSpeed` and shrink `_controller.height` while a
+new `Crouch` input is held (you'll wire the actual input in Chapter 8 — for now,
+hardcode a keyboard check to prove the movement math works).
+
+## Interview corner
+
+**Why CharacterController instead of Rigidbody for a player?** CharacterController
+gives precise, deterministic control — no sliding, no physics forces knocking you
+around — at the cost of not participating in physics simulation naturally (you
+handle gravity yourself). Rigidbody is right when you want real physics response;
+CharacterController is right when you want exact control over "how does this thing move."
+
+**What does `Time.deltaTime` protect against here?** Frame-rate independence — without
+multiplying by it, movement speed would be tied to how fast the machine renders,
+so the same code would move players at different real-world speeds on different hardware.
+
+## Checkpoint
+
+- [ ] You can explain why `Move()` handles collision and a bare `transform.position` doesn't
+- [ ] You saw the ground-stick stutter and understand why the line exists
+- [ ] You can say why gravity is hand-rolled instead of using Rigidbody's
+- [ ] The crouch challenge compiles and visibly shrinks the capsule
+
+**Next → Chapter 2: NavMesh & AI pathfinding** — `GolemAI.cs`: how the golem finds
+its way around the same walls without touching a line of pathfinding math either.

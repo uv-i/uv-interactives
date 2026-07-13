@@ -1,0 +1,110 @@
+---
+title: 'Particle Systems — Fire You Never Hand-Animate'
+description: 'Chapter 4 — TorchController.cs: configuring a Particle System''s emission/shape/color-over-lifetime modules for embers, plus a companion Light flicker.'
+series: ember-hollow
+part: 4
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → VFX → `TorchController.cs`**, and select
+a torch in the Hierarchy to see its Particle System in the Inspector.
+
+## The problem — fire is chaos, cheaply
+
+Fire is hundreds of small glowing embers moving semi-randomly, fading and dying at
+different rates. Animating that much independent motion by hand — individual
+GameObjects, hand-keyed curves — would be enormous overkill for a worse-looking result.
+
+## The fix — the emission, shape, and color-over-lifetime modules
+
+`SceneBootstrapper.cs` configures the embers entirely through the ParticleSystem
+scripting API when the scene is built:
+
+```csharp
+var main = ps.main;
+main.startLifetime = 1.2f;
+main.startSpeed = 1.5f;
+main.startColor = new Color(1f, 0.55f, 0.15f);
+
+var shape = ps.shape;
+shape.shapeType = ParticleSystemShapeType.Cone;
+shape.angle = 12f;
+
+var colorOverLifetime = ps.colorOverLifetime;
+colorOverLifetime.enabled = true;
+// gradient: bright orange at birth -> transparent dark red at death
+```
+
+`TorchController.cs` then only has to toggle emission on/off and handle the
+companion point light:
+
+```csharp
+private void ApplyLitState()
+{
+    var emission = _embers.emission;
+    emission.enabled = IsLit;
+    if (IsLit) _embers.Play();
+    else _embers.Stop();
+
+    _light.enabled = IsLit;
+}
+```
+
+The flicker itself is just Perlin noise driving `Light.intensity` every frame —
+the particle system is doing all the actual "fire" visual work.
+
+## The counterfactual
+
+Turn off `colorOverLifetime` and the embers stay bright orange until they simply
+vanish at the end of their lifetime — no fade, no sense of cooling. The gradient is
+what sells "ember," not the particle count.
+
+## Try it — break it on purpose
+
+Select a torch's Particle System and set `Start Speed` to `0`. Play. The embers now
+spawn and sit in place instead of rising — proving that `startSpeed` (not the shape
+module) is what gives the fire its upward drift.
+
+<InstructorNotes>
+
+- Live-tweak `startColor` to blue mid-Play and let students see instant feedback —
+  no recompile, no reimport, the fire changes on the next spawned particle.
+- Ask why `TorchController` is on the torch root while the mesh is a child ("Post")
+  object — because `[RequireComponent(ParticleSystem, Light)]` needs both on the
+  same GameObject the script sits on.
+- This chapter's Try It pairs well with Chapter 5's dissolve shader — both are
+  "one runtime property, driven by a script, doing the visual heavy lifting."
+
+</InstructorNotes>
+
+## Challenge
+
+Add a `smokeTrail` child Particle System to `TorchController` that only emits while
+the torch is **unlit**, so unlit torches visibly smoke instead of doing nothing.
+
+## Interview corner
+
+**Why configure modules via `ps.emission`/`ps.shape` instead of exposing every field
+as a `[SerializeField]`?** The ParticleSystem's own modules already are the
+Inspector-editable data — reaching into them via script (`var main = ps.main;`)
+edits the same underlying system a designer would tweak by hand, instead of
+duplicating dozens of fields onto `TorchController` itself.
+
+**What would happen if `TorchController` called `_embers.Play()` every frame instead
+of only on the `IsLit` transition?** It would restart the emission burst
+continuously, fighting the system's own natural continuous emission and wasting
+CPU calling Play() 60 times a second for no visual benefit.
+
+## Checkpoint
+
+- [ ] You can name the three modules that give the embers their look
+- [ ] You saw the embers sit still with `startSpeed` at 0 and understood why
+- [ ] You can explain why TorchController's RequireComponent forces its GameObject layout
+- [ ] The unlit-smoke challenge only emits when the torch is dark
+
+**Next → Chapter 5: Shader & VFX graph basics** — the wall that dissolves into
+dust when the ruin finally collapses.

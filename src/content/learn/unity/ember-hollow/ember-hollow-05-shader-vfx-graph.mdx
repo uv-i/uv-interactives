@@ -1,0 +1,116 @@
+---
+title: 'Shader & VFX Graph Basics — The Wall That Dissolves'
+description: 'Chapter 5 — CrumbleWall.cs and the hand-built Dissolve Shader Graph: animating a per-pixel _DissolveAmount property via MaterialPropertyBlock.'
+series: ember-hollow
+part: 5
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → VFX → `CrumbleWall.cs`**, and the
+`Dissolve` Shader Graph you built in Chapter 0.
+
+## The problem — crumbling from the edges, not shrinking
+
+The north wall needs to visibly disintegrate as the ruin collapses. Scaling the
+mesh to zero or fading its alpha uniformly reads as "shrinking" or "fading," not
+"crumbling" — nothing looks like it's breaking apart from the edges inward.
+
+## The fix — a shader property animated at runtime
+
+The `Dissolve` Shader Graph exposes a float, `_DissolveAmount`, feeding a Noise node
+into an Alpha Clip Threshold — pixels below the threshold get clipped entirely,
+and as the noise pattern is uniform-random, the clipped region looks like
+disintegration rather than a clean wipe.
+
+`CrumbleWall.cs` animates that property per-renderer:
+
+```csharp
+private IEnumerator DissolveRoutine()
+{
+    if (debrisBurst != null) debrisBurst.Play();
+
+    float t = 0f;
+    while (t < dissolveDuration)
+    {
+        t += Time.deltaTime;
+        float amount = t / dissolveDuration;
+
+        _renderer.GetPropertyBlock(_propBlock);
+        _propBlock.SetFloat(dissolveProperty, amount);
+        _renderer.SetPropertyBlock(_propBlock);
+
+        yield return null;
+    }
+    gameObject.SetActive(false);
+}
+```
+
+## Why MaterialPropertyBlock, not `sharedMaterial`
+
+```csharp
+private MaterialPropertyBlock _propBlock;
+```
+
+`MaterialPropertyBlock` overrides a property **per-renderer** without touching the
+shared `Material` asset. If `CrumbleWall.cs` instead did
+`_renderer.sharedMaterial.SetFloat(...)`, every object using that material —
+every wall built from the same shader — would dissolve together, because they'd
+all be reading and writing the same asset.
+
+## The counterfactual
+
+Swap `SetPropertyBlock` for directly editing `_renderer.sharedMaterial` and add a
+second `CrumbleWall` using the same `Dissolve` material. Collapse one wall — both
+dissolve, because they share the one material instance you just mutated.
+
+## Try it — break it on purpose
+
+Temporarily rename `dissolveProperty` in the Inspector to a property that doesn't
+exist on the shader (e.g. `_Typo`). Play and trigger the collapse — nothing errors,
+and the wall's debris still bursts, but the mesh never visually dissolves.
+`SetFloat` on a non-existent property silently no-ops rather than throwing.
+
+<InstructorNotes>
+
+- If a lab is short on time, a pre-built `Dissolve` Shader Graph can be handed out —
+  but building it live is the strongest moment in this whole series; don't skip it
+  without a real time constraint.
+- Show the Noise node's Scale parameter live — bigger noise scale reads as "chunky
+  rubble," smaller reads as "fine ash." Let students pick a feel.
+- Tie back to Chapter 4: both torches and this wall are "a script drives one
+  runtime-editable value; the visual complexity lives in the asset, not the code."
+
+</InstructorNotes>
+
+## Challenge
+
+Duplicate the `Dissolve` Shader Graph, swap the Noise node for a Voronoi node, and
+make a second wall collapse in a cracked-glass pattern instead of a smooth
+disintegration.
+
+## Interview corner
+
+**What does Alpha Clip actually do to a pixel?** It discards the pixel entirely if
+its computed alpha falls below the threshold — the pixel isn't drawn transparent,
+it isn't drawn at all, which is what allows a mesh to appear to have literal holes
+rather than just fading.
+
+**Why is the debris `ParticleSystem` burst triggered from code instead of an
+Animation Event on the dissolve?** `CrumbleWall.Collapse()` is called by
+`CollapseTimer` at a moment decided by game logic, not by an animation clip's
+timeline — there's no clip driving this at all, so the burst has to be triggered
+from the same script that starts the dissolve coroutine.
+
+## Checkpoint
+
+- [ ] You can explain why Alpha Clip produces "crumbling" instead of "fading"
+- [ ] You saw two walls dissolve together after switching to `sharedMaterial`
+- [ ] You broke `dissolveProperty`'s name and saw it fail silently, not crash
+- [ ] The Voronoi-pattern challenge visibly looks different from the Noise version
+
+**Next → Chapter 6: Audio triggers** — how each chamber of the ruin gets its own
+ambience the instant you walk into it.

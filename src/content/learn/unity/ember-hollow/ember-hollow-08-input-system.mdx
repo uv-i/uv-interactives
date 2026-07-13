@@ -1,0 +1,128 @@
+---
+title: 'Input System, Touch & Controller Haptics — One Action, Every Device'
+description: 'Chapter 8 — EmberHollowControls.inputactions, InputReader.cs, and TouchJoystick.cs: keyboard, gamepad, and mobile touch feeding one Move action, plus gamepad rumble on a catch.'
+series: ember-hollow
+part: 8
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open `EmberHollowControls.inputactions` (double-click in the Project window), then
+**Packages → Ember Hollow → Scripts → Input → `InputReader.cs`** and `TouchJoystick.cs`.
+
+## The problem — one game, three input devices
+
+Keyboard on desktop, a gamepad if one's plugged in, and touch on mobile all need to
+move the same player. The legacy Input Manager needs separate polling code per
+device — `Input.GetAxis` with different axis names for keyboard vs. gamepad, and no
+first-class touch support at all.
+
+## The fix — one action, many bindings
+
+Open the `.inputactions` asset and look at the `Move` action's binding list: a WASD
+composite AND a gamepad left-stick binding, both feeding the same action.
+`InputReader.cs` never asks which device produced the value:
+
+```csharp
+private void Update()
+{
+    Vector2 move = _touchOverrideActive ? _touchMoveOverride : _moveAction.ReadValue<Vector2>();
+    bool sprint = _sprintAction.IsPressed();
+    playerController.SetMoveInput(move, sprint);
+}
+```
+
+Interact is callback-driven, not polled — it only fires when the value actually changes:
+
+```csharp
+_interactAction.performed += OnInteractPerformed;
+```
+
+## Mobile touch — override, don't merge
+
+`TouchJoystick.cs` is a plain UI drag handler. When the player's thumb is down, it
+pushes a value into `InputReader` that **replaces** the Input System's `Move`
+reading entirely:
+
+```csharp
+public void SetTouchMoveOverride(Vector2 move)
+{
+    _touchMoveOverride = move;
+    _touchOverrideActive = true;
+}
+```
+
+Overriding — rather than adding the two together — avoids two input sources
+fighting over the same direction at once, which would happen constantly on a
+device with both a connected gamepad and a touchscreen.
+
+## Controller haptics — a real, load-bearing use
+
+```csharp
+public void TriggerRumble(float lowFrequency, float highFrequency, float durationSeconds)
+{
+    if (Gamepad.current == null) return; // no gamepad connected -- fail silently
+    StartCoroutine(RumbleRoutine(lowFrequency, highFrequency, durationSeconds));
+}
+```
+
+`GolemAI.TickChase` calls this the instant the golem catches you — rumble isn't a
+decorative extra layered on top; it's the direct, felt consequence of one specific
+game event.
+
+## The counterfactual
+
+Delete the `.inputactions` asset's gamepad binding on `Move` and gamepads simply
+stop moving the player — nothing in `PlayerController.cs` or `InputReader.cs`
+changes, proving the device-agnosticism lives entirely in the asset's binding list,
+not in code.
+
+## Try it — break it on purpose
+
+Open the `.inputactions` asset and add a new binding for `Interact` — try
+`<Keyboard>/f`. Save, Play, press F. It works immediately, with zero code changes —
+the callback subscription in `InputReader.cs` doesn't care which binding fired it.
+
+<InstructorNotes>
+
+- Live-add the arrow-key binding to `Move` in front of the class — the "zero code
+  changes" claim is much more convincing demonstrated than described.
+- Plug in a gamepad and let a volunteer get caught by the golem — the rumble is the
+  single most memorable moment of this chapter for most students.
+- Point out `Gamepad.current == null` failing silently rather than throwing —
+  contrast with a naive version that would NullReferenceException on any machine
+  without a gamepad connected.
+
+</InstructorNotes>
+
+## Challenge
+
+Build a minimal rebind UI: a button that calls
+`InputActionRebindingExtensions.PerformInteractiveRebinding()` on the `Interact`
+action, so a player can remap it to any key or button themselves.
+
+## Interview corner
+
+**What's the practical difference between reading an action's value every frame
+(`ReadValue<Vector2>()`) versus subscribing to its `performed` callback?**
+Continuous values you need every frame (movement) are read via polling in Update;
+discrete one-off events (a button press) are cheaper and more precise as callbacks,
+firing exactly once per press instead of being checked 60 times a second.
+
+**Why does `TouchJoystick` check `Application.isMobilePlatform` in `Start()` instead
+of at compile time with `#if UNITY_IOS`?** `isMobilePlatform` is a runtime check —
+it lets one build run correctly whether or not the device it's actually running on
+has touch, without needing a separate compiled build per platform.
+
+## Checkpoint
+
+- [ ] You can explain why touch overrides rather than merges with Move's value
+- [ ] You added an Interact binding with zero code changes and it worked
+- [ ] You felt the gamepad rumble trigger on a golem catch
+- [ ] The rebind-UI challenge remaps Interact to a newly pressed key
+
+**Next → Chapter 9: Player interaction & triggers** — how torches and future
+levers all share one `IInteractable` contract.

@@ -40,7 +40,7 @@ const caveat = Caveat({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${archivoBlack.variable} ${spaceGrotesk.variable} ${caveat.variable}`}>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
         <JsonLd data={organizationLd(studioConfig)} />
         <JsonLd data={personLd(studioConfig)} />
         <Providers>

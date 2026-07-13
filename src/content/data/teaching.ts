@@ -38,6 +38,18 @@ export const teaching: TeachingPackage[] = [
     status: 'active',
   },
   {
+    id: 'ember-hollow',
+    title: 'Ember Hollow',
+    summary:
+      'The capstone: a collapsing-ruin survival explorer teaching 3D movement & NavMesh AI, Animator Controllers & VFX, audio triggers & mixer management, the Input System with touch & controller support, and post-processing — all in one playable build.',
+    engine: 'Unity',
+    category: 'Capstone Project',
+    level: 'Advanced',
+    tags: ['Unity', 'C#', 'URP', 'NavMesh AI', 'Shader Graph', 'Capstone'],
+    githubUrl: 'https://github.com/uv-interactives/uvi-learn-ember-hollow',
+    status: 'active',
+  },
+  {
     id: 'uefn-intro',
     title: 'UEFN Fundamentals',
     summary:

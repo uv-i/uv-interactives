@@ -42,6 +42,21 @@ export function InstructorNotes({ title, children }: { title?: string; children:
   );
 }
 
+/** Rough monospace text width estimate (no DOM available at render time —
+ *  these are server components), used to size boxes so long identifiers
+ *  (e.g. "CollapseTimer.OnProgressChanged") don't overflow their box. */
+function textBoxWidth(label: string, fontSize: number, minWidth: number, pad = 26) {
+  return Math.max(minWidth, Math.round(label.length * fontSize * 0.62) + pad);
+}
+
+/** Shrink font size for longer labels so they have a fighting chance of
+ *  fitting without wrapping (SVG <text> doesn't wrap on its own). */
+function fitFontSize(label: string, base: number) {
+  if (label.length > 30) return base - 2.5;
+  if (label.length > 20) return base - 1.5;
+  return base;
+}
+
 /** One source → hub → many listeners. items: "GameManager,UIManager,AudioManager" */
 export function EventFanout({ source, hub, listeners, note }: {
   source: string; hub: string; listeners: string; note?: string;
@@ -49,25 +64,42 @@ export function EventFanout({ source, hub, listeners, note }: {
   const ls = parseItems(listeners);
   const h = Math.max(ls.length * 44 + 20, 110);
   const midY = h / 2;
+
+  const sourceFS = fitFontSize(source, 11.5);
+  const hubFS = fitFontSize(hub, 11.5);
+  const sourceW = textBoxWidth(source, sourceFS, 110);
+  const hubW = textBoxWidth(hub, hubFS, 110);
+
+  const sourceX = 4;
+  const hubX = sourceX + sourceW + 62;
+  const listenerX = hubX + hubW + 86;
+
+  const listenerBoxes = ls.map((l) => {
+    const fs = fitFontSize(l.label, 11);
+    return { ...l, fs, w: textBoxWidth(l.label, fs, 140) };
+  });
+  const maxListenerW = Math.max(...listenerBoxes.map((b) => b.w));
+  const totalW = Math.max(560, listenerX + maxListenerW + 12);
+
   return (
     <figure className="learn-diagram">
-      <svg viewBox={`0 0 560 ${h + (note ? 26 : 0)}`} role="img" aria-label={`${source} broadcasts through ${hub} to ${ls.length} listeners`}>
-        <rect x={4} y={midY - 16} width={130} height={32} rx={6} fill="rgba(245,166,35,0.12)" stroke={GOLD} strokeWidth={1} />
-        <text x={69} y={midY + 4} textAnchor="middle" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11.5, fill: GOLD }}>{source}</text>
-        <line x1={134} y1={midY} x2={196} y2={midY} stroke={GOLD} strokeWidth={1.2} />
-        <rect x={198} y={midY - 16} width={124} height={32} rx={6} fill="rgba(124,111,221,0.15)" stroke={VIOLET} strokeWidth={1} />
-        <text x={260} y={midY + 4} textAnchor="middle" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11.5, fill: PEARL }}>{hub}</text>
-        {ls.map((l, i) => {
+      <svg viewBox={`0 0 ${totalW} ${h + (note ? 26 : 0)}`} role="img" aria-label={`${source} broadcasts through ${hub} to ${ls.length} listeners`}>
+        <rect x={sourceX} y={midY - 16} width={sourceW} height={32} rx={6} fill="rgba(245,166,35,0.12)" stroke={GOLD} strokeWidth={1} />
+        <text x={sourceX + sourceW / 2} y={midY + 4} textAnchor="middle" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: sourceFS, fill: GOLD }}>{source}</text>
+        <line x1={sourceX + sourceW + 4} y1={midY} x2={hubX - 4} y2={midY} stroke={GOLD} strokeWidth={1.2} />
+        <rect x={hubX} y={midY - 16} width={hubW} height={32} rx={6} fill="rgba(124,111,221,0.15)" stroke={VIOLET} strokeWidth={1} />
+        <text x={hubX + hubW / 2} y={midY + 4} textAnchor="middle" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: hubFS, fill: PEARL }}>{hub}</text>
+        {listenerBoxes.map((l, i) => {
           const y = 20 + i * 44 + 16;
           return (
             <g key={l.label}>
-              <path d={`M322 ${midY} C 360 ${midY}, 375 ${y}, 408 ${y}`} fill="none" stroke={VIOLET} strokeWidth={1} opacity={0.8} />
-              <rect x={410} y={y - 14} width={140} height={28} rx={6} fill="rgba(255,255,255,0.04)" stroke={`rgb(var(--c-pearl) / 0.3)`} strokeWidth={0.7} />
-              <text x={480} y={y + 4} textAnchor="middle" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, fill: `rgb(var(--c-pearl) / 0.85)` }}>{l.label}</text>
+              <path d={`M${hubX + hubW} ${midY} C ${hubX + hubW + 38} ${midY}, ${listenerX - 33} ${y}, ${listenerX} ${y}`} fill="none" stroke={VIOLET} strokeWidth={1} opacity={0.8} />
+              <rect x={listenerX} y={y - 14} width={l.w} height={28} rx={6} fill="rgba(255,255,255,0.04)" stroke={`rgb(var(--c-pearl) / 0.3)`} strokeWidth={0.7} />
+              <text x={listenerX + l.w / 2} y={y + 4} textAnchor="middle" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: l.fs, fill: `rgb(var(--c-pearl) / 0.85)` }}>{l.label}</text>
             </g>
           );
         })}
-        {note && <HandNote x={280} y={h + 16}>{note}</HandNote>}
+        {note && <HandNote x={totalW / 2} y={h + 16}>{note}</HandNote>}
       </svg>
     </figure>
   );

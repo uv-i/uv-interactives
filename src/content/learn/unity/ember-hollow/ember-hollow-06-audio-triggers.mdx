@@ -1,0 +1,117 @@
+---
+title: 'Audio Triggers — A Different Ambience Per Room'
+description: 'Chapter 6 — AudioTriggerZone.cs: fading room ambience in/out via OnTriggerEnter/Exit instead of polling distance every frame.'
+series: ember-hollow
+part: 6
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → Audio → `AudioTriggerZone.cs`**.
+
+## The problem — ambience that scales with the level, not against it
+
+Each chamber of the ruin should have its own ambience — dripping water in the
+flooded hall, howling wind in the collapsed atrium. Checking "how far is the player
+from every zone" every frame in a manager script works for two zones and gets
+slower with every zone a designer adds afterward.
+
+## The fix — trigger colliders, not distance checks
+
+```csharp
+[RequireComponent(typeof(AudioSource))]
+[RequireComponent(typeof(Collider))]
+public class AudioTriggerZone : MonoBehaviour
+{
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.CompareTag(playerTag)) return;
+        if (!_source.isPlaying) _source.Play();
+        StartFade(targetVolume);
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag(playerTag)) return;
+        StartFade(0f);
+    }
+```
+
+Unity's physics engine calls these automatically the instant colliders overlap —
+each zone costs nothing until the player actually enters it. Adding a tenth zone
+doesn't add a tenth distance check anywhere; it adds one more collider the physics
+engine already tracks for free.
+
+Volume changes are a plain coroutine fade, not an instant snap:
+
+```csharp
+private IEnumerator FadeVolume(float target)
+{
+    float start = _source.volume;
+    float t = 0f;
+    while (t < fadeDuration)
+    {
+        t += Time.deltaTime;
+        _source.volume = Mathf.Lerp(start, target, t / fadeDuration);
+        yield return null;
+    }
+    _source.volume = target;
+    if (target <= 0f) _source.Stop();
+}
+```
+
+## The counterfactual
+
+Replace the triggers with a `foreach (zone in allZones) if (Vector3.Distance(...) <
+radius)` check in `Update()`. It works identically at 2 zones and gets measurably
+slower as more zones are added — an O(n) check every frame for every zone in the
+level, forever, whether the player is anywhere near them or not.
+
+## Try it — break it on purpose
+
+Set `fadeDuration` to `0.02` and walk between two zones repeatedly. The ambience
+now snaps rather than crossfades — proving the fade coroutine, not the trigger
+itself, is what makes room transitions feel smooth instead of jarring.
+
+<InstructorNotes>
+
+- Ask why `AudioTriggerZone` requires a `Collider` but doesn't require it to be a
+  trigger in the RequireComponent attribute — `Awake()` sets `isTrigger = true`
+  itself, because RequireComponent can't specify collider *settings*, only presence.
+- Assign genuinely different ambience clips to two zones before Play and have
+  students walk the boundary — the crossfade is the whole point, make it audible.
+- Foreshadow Chapter 7: this file only handles per-room ambience; the mixer chapter
+  is where music (a different audio layer entirely) reacts to game state.
+
+</InstructorNotes>
+
+## Challenge
+
+Add a third `AudioTriggerZone` covering a new area of the ruin, with its own
+ambience clip, using `SceneBootstrapper.CreateAudioZone` as your template.
+
+## Interview corner
+
+**Why does `OnTriggerEnter`/`OnTriggerExit` require at least one Rigidbody in the
+pair of overlapping colliders?** Unity's physics engine only evaluates trigger
+overlaps as part of its physics step, and a physics step needs at least one
+Rigidbody (kinematic is fine) to know something is actually "in motion" worth
+tracking — two purely static colliders overlapping raise no trigger events at all.
+
+**What's the difference between `_source.Stop()` and setting volume to 0?** `Stop()`
+actually halts playback and resets the clip's read position; volume 0 leaves the
+clip silently playing and consuming a voice — `AudioTriggerZone` only calls `Stop()`
+once the fade-out finishes, not the instant the trigger exits.
+
+## Checkpoint
+
+- [ ] You can explain why triggers scale better than a distance-check loop
+- [ ] You heard the snap when fadeDuration dropped to 0.02, and restored it
+- [ ] You know why the RequireComponent + Awake split exists for the Collider
+- [ ] The third-zone challenge plays its own ambience in its own area
+
+**Next → Chapter 7: Mixer setup & management** — how the whole music layer shifts
+from calm to intense as the collapse timer runs down.

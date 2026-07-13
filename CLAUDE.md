@@ -327,8 +327,17 @@ always reach the actual mounted disk. After any `Edit`, run `git diff <file>` in
 the change is on disk. If git shows no diff, the write was lost — use bash heredoc instead:
 `cat > /sessions/…/mnt/uv-i/src/... << 'EOF' … EOF`. This is the reliable write path.
 
-**Never use the Edit tool for files > ~390 lines** — it silently truncates. Use bash heredoc
-or write a Python script.
+**Never trust the Edit tool on this mount, at ANY file size** — the ">~390 lines"
+threshold below was a false comfort: 2026-07-13 confirmed silent truncation on files
+of 60, 76, and 216 lines too (`layout.tsx`, `teaching.ts`, `mdx-components.tsx`), and
+on THIS FILE ITSELF mid-edit (606 lines, cut off mid-sentence in the middle of the
+document, not even at the tail). There is no safe size — assume every Edit tool call
+is unverified until proven otherwise. After EVERY Edit tool call to a repo file, run
+`git diff <file>` AND `grep -c '' <file>` (line count) — if the diff looks larger than
+your intended change, or the line count doesn't match your expectation, the write was
+corrupted; rebuild from `git show HEAD:<path>` and reapply via a single Python script
+or bash heredoc instead. Prefer those two paths outright for anything beyond a true
+single-line change; use `sed -i` only for genuine one-line swaps.
 
 **Targeted string replacement without full rewrite:** For a single-line change in a large file,
 use `sed -i 's/old/new/' file` in bash — faster and safer than a full heredoc rewrite.
@@ -346,6 +355,45 @@ Restore corrupted GLBs with: `git checkout HEAD -- public/models/archipelago/<fi
 
 **Restoring files from git:** `git checkout HEAD -- <file>` restores the last committed version
 but destroys any uncommitted changes. Commit frequently after each meaningful batch.
+⚠️ 2026-07-13: `git checkout HEAD --` FAILED here with `error: unable to unlink old '<file>':
+Operation not permitted` — this mount blocks unlink/rename on existing tracked files, not just
+the cowork outputs scratch folder. When checkout fails like this, get the original via
+`git show HEAD:<path> > /tmp/orig` (read-only, no unlink needed) then overwrite the real path
+with `cat /tmp/orig > <path>` (a write/truncate, not a rename) — that always works.
+
+**The cowork outputs/scratch folder has its own quirks:** the `Write` tool can only write to
+files that already sit in an already-connected directory — it errors "outside this session's
+connected folders" the instant you target a new subfolder that doesn't exist yet (even though
+it will happily overwrite/create sibling files at the root). Bash `mkdir -p`/`cp` in that same
+folder works fine once the sandbox VM is actually up. Deleting/renaming existing files there
+(`rm`, `mv`, zip's temp-then-rename) can fail with the same "Operation not permitted" as above —
+build/zip in `/tmp` instead and `cp` the finished artifact into outputs; never rely on deleting
+stray files there afterward (harmless clutter, just tell the user to ignore them).
+
+**Sandbox VM occasionally fails to start entirely** (`mcp__workspace__bash` returns "VM service
+not running. The service failed to start.") for extended stretches, not just the usual few-second
+boot delay. Keep retrying plain no-op commands (`echo test`) every so often — it does recover.
+While down, `Write`/`Read`/`Edit` (the file-tool path) may still work for the outputs root even
+though bash doesn't; that's the fallback, not a permanent workaround.
+
+**Bash heredoc bodies do NOT process backslash escapes, even for quote-escaping tricks that work
+outside a heredoc.** Writing `ruin'\''s` inside a `cat > file << 'EOF' ... EOF` block (the classic
+bash trick for embedding a literal `'` inside a single-quoted *shell argument*) does NOT apply
+inside a heredoc body — those four characters (`'`, `\`, `'`, `'`) get written to the file
+verbatim. This silently broke YAML frontmatter twice (2026-07-13, Ember Hollow ch1/ch4
+`description:` fields) with `YAMLException: can not read a block mapping entry; a multiline key
+may not be an implicit key`. If an MDX frontmatter string needs an apostrophe, write YAML's own
+escape directly in the heredoc body — a literal doubled `''` — never the bash `'\''` idiom. After
+writing any new frontmatter, sanity-check it with Node + gray-matter (the same lib the site uses),
+not just a null-byte/tail check — null bytes and truncation don't catch bad YAML.
+
+**Cloning a private GitHub repo from the sandbox fails as a generic-looking `404`, not `401`/`403`**
+(GitHub hides private-repo existence from unauthenticated requests) — `git clone`/`curl` both just
+report "not found". If a repo the user just created won't clone, ask whether it's still private
+before assuming a typo'd URL. Also: `raw.githubusercontent.com` and `api.github.com` are BLOCKED by
+the sandbox's network allowlist even when plain `github.com` (web pages, `git clone` over https)
+works fine — don't reach for the raw/API endpoints as a workaround for anything, they will silently
+fail (empty curl output, exit 56) or return a proxy 403.
 
 **Live UI inspection:** Claude-in-Chrome at localhost:3000. The orange control border/cursor
 are the Chrome extension UI, NOT site bugs.
@@ -544,7 +592,7 @@ the exact-URL matching — a new chat with this folder connected + both skills =
   Repo DOES NOT EXIST YET — user must create it (repo-prep-unity-fundamentals/ has
   README + REPO-SETUP.md). It's a project TEMPLATE repo (copy-into-Assets), NOT a UPM
   package — no package.json, no meta-commit requirement.
-- Learning path now: Unity Fundamentals → Coin Rush → OOP Pillars (cross-linked in
+- Learning path now: Unity Fundamentals → Coin Rush → OOP Pillars → Ember Hollow (capstone, cross-linked in
   ch10 finale + repo README).
 - Pending owner: create+push the GitHub repo, review 11 chapters, flip drafts, delete
   repo-prep folder. Until repo exists, the card 404s on GitHub link (tutorial link works).
@@ -604,3 +652,46 @@ for BODY text rejected (readability/credibility) → hand accents only.
   REJECTED: class hierarchies, DI containers, barrel-file churn — anti-patterns here.
   Existing patterns already in place: repository (content/), observer (zustand stores,
   GameEvents-style), strategy (activeEnvironment swap), registry (learnMdxComponents).
+
+## Session 8 — Ember Hollow capstone package + tutorial series (2026-07-13)
+- **New teaching package: Ember Hollow** (via `unity-teaching-package` skill) — a
+  collapsing-ruin survival explorer teaching all 5 requested modules (7-11) in one
+  build: 3D collision/movement + NavMesh AI, Animator Controllers/blend trees +
+  particles + Shader Graph dissolve, audio triggers + mixer snapshots, Input System +
+  mobile touch + controller haptics, post-processing tied to a collapse timer.
+  `SceneBootstrapper.cs` builds the entire playable scene (including scripting
+  `AnimatorController`/`BlendTree` assets via `UnityEditor.Animations` and baking the
+  NavMesh) from empty project → Play with zero manual scene work. Two DELIBERATE
+  manual steps (Audio Mixer w/ snapshots, Dissolve Shader Graph) are the hands-on
+  practice for those two modules, not shortcuts — documented with checkpoints in
+  README Chapter 0. Pushed by owner to
+  `github.com/uv-interactives/uvi-learn-ember-hollow` (had to be flipped from
+  private to public before the sandbox could clone it — see network gotcha above).
+- **New tutorial series: ember-hollow** (topic `unity`, 11 chapters ch0-ch10, ALL
+  `draft: true`). One chapter per module-concept rather than one per module (finer
+  granularity, matching the `unity-fundamentals`/`coin-rush` chapter-count norm).
+  3 diagrams used (StateDiagram ch2, TreeDiagram ch3, EventFanout ch10) — within the
+  2-4/series budget. Cross-links back to `unity-fundamentals`' animation/audio/input
+  modules in the finale for students who want the slower build-up.
+- **teaching.ts**: added `ember-hollow` entry, category `"Capstone Project"`,
+  level `Advanced`, positioned after `oop-pillars` (end of the existing beginner→
+  intermediate track, before the not-yet-real UEFN/Verse entries).
+- **`EventFanout` diagram component was overflowing on long identifiers** — its box
+  widths were hardcoded (130px/124px/140px), fine for coin-rush's short labels
+  (`Coin.Raise()`, `GameManager`) but broke on Ember Hollow's fully-qualified
+  `CollapseTimer.OnProgressChanged` / `AudioMixerManager.SetIntensity` style labels.
+  Fixed in `mdx-components.tsx`: new `textBoxWidth()`/`fitFontSize()` helpers size
+  each box off its own label length and shrink font past 20/30 chars; the SVG
+  `viewBox` width is now `Math.max(560, computed)` so short-label diagrams
+  (coin-rush ch4, oop-pillars ch4) render pixel-identical to before. `StateDiagram`/
+  `CycleDiagram`/`TreeDiagram` were NOT touched — same latent risk if ever given a
+  long label, not yet hit in practice.
+- **`layout.tsx`**: added `suppressHydrationWarning` to `<body>` — unrelated to the
+  above, fixes a recurring false-positive hydration warning from the Grammarly
+  browser extension injecting `data-new-gr-c-s-check-loaded`/`data-gr-ext-installed`
+  attributes before React hydrates. Scoped to one element; doesn't hide real
+  hydration bugs elsewhere.
+- **This file (`CLAUDE.md`) itself got Edit-tool-truncated mid-edit today** while
+  trying to add the gotcha bullets above — see the strengthened warning at the top
+  of this section. Recovered via `git show HEAD:CLAUDE.md` + a single Python
+  read-modify-write script rather than piecemeal Edit calls.

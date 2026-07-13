@@ -1,0 +1,134 @@
+---
+title: 'Player Interaction & Triggers — One Contract, Any Interactable'
+description: 'Chapter 9 — PlayerInteraction.cs and IInteractable: why the player holds one interface reference instead of type-checking "is this a torch, a lever, a door."'
+series: ember-hollow
+part: 9
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → Player → `PlayerInteraction.cs`**.
+
+## The problem — torches today, levers and doors tomorrow
+
+Torches are the only interactable in this build, but a real project keeps adding
+more — levers, doors, pickups. If `PlayerInteraction` type-checks each one
+(`if (obj is Torch) ... else if (obj is Lever) ...`), every new interactable type
+means editing this file again.
+
+## The fix — IInteractable
+
+```csharp
+public interface IInteractable
+{
+    string InteractionPrompt { get; }
+    void Interact(GameObject interactor);
+}
+```
+
+`PlayerInteraction` holds exactly one reference, regardless of what's nearby:
+
+```csharp
+private void OnTriggerEnter(Collider other)
+{
+    var interactable = other.GetComponentInParent<IInteractable>();
+    if (interactable == null) return;
+
+    _current = interactable;
+    OnInteractionPromptChanged?.Invoke(interactable.InteractionPrompt);
+}
+
+public void TryInteract()
+{
+    if (_current == null) return;
+    _current.Interact(gameObject);
+}
+```
+
+`TorchController` is the only implementer today (`IsLit ? "Torch lit" : "Press E to
+light torch"`), but `TryInteract()` never needed to change to add it, and won't
+need to change for the next one either.
+
+## The Rigidbody gotcha
+
+```csharp
+[RequireComponent(typeof(SphereCollider))]
+[RequireComponent(typeof(Rigidbody))]
+public class PlayerInteraction : MonoBehaviour
+{
+    private void Awake()
+    {
+        var col = GetComponent<SphereCollider>();
+        col.isTrigger = true;
+        col.radius = interactRadius;
+
+        var rb = GetComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+    }
+```
+
+Unity only raises `OnTriggerEnter`/`OnTriggerExit` when at least one of the two
+overlapping colliders has a Rigidbody. Torches are static, so the player side
+carries a **kinematic** Rigidbody — kinematic means physics forces never move it;
+it exists purely to make the trigger events fire at all.
+
+## The counterfactual
+
+Remove the Rigidbody from the player and the interaction trigger simply never
+fires against static torches — no error, no prompt, nothing. This is one of Unity's
+quieter gotchas: two static colliders overlapping, with a trigger flag, still raise
+nothing without a Rigidbody in the pair.
+
+## Try it — break it on purpose
+
+Temporarily delete the Rigidbody component from the Player in Play mode. Walk up to
+a torch. No "Press E" prompt appears — restore the Rigidbody (or stop and replay)
+and it comes back immediately.
+
+<InstructorNotes>
+
+- This Rigidbody requirement trips up almost everyone the first time they build
+  their own trigger-based interaction system — call it out explicitly rather than
+  letting students discover it as a mystery bug later.
+- Ask what `GetComponentInParent<IInteractable>()` buys over `GetComponent` — the
+  torch's collider could live on a child object while the interface lives on the
+  root, and `InParent` searches upward through the hierarchy for it.
+- `OnInteractionPromptChanged` is a C# event, not a direct call into
+  `HUDController` — same decoupling principle as `GolemAI.OnRoar` in Chapter 7.
+
+</InstructorNotes>
+
+## Challenge
+
+Add a `Lever` class implementing `IInteractable` that, when interacted with, opens
+a door by disabling a wall's collider. `PlayerInteraction` needs zero changes to
+support it.
+
+## Interview corner
+
+**Why does `IInteractable` expose a `string InteractionPrompt` property instead of
+letting the HUD ask "what should I display" some other way?** Each implementer
+knows its own current state best (a torch's prompt changes once lit); centralizing
+that logic in the interface keeps the HUD completely ignorant of what kinds of
+interactables exist.
+
+**What's the practical difference between `GetComponent<T>()` and
+`GetComponentInParent<T>()`?** `GetComponent` only checks the exact GameObject it's
+called on; `GetComponentInParent` walks upward through ancestors until it finds a
+match (or none) — necessary here because the collider that triggers the overlap
+isn't always on the same object as the `IInteractable` implementation.
+
+## Checkpoint
+
+- [ ] You can explain why `PlayerInteraction` never type-checks what it's near
+- [ ] You removed the player's Rigidbody and watched the prompt stop appearing
+- [ ] You know why `GetComponentInParent` is used instead of `GetComponent`
+- [ ] The Lever challenge opens a door without touching `PlayerInteraction.cs`
+
+**Next → Chapter 10: Post-processing, and everything wired together** — the
+volume that reacts to the collapse timer, and the one file that connects every
+system in this series without any of them referencing each other directly.

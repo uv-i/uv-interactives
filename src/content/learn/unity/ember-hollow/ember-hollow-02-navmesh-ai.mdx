@@ -1,0 +1,113 @@
+---
+title: 'NavMesh & AI Pathfinding — The Golem That Hunts You'
+description: 'Chapter 2 — GolemAI.cs: NavMeshAgent pathfinding and a Patrol/Chase state machine, and why an explicit state enum beats a pile of bools.'
+series: ember-hollow
+part: 2
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → Enemy → `GolemAI.cs`**.
+
+## The problem — chasing around corners, not through them
+
+The golem needs to path around rubble and through corridors toward you, not walk
+straight at your position and get stuck on the first wall. Doing this by hand —
+raycasting around obstacles, backtracking on dead ends — is a real, hard
+pathfinding problem you do not want to write from scratch.
+
+## The fix — NavMeshAgent + an explicit state enum
+
+```csharp
+public enum GolemState { Patrol, Chase }
+
+[RequireComponent(typeof(NavMeshAgent))]
+public class GolemAI : MonoBehaviour
+{
+    private NavMeshAgent _agent;
+    private GolemState _state = GolemState.Patrol;
+```
+
+`NavMeshAgent` does the actual pathfinding — our job is only deciding *when* to
+chase, never *how* to get there:
+
+```csharp
+switch (_state)
+{
+    case GolemState.Patrol:
+        TickPatrol(distToPlayer);
+        break;
+    case GolemState.Chase:
+        TickChase(distToPlayer);
+        break;
+}
+```
+
+Each state just re-targets the agent's destination:
+
+```csharp
+private void TickChase(float distToPlayer)
+{
+    _agent.speed = config.chaseSpeed;
+    _agent.SetDestination(player.position);
+    ...
+```
+
+<StateDiagram states="Patrol|wander waypoints,Chase|hunt player position" transitions="0-1|player within sightRange,1-0|player beyond loseInterestRange" note="re-targets NavMeshAgent.destination on every transition" />
+
+## The counterfactual
+
+Replace the `switch` with the bool-flag version — `isChasing`, `wasChasing`,
+`isPatrolling` — and adding a third state (say, `Stunned`) means auditing every
+existing `if` for a case you forgot. The enum + switch keeps "what am I doing right
+now" as one readable answer instead of a web of flag combinations.
+
+## Try it — break it on purpose
+
+In `GolemConfig`, set `sightRange` higher than `loseInterestRange`. Play. The golem
+will chase forever once it notices you, because `TickChase`'s exit condition
+(`distToPlayer > loseInterestRange`) can never fire before `TickPatrol` would have
+re-triggered chase anyway. Fix the values back and explain in one sentence why the
+ordering of those two numbers matters.
+
+<InstructorNotes>
+
+- Open the Navigation window (Window → AI → Navigation) and show the baked walkable
+  surface overlay — students rarely realize NavMesh is a literal pre-computed mesh.
+- The roar cooldown (`_roarTimer`) is a plain countdown, not a coroutine — ask why
+  a coroutine wasn't needed here (it's checked every frame in Update() already).
+- Foreshadow Chapter 7: `OnRoar` is a C# event GolemAI raises but never listens to
+  itself — audio ducking happens elsewhere without GolemAI knowing audio exists.
+
+</InstructorNotes>
+
+## Challenge
+
+Add a third state, `Stunned`, entered when the player uses some future ability, that
+sets `_agent.isStopped = true` for 2 seconds before returning to whichever state
+it was in before.
+
+## Interview corner
+
+**Why a NavMeshAgent instead of moving the transform toward the player directly?**
+NavMeshAgent paths around static geometry baked into the NavMesh; a direct
+`Vector3.MoveTowards` toward the player walks straight into any wall between them.
+
+**What's the difference between `_agent.SetDestination()` and setting
+`transform.position` directly?** `SetDestination` asks the agent to *path* there over
+time, respecting the NavMesh and avoiding obstacles; setting `transform.position`
+teleports instantly and bypasses the agent's pathing (and desyncs the agent's
+internal state from the object's actual position).
+
+## Checkpoint
+
+- [ ] You can explain why `switch (_state)` beats a pile of bools here
+- [ ] You broke the sight/lose-interest range ordering and saw why it matters
+- [ ] You can point to the exact line where the golem re-targets its NavMeshAgent
+- [ ] The Stunned-state challenge compiles and the golem actually pauses
+
+**Next → Chapter 3: Animator Controllers & blend trees** — how one `Speed` float
+drives both the player's and the golem's locomotion animation.

@@ -1,0 +1,123 @@
+---
+title: 'Mixer Setup & Management — Blending Whole Groups at Once'
+description: 'Chapter 7 — AudioMixerManager.cs: TransitionToSnapshots and exposed parameter ducking, built on the EmberHollowMixer you created by hand in Chapter 0.'
+series: ember-hollow
+part: 7
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → Audio → `AudioMixerManager.cs`**, and the
+`EmberHollowMixer` asset you built by hand in Chapter 0.
+
+## The problem — many sounds, one mood
+
+As the collapse timer runs down, the whole audio picture should shift — music
+should feel more urgent, and the golem's roar should momentarily cut through
+everything else. Doing this by independently lerping every individual
+`AudioSource.volume` in the scene means every new sound source needs its own
+volume-management code, and there's no single place that owns "how loud is
+everything right now."
+
+## The fix — snapshots and exposed parameters
+
+Your `EmberHollowMixer` has one exposed float, `MusicVolume`, and two snapshots,
+`Calm` and `Intense`, each remembering a full set of mixer values. Blending between
+them is one call:
+
+```csharp
+public void SetIntensity(float t)
+{
+    if (mixer == null || calmSnapshot == null || intenseSnapshot == null) return;
+
+    t = Mathf.Clamp01(t);
+    var snapshots = new[] { calmSnapshot, intenseSnapshot };
+    var weights = new[] { 1f - t, t };
+    mixer.TransitionToSnapshots(snapshots, weights, 0.75f);
+}
+```
+
+`TransitionToSnapshots` blends *every* exposed parameter across both snapshots at
+once — contrast that with hand-lerping N separate `AudioSource.volume` fields, each
+needing its own coroutine and its own "what's the target value" bookkeeping.
+
+Ducking under the golem's roar is the same idea at a smaller scale — one exposed
+parameter, lerped down and back:
+
+```csharp
+private IEnumerator LerpParam(string param, float from, float to, float duration)
+{
+    float t = 0f;
+    while (t < duration)
+    {
+        t += Time.deltaTime;
+        mixer.SetFloat(param, Mathf.Lerp(from, to, t / duration));
+        yield return null;
+    }
+    mixer.SetFloat(param, to);
+}
+```
+
+## The counterfactual
+
+Skip the mixer and instead have every individual `AudioSource` (ambience zones,
+music, SFX) know how to duck itself for a roar and how to respond to collapse
+progress. Every new sound in the game now needs that same ducking/intensity logic
+copy-pasted into it — the mixer chapter exists specifically to avoid that.
+
+## Try it — break it on purpose
+
+Leave `calmSnapshot` unassigned on `AudioMixerManager` in the Inspector and Play.
+Nothing crashes — `SetIntensity` and `DuckMusicForRoar` both guard with a null
+check and silently no-op:
+
+```csharp
+if (mixer == null || calmSnapshot == null || intenseSnapshot == null) return;
+```
+
+That guard exists on purpose: until you complete the Chapter 0 mixer build, the
+rest of the game still runs.
+
+<InstructorNotes>
+
+- This is the second of the two Chapter 0 hands-on builds — if a class is running
+  long, this is the better one to have pre-built for them (the dissolve shader in
+  Chapter 5 is the more memorable hands-on moment of the two).
+- Open the Audio Mixer window during a roar and watch the `Music` group's meter dip
+  in real time — visible feedback beats explaining ducking in the abstract.
+- `GameWiring.cs` (Chapter 10) is where `GolemAI.OnRoar` actually gets connected to
+  `DuckMusicForRoar` — this file never listens for the roar itself.
+
+</InstructorNotes>
+
+## Challenge
+
+Add a third snapshot, `Danger`, entered only in the last 10% of the collapse timer
+(on top of the existing Calm/Intense blend), that also pulls the SFX group up a few dB.
+
+## Interview corner
+
+**What's the actual difference between a mixer Snapshot and just setting exposed
+parameters directly in a script?** A Snapshot is a saved set of *every* parameter's
+value at once, designed and tuned inside the Mixer window by ear; blending toward
+one lets a sound designer own the "what does Intense actually sound like" decision
+entirely outside of code, while the script only ever says "how intense, right now."
+
+**Why does `DuckMusicForRoar` restart its coroutine (`StopCoroutine` then
+`StartCoroutine`) instead of letting overlapping calls run concurrently?** Two roars
+close together would otherwise start two independent lerps fighting over the same
+`MusicVolume` parameter, producing a jittery, unpredictable volume instead of one
+clean duck-and-recover.
+
+## Checkpoint
+
+- [ ] You can explain what `TransitionToSnapshots` does in one sentence
+- [ ] You unassigned a snapshot, saw nothing crash, and found the guard clause that prevents it
+- [ ] You watched the Music meter dip during a roar in the Mixer window
+- [ ] The Danger-snapshot challenge blends in during the final stretch
+
+**Next → Chapter 8: Input System, touch & controller haptics** — one set of
+actions reading keyboard, gamepad, and touch without three separate code paths.

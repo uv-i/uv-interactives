@@ -1,0 +1,90 @@
+---
+title: 'Install & Play: Ember Hollow'
+description: 'Chapter 0 — install the capstone package, run the two bootstrapper steps, build the Audio Mixer and Dissolve shader by hand, and play the finished ruin before we take it apart system by system.'
+series: ember-hollow
+seriesTitle: 'Ember Hollow'
+part: 0
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: false
+---
+
+Ember Hollow is the capstone: a collapsing-ruin survival explorer where a stone golem
+hunts you by NavMesh pathfinding while a collapse timer drives the music, the
+post-processing, and a dissolving wall. It exists to show five systems working
+together — 3D movement, animation/VFX, audio, input, and post-processing — in one
+playable build, not five separate demos. This chapter takes you from **nothing
+installed** to **playing the game**. The rest of the series takes it apart, system
+by system.
+
+## What you need
+
+- Unity Hub with **Unity 6000.0 or newer** installed
+- Comfortable with a first Unity project already — this series assumes you've
+  finished **Unity Fundamentals**, **Coin Rush**, or equivalent beginner ground
+
+## 1. Create the project
+
+1. Unity Hub → **New project** → **Universal 3D** template.
+2. Name it `EmberHollow`, choose a location, **Create project**.
+
+## 2. Install the package
+
+1. **Window → Package Manager → + → Add package from git URL**:
+   ```
+   https://github.com/uv-interactives/uvi-learn-ember-hollow.git#1.0.0
+   ```
+2. Package Manager pulls in everything the package depends on: Input System,
+   AI Navigation, TextMeshPro, Universal RP, Visual Effect Graph, Shader Graph.
+   If Unity asks to switch active input handling to **"Input System Package (New)"**
+   — click **Yes** and let the editor restart.
+
+## 3. Bootstrap the scene
+
+1. **Ember Hollow → Step 1 → Create Default ScriptableObjects** — creates
+   `GolemConfig`, `RuinConfig`, `PlayerAnimator.controller`, `GolemAnimator.controller`,
+   and `EmberHollowVolumeProfile` under `Assets/EmberHollow/Data/`.
+2. **Ember Hollow → Step 2 → Build Scene** — builds the entire playable ruin:
+   ground, walls, golem, player, camera, torches, audio zones, post-processing
+   volume, and UI, and bakes the NavMesh. Nothing else needs placing by hand.
+
+## 4. The two hands-on steps
+
+Everything else is generated for you — these two are deliberately left for your
+hands, because building them **is** the lesson for their module, not a shortcut we
+forgot to script.
+
+**Build the Audio Mixer** (this is chapter 7's whole subject):
+1. Project window → right-click → **Create → Audio Mixer** → name it `EmberHollowMixer`.
+2. Open it. Right-click the **Master** group → **Add child group** → name it `Music`.
+3. Right-click the `Music` group's volume slider → **Expose "Volume (of Music)" to
+   script** → in the Exposed Parameters panel, rename it to `MusicVolume`.
+4. In the Snapshots panel, duplicate the default snapshot into two: `Calm` and
+   `Intense` (pull `Music` down a few dB in `Intense`).
+5. Select the `GameManager` object in the Hierarchy → drag `EmberHollowMixer`,
+   `Calm`, and `Intense` onto the matching fields on its `AudioMixerManager` component.
+
+**Build the Dissolve shader** (this is chapter 5's whole subject):
+1. Project window → right-click → **Create → Shader Graph → URP → Lit Shader Graph**
+   → name it `Dissolve`.
+2. Add a float property `_DissolveAmount` (exposed), a Noise node, and an Alpha
+   Clip Threshold driven by `_DissolveAmount`.
+3. Create a Material from the shader, drag it onto `CrumbleWall_North`'s Mesh Renderer.
+
+## 5. Play
+
+WASD or left stick to move, Shift or stick-click to sprint, `E` or gamepad South
+button to interact. On mobile builds the on-screen joystick and interact button
+appear automatically — nothing to configure.
+
+## Checkpoint
+
+- [ ] Pressing Play drops you into a lit ruin with a countdown timer visible
+- [ ] Standing near a torch shows an "E" prompt, and lighting it works
+- [ ] Walking into the golem's sight range makes it start chasing you
+- [ ] Music audibly shifts as the timer nears zero, and the north wall dissolves at zero
+
+**Next → Chapter 1: 3D collision & movement** — `PlayerController.cs` and why
+`CharacterController.Move()` replaces hand-written collision math.

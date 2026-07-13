@@ -1,0 +1,128 @@
+---
+title: 'Post-Processing, and Everything Wired Together'
+description: 'Chapter 10 (finale) — PostFXController.cs reacting to CollapseTimer, and GameWiring.cs: the one file connecting every system in this series via C# events, with nothing that references anything else directly.'
+series: ember-hollow
+part: 10
+level: advanced
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-ember-hollow'
+updated: '2026-07-13'
+draft: true
+---
+
+Open **Packages → Ember Hollow → Scripts → Environment → `PostFXController.cs`**,
+`CollapseTimer.cs`, and `GameWiring.cs`.
+
+## The problem — the whole screen needs to feel the collapse
+
+As the countdown nears zero, the game should feel more oppressive — vignette
+closing in, colors desaturating — without hand-darkening every individual light
+and material in the scene.
+
+## The fix — driving a Volume profile at runtime
+
+```csharp
+private void HandleProgress(float t)
+{
+    if (_vignette != null)
+        _vignette.intensity.value = Mathf.Lerp(vignetteStart, vignetteEnd, t);
+
+    if (_colorAdjustments != null)
+        _colorAdjustments.saturation.value = Mathf.Lerp(saturationStart, saturationEnd, t);
+}
+```
+
+`.value`, not a plain field assignment — these are `VolumeParameter<T>` wrappers,
+and `TryGet` (used in `Awake()`) returns `false` instead of throwing if the profile
+doesn't have that override added, so always check before using one:
+
+```csharp
+volume.profile.TryGet(out _vignette);
+volume.profile.TryGet(out _colorAdjustments);
+```
+
+## Where `t` comes from — CollapseTimer owns the truth
+
+```csharp
+public event Action<float> OnProgressChanged;
+...
+_elapsed += Time.deltaTime;
+float curved = config.intensityOverTime.Evaluate(Progress01);
+OnProgressChanged?.Invoke(curved);
+```
+
+`RuinConfig.intensityOverTime` is an `AnimationCurve` — an instructor can reshape
+*when* the intensity ramps up (slow burn vs. sudden dread) entirely in the
+Inspector, with zero code changes.
+
+## The whole series, wired in one file
+
+Every system you've studied — the golem, the timer, the mixer, the post-fx — could
+each hold direct references to the others. Instead, exactly one file does that job:
+
+```csharp
+private void OnEnable()
+{
+    if (golem != null && audioMixerManager != null)
+        golem.OnRoar += audioMixerManager.DuckMusicForRoar;
+
+    if (collapseTimer != null && audioMixerManager != null)
+        collapseTimer.OnProgressChanged += audioMixerManager.SetIntensity;
+}
+```
+
+<EventFanout source="CollapseTimer.OnProgressChanged" hub="GameWiring" listeners="AudioMixerManager.SetIntensity,PostFXController.HandleProgress" note="GolemAI.OnRoar also fans out here, to DuckMusicForRoar" />
+
+Delete `GameWiring.cs` entirely and every other script in this package still
+compiles and runs standalone — the golem still chases, the timer still counts
+down, the walls still dissolve on schedule. Only the *cross-system reactions* stop:
+music won't duck for roars, the mix won't shift with the timer. That's the proof
+this is decoupling, not just indirection for its own sake.
+
+## The counterfactual
+
+Give `GolemAI` a direct `[SerializeField] AudioMixerManager` reference and call
+`DuckMusicForRoar()` straight from `TickChase()`. It works — until the next system
+wants to react to a roar too (a screen shake, an achievement), and now `GolemAI`
+needs a reference to that as well. `GameWiring` is the one place allowed to know
+about all of them.
+
+<InstructorNotes>
+
+- Save this file for last on purpose — every earlier chapter's "why doesn't X know
+  about Y" question gets answered by this one script.
+- Live-delete `GameWiring` from the scene, Play, and have students name exactly
+  what stops working (music ducking, mix shifting) versus what keeps working
+  (literally everything else).
+- Scrub `RuinConfig.intensityOverTime` in the Inspector between a straight line and
+  an ease-in curve — same countdown length, very different pacing.
+
+</InstructorNotes>
+
+## Final challenge round
+
+No hints this time — you have every system from all ten chapters:
+
+1. **A second reactive system:** a screen-shake effect that fires on `GolemAI.OnRoar`,
+   wired through `GameWiring` — no changes to `GolemAI.cs` itself.
+2. **Danger post-fx layer:** a chromatic aberration override that pulses whenever the
+   golem is within its `catchDistance`, layered on top of (not replacing) the
+   collapse-timer vignette.
+3. **A fourth Chapter-0-style manual step:** design one more hands-on build (a
+   Cinemachine camera, a new Shader Graph effect) and write its instructions the
+   way Chapters 0, 5, and 7 do — with a checkpoint.
+
+## Checkpoint
+
+- [ ] You can explain what `TryGet` protects against and why it returns bool
+- [ ] You deleted `GameWiring` and correctly predicted what would and wouldn't break
+- [ ] You reshaped the collapse pacing using only the AnimationCurve
+- [ ] At least one final challenge shipped and runs
+
+**Series complete.** You've now touched 3D movement and collision, NavMesh AI,
+Animator Controllers and blend trees, particle systems, Shader Graph, audio triggers
+and mixer management, the Input System with touch and controller support, player
+interaction, post-processing, and event-driven cross-system wiring — in one
+playable build. If any single system here felt fast, **Unity Fundamentals**' later
+modules (`08` animation, `09` audio, `10` input) build each of them more slowly,
+from scratch, on their own.
