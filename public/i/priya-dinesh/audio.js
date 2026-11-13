@@ -29,19 +29,31 @@ window.SND = (() => {
     bgm.connect(bgmBus); bgm.start(0, ls);
     bgmBus.gain.setValueAtTime(0, now()); ramp(bgmBus, muted ? 0 : VOL.bgm, FADE.bgmIn);
   }
-  async function unlock() {                                 // first tap anywhere: create the context, start BGM
-    if (started) return; started = true;
+  /* iOS (user 2026-11-13: no sound on iPhone): Safari only unlocks audio inside touchend/click (pointerdown is NOT a
+     user-activation event there), and Web Audio obeys the silent switch unless the audio session is 'playback'.
+     So: listen on touchend + click too, retry resume on every gesture until running, play a 1-sample silent buffer
+     inside the gesture (the classic iOS unlock), and set navigator.audioSession.type (Safari 16.4+). */
+  async function unlock() {
     try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
-      master = ac.createGain(); master.gain.value = VOL.master; master.connect(ac.destination);
-      bgmBus = ac.createGain(); bgmBus.gain.value = 0; bgmBus.connect(master);
-      sfxBus = ac.createGain(); sfxBus.gain.value = muted ? 0 : VOL.sfx; sfxBus.connect(master);
-      await ac.resume();
-      bgmBuf = await load('a/bgm_loop.mp3'); startBgm();
-      load('a/olai_rustle.mp3').then(b => rustle = b).catch(() => {});
+      if (navigator.audioSession) navigator.audioSession.type = 'playback';
+      if (!ac) {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        master = ac.createGain(); master.gain.value = VOL.master; master.connect(ac.destination);
+        bgmBus = ac.createGain(); bgmBus.gain.value = 0; bgmBus.connect(master);
+        sfxBus = ac.createGain(); sfxBus.gain.value = muted ? 0 : VOL.sfx; sfxBus.connect(master);
+      }
+      if (ac.state !== 'running') {
+        const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1, 1, 22050); s.connect(ac.destination); s.start(0);
+        await ac.resume();
+      }
+      if (ac.state === 'running' && !started) {
+        started = true;
+        bgmBuf = await load('a/bgm_loop.mp3'); startBgm();
+        load('a/olai_rustle.mp3').then(b => rustle = b).catch(() => {});
+      }
     } catch (e) { /* audio is decoration: never break the invitation */ }
   }
-  ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, unlock, { once: false, passive: true }));
+  ['touchend', 'click', 'pointerdown', 'keydown'].forEach(ev => addEventListener(ev, unlock, { passive: true }));
 
   function setMuted(m) {
     muted = m; try { localStorage.setItem('mute', m ? '1' : '0'); } catch (e) {}

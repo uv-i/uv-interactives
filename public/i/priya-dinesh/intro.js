@@ -26,8 +26,8 @@ window.INTRO = (() => {
   const STACK = [['cover', 'leaf_cover'], ['L1', 'leaf_title'], ['L2', 'leaf_title'], ['L3', 'leaf_title'], ['L4', 'leaf_title'], ['L5', 'leaf_plain'], ['L6', 'leaf_plain']];
   const FACT = { L1: () => `<div class="fit big">${t('title')}</div>`,
                  L2: () => `<div class="fit big">${t('bride')} ${HEART()} ${t('groom')}</div><div class="wrap2">${t('welcome')}</div>`,
-                 L3: () => `<div class="fit"><b>${t('wedL')}</b></div><div class="fit big">${t('wedS')}</div>`,   /* wedding only (user: no engagement) */
-                 L4: () => `<div class="fit"><b>${LANG === 'ta' ? 'இடம்' : 'VENUE'}</b></div><div class="fit big">${t('venue')}</div>` };
+                 L3: () => `<div class="fit"><b>${t('wedL')}</b></div><div class="two">${t('wedS')}</div>`,   /* wedding only (user: no engagement) */
+                 L4: () => `<div class="fit"><b>${LANG === 'ta' ? 'இடம்' : 'VENUE'}</b></div><div class="two">${t('venue')}</div>`   /* elders: wrap to 2 big lines instead of shrinking */ };
   const LIFT0 = -58, SHOW = 6;
   const step = (p, q) => { const [wq, hq] = sz(STACK[q][1]), hp = sz(STACK[p][1])[1];
     return Math.asin(Math.min(.5, ((hp - hq) / 2 + SHOW) / (wq * .9))) * 180 / Math.PI; };
@@ -72,14 +72,14 @@ window.INTRO = (() => {
 
   // ---------------------------------------------------------------- hint glyph over the active object
   function hint(icon, x, y) { const h = el(`<div class="hint" style="left:${x}px;top:${y}px"><img src="${A}${icon}.png" alt=""></div>`); layer.appendChild(h); return h; }
-  function petals(n = 10, ms = 3600) {
+  function petals(n = 10, ms = 3600, spread = 900) {
     const kinds = ['petal_rose', 'petal_marigold', 'petal_jasmine'];
     for (let i = 0; i < n; i++) {
       const p = el(`<img class="petal" src="${A}${kinds[i % 3]}.webp" alt="">`), r0 = Math.random() * 360;
       p.style.left = 20 + Math.random() * 320 + 'px'; p.style.top = '-30px'; $('#stage').appendChild(p);
       p.animate([{ transform: `translate(0,0) rotate(${r0}deg)`, opacity: 0 }, { opacity: 1, offset: .12 },
                  { transform: `translate(${(Math.random() - .5) * 140}px, ${640 + Math.random() * 200}px) rotate(${r0 + 300}deg)`, opacity: 0 }],
-        { duration: ms + Math.random() * 1500, delay: Math.random() * 900, easing: 'cubic-bezier(.3,.2,.6,1)' }).finished.then(() => p.remove());
+        { duration: ms + Math.random() * 1500, delay: Math.random() * spread, easing: 'cubic-bezier(.3,.2,.6,1)' }).finished.then(() => p.remove());
     }
   }
   function sparkle(x, y) {
@@ -92,8 +92,8 @@ window.INTRO = (() => {
     return new Promise(res => {
       const k = buildBundle(), knot = bundleEl.querySelector('.knot');
       let h = null; later(() => h = hint('ic_hint_tap', k.x + 28, k.y - 36), IT.hintMs);
-      const go = () => { knot.onclick = null; if (h) h.remove(); res(); };
-      knot.onclick = go;                         // the knot tap is also the first gesture: audio.js starts the BGM on it
+      const go = () => { finishStep = null; knot.onclick = null; if (h) h.remove(); res(); };
+      knot.onclick = go; finishStep = go;                         // the knot tap is also the first gesture: audio.js starts the BGM on it
       later(go, IT.idleMs);                      // no input for 6 s -> unties itself
     });
   }
@@ -162,7 +162,7 @@ window.INTRO = (() => {
     draw();
     return new Promise(res => {
       const finish = async () => {
-        if (done) return; done = true; svg.onpointerdown = svg.onpointermove = null; if (h) h.remove();
+        if (done) return; done = true; finishStep = null; svg.onpointerdown = svg.onpointermove = null; if (h) h.remove();
         await new Promise(r => { const p0 = prog, t0 = performance.now(), dur = RM ? 1 : 900 * (1 - p0) + 100;   /* draws on outer, then inner */
           const tick = n => { const k = Math.min(1, (n - t0) / dur); prog = p0 + (1 - p0) * k; draw(); k < 1 ? requestAnimationFrame(tick) : r(); };
           requestAnimationFrame(tick); });
@@ -170,6 +170,7 @@ window.INTRO = (() => {
         svg.querySelector('.glow').animate([{ opacity: 0 }, { opacity: .7 }], { duration: 500, fill: 'forwards' });
         petals(8, 3000); res();
       };
+      finishStep = finish;
       const move = e => {
         if (done) return; const [x, y] = toDesign(e), at = prog * L; let best = null;
         for (const [px, py, l] of pts) if (l >= at - 8 && l <= at + IT.traceAhead) { const dd = Math.hypot(px - x, py - y); if (dd < IT.traceSnapPx && (!best || l > best)) best = l; }
@@ -220,7 +221,7 @@ window.INTRO = (() => {
     const off = a => { let d = ((a - TARGET) % 360 + 540) % 360 - 180; return d; };   /* signed distance to the target, -180..180 */
     return new Promise(res => {
       const snap = async (auto = false) => {
-        if (done) return; done = true; box.onpointerdown = box.onpointermove = null; arc.remove(); if (h) h.remove();
+        if (done) return; done = true; finishStep = null; box.onpointerdown = box.onpointermove = null; arc.remove(); if (h) h.remove();
         const from = ang, to = ang - off(ang);
         await new Promise(r2 => { const t0 = performance.now(), dur = RM ? 1 : (auto ? 1600 : 280);
           const tick = n => { const k = Math.min(1, (n - t0) / dur), e = 1 - Math.pow(1 - k, 3); set(from + (to - from) * e); k < 1 ? requestAnimationFrame(tick) : r2(); };
@@ -228,6 +229,7 @@ window.INTRO = (() => {
         SND.play('snap'); try { navigator.vibrate && navigator.vibrate(20); } catch (e) {}
         res(box);
       };
+      finishStep = () => snap();
       box.onpointerdown = e => { cap(box, e); const [x, y] = toDesign(e); grab = Math.atan2(y - cy, x - cx) * 180 / Math.PI;
         box.onpointermove = ev => { const [mx, my] = toDesign(ev), a = Math.atan2(my - cy, mx - cx) * 180 / Math.PI; let da = a - grab; da = (da + 540) % 360 - 180; grab = a;
           set(ang + da); lastMove = performance.now(); if (arc.style.opacity !== '0.25') arc.style.opacity = .25;
@@ -261,7 +263,7 @@ window.INTRO = (() => {
     return new Promise(res => {
       let anim = null, done = false, lastTouch = performance.now();
       const complete = async () => {
-        if (done) return; done = true; g.onpointerdown = null; if (h) h.remove();
+        if (done) return; done = true; finishStep = null; g.onpointerdown = null; if (h) h.remove();
         p.style.strokeDasharray = '1 1'; ring.remove(); beacon.remove();
         SND.play('flyin');                               // fly-in: zoom into Vadipatti, the globe dissolves to gold
         img.src = `${A}globe.webp`;
@@ -271,6 +273,7 @@ window.INTRO = (() => {
         g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }); gold.remove();
         res();
       };
+      finishStep = complete;
       const start = () => { if (done) return; lastTouch = performance.now(); SND.play('hold');
         anim = p.animate([{ strokeDasharray: '0 1' }, { strokeDasharray: '1 1' }], { duration: IT.holdMs, fill: 'forwards' }); anim.finished.then(complete).catch(() => {}); };
       const stop = () => { if (anim && !done) { anim.cancel(); anim = null; } };
@@ -284,7 +287,8 @@ window.INTRO = (() => {
     return new Promise(res => {
       const pin = el(`<button class="pin glass" type="button" style="left:150px;top:540px"><img src="${A}ic_map_pin.png" alt=""></button>`), h = hint('ic_hint_hold', 196, 610);
       layer.appendChild(pin); let tm = null;
-      const go = () => { pin.onpointerdown = null; h.remove(); pin.remove(); res(); };
+      const go = () => { finishStep = null; pin.onpointerdown = null; h.remove(); pin.remove(); res(); };
+      finishStep = go;
       pin.onpointerdown = () => { SND.play('hold'); tm = setTimeout(go, IT.holdMs); };
       pin.onpointerup = () => clearTimeout(tm);
       later(go, IT.idleMs);
@@ -307,7 +311,7 @@ window.INTRO = (() => {
       { duration: 1200, delay: i * 18, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' }).finished));
     reveal(true);                                        // under full cover: swap the intro for the card
     await wait(350);
-    SND.play('shower'); petals(16, 4200);
+    SND.play('shower'); petals(80, 4200, 2600);   /* user: 5x the shower, spread over 2.6 s */
     await Promise.all(fs.map(([f, a]) => { const sp = a > 0 ? -70 : 70;   /* part like curtains toward the edges */
       return f.animate([{ transform: `rotate(${a}deg)` }, { transform: `rotate(${a - Math.sign(a || 1) * 70}deg)`, opacity: 0 }], { duration: 1100, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' }).finished; }));
     fs.forEach(([f]) => f.remove());
@@ -315,7 +319,7 @@ window.INTRO = (() => {
   /* Skip (user 2026-11-13): never on screen at a step's start. During a hand-played step (knot, kolam, dial, globe) it
      fades in once the step has run skipMs with no touch — after the 2 s hint, before the 6 s auto-complete. Any touch hides
      it and restarts the clock. Cinematic beats (untie, leaf lifts, fan reveal) are never skippable from here. */
-  let skippable = false, stepT0 = 0, lastTouch = 0, skipWatch = null;
+  let skippable = false, stepT0 = 0, lastTouch = 0, skipWatch = null, finishStep = null;   /* finishStep: the current step's own auto-complete */
   const armSkip = on => { skippable = on; stepT0 = performance.now(); hideSkip(); };
   const hideSkip = () => { $('#skip').hidden = true; };
   document.addEventListener('pointerdown', e => { lastTouch = performance.now(); if (running && !e.target.closest('#skip')) hideSkip(); }, true);
@@ -324,12 +328,23 @@ window.INTRO = (() => {
     skipWatch = setInterval(() => {
       const sk = $('#skip'), n = performance.now();
       if (!running) { clearInterval(skipWatch); return; }
-      if (skippable && sk.hidden && n - Math.max(stepT0, lastTouch) > IT.skipMs) {
+      if (skippable && finishStep && sk.hidden && n - Math.max(stepT0, lastTouch) > IT.skipMs) {   /* only while the step can still be skipped */
         sk.hidden = false;
         if (!RM) sk.animate([{ opacity: 0, transform: 'translate(-50%, 8px)' }, { opacity: 1, transform: 'translate(-50%, 0)' }], { duration: 450, easing: 'ease-out' });
       }
     }, 250);
   }
+  /* instruction captions (user playtest 2026-11-13: gestures alone weren't understood): one short line per step, shown
+     at the step's start, centred above the object you act on; it rides the language toggle like every other string. */
+  let sayEl = null;
+  function say(key, y) {
+    unsay();
+    sayEl = el(`<div class="say glass" style="top:${y}px"><span data-t="say_${key}">${t('say_' + key)}</span></div>`);
+    layer.appendChild(sayEl); stepDown(sayEl);
+    if (!RM) sayEl.animate([{ opacity: 0, transform: 'translate(-50%, 6px)' }, { opacity: 1, transform: 'translate(-50%, 0)' }], { duration: 400, easing: 'ease-out' });
+  }
+  function unsay() { if (!sayEl) return; const s = sayEl; sayEl = null;
+    s.animate([{ opacity: 1 }, { opacity: 0 }], { duration: RM ? 1 : 250, fill: 'forwards' }).finished.then(() => s.remove()); }
   function reveal(instant) {
     clearInterval(skipWatch); skippable = false;
     layer.remove(); layer = null; running = false; clearTimers();
@@ -347,17 +362,18 @@ window.INTRO = (() => {
     layer.addEventListener('contextmenu', e => e.preventDefault());   /* Android long-press menu on the globe */
     hideSkip(); watchSkip();
     try {
-      armSkip(true); await arrival(); armSkip(false); await untie();
+      say('knot', 256); armSkip(true); await arrival(); armSkip(false); unsay(); await untie();
       preloadGlobe();                                    // fetch the globe while the guest traces
-      armSkip(true); await kolam(); armSkip(false); await wait(IT.settleMs); await lift(); await wait(900);
+      say('kolam', 426); armSkip(true); await kolam(); armSkip(false); unsay(); await wait(IT.settleMs); await lift(); await wait(900);
       layer.querySelector('.kolam').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
-      armSkip(true); const db = await dial(); armSkip(false); await wait(300); await lift();
+      say('dial', 414); armSkip(true); const db = await dial(); armSkip(false); unsay(); await wait(300); await lift();
       db.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(60px) scale(.8)' }], { duration: 500, fill: 'forwards' }); await wait(900);
-      armSkip(true); await globe(); armSkip(false); await lift(); await wait(1300);
+      say('globe', 432); armSkip(true); await globe(); armSkip(false); unsay(); await lift(); await wait(1300);
       await fanReveal();
     } catch (e) { console.error('intro aborted ->', e); if (layer) reveal(); }   /* never strand a guest; but never hide why */
   }
-  function skip() { if (!running) return; document.getAnimations().forEach(a => { try { a.finish(); } catch (e) {} }); reveal(); }
+  /* Skip (user 2026-11-13): completes ONLY the current step, through the same path its idle auto-complete uses. */
+  function skip() { if (!running || !finishStep) return; const f = finishStep; finishStep = null; $('#skip').hidden = true; f(); }
   function preload() {                                   // first visit: fetch the bundle sprites while the loader shows
     ['leaf_cover', 'leaf_title', 'leaf_plain', 'knot', 'dial_disc', 'dial_ring', 'beacon_0', 'beacon_1', 'beacon_2']
       .forEach(id => { const i = new Image(); i.src = `${A}${id}.webp`; });

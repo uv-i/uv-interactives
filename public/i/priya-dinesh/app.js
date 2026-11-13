@@ -36,7 +36,7 @@ const HEART = () => { const id = 'hg' + (HID++);   /* the kolam heart, gold foil
 
 /* style.json type.names: single line, step down until it fits (never wrap, never clip) */
 function stepDown(root) {
-  root.querySelectorAll('.names, .t1, .d, .cd, .ink .fit').forEach(n => {
+  root.querySelectorAll('.names, .t1, .d, .cd, .ink .fit, .say span').forEach(n => {
     n.style.fontSize = '';
     const ps = getComputedStyle(n.parentElement), box = n.parentElement.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight) - 2;
     let fs = parseFloat(getComputedStyle(n).fontSize);
@@ -98,7 +98,7 @@ const istDay = d => new Date(d.getTime() + 5.5 * 3600e3).toISOString().slice(0, 
 function tickCountdown() {
   const now = NOW(), E = C.events, wed = new Date(E.wedding.start), thanks = new Date(E.thanks_after), cd = $('#cd'), today = istDay(now);
   let txt;
-  if (now >= thanks) { txt = t('thanks'); $('#cta').hidden = true; }
+  if (now >= thanks) { txt = t('thanks'); $('#cal').hidden = true; }
   else if (today === '2026-11-22') txt = t('today_wed');
   else { const ms = wed - now, d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
     txt = (d > 0 ? t('cd_days') : t('cd_hours')).replace('{d}', d).replace('{h}', h).replace('{m}', m);
@@ -129,7 +129,7 @@ function ics() {
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//uv-i//invitation//EN', 'CALSCALE:GREGORIAN', ...ev('wedding', 'wed'), 'END:VCALENDAR'].join('\r\n');
 }
 function download(href, name) { const a = el(`<a download="${name}" href="${href}"></a>`); document.body.appendChild(a); a.click(); a.remove(); }
-$('#cta').onclick = () => { SND.play('cta'); setTimeout(() => SND.play('open'), 120); $('#gWed').href = gcal('wedding'); $('#sheet').hidden = false; };
+$('#cal').onclick = () => { SND.play('cta'); setTimeout(() => SND.play('open'), 120); $('#gWed').href = gcal('wedding'); $('#sheet').hidden = false; };
 $('#ics').onclick = () => {
   if (inApp) toast(t('ics_blocked'));                     /* in-app browsers often block .ics; the Google links still work */
   download(URL.createObjectURL(new Blob([ics()], { type: 'text/calendar' })), 'Priya-Dinesh.ics'); SND.play('saved');
@@ -153,7 +153,7 @@ $('#share').onclick = async () => {
 
 // ---------------------------------------------------------------- close any overlay
 document.querySelectorAll('.opt[href]').forEach(a => a.addEventListener('click', () => SND.play('saved')));
-$('#dir').addEventListener('click', () => SND.play('tap'));
+['#dir', '#cdir'].forEach(s => $(s).addEventListener('click', () => SND.play('tap')));
 document.addEventListener('click', e => { if (e.target.closest('[data-close]')) { SND.play('close'); $('#sheet').hidden = true; $('#poster').hidden = true; } });
 
 // ---------------------------------------------------------------- 01a ambient intro + replay
@@ -191,7 +191,7 @@ function build() {
   FRAME.forEach(([v, x, y, h, rot, zi], i) => feather(st, v, x, y, h, rot, zi, (i === 5 || i === 6 ? 'side-only ' : '') + (i >= 11 ? 'corner' : '')));
   for (const [x, y, d] of [[70,92,0],[290,120,1.1],[60,380,2.0],[300,420,.6],[180,60,1.6],[110,600,2.4],[250,640,.3],[320,300,1.9]])
     st.appendChild(el(`<span class="tw" style="left:${x}px;top:${y}px;animation-delay:${d}s"></span>`));
-  $('#dir').href = C.map; $('#footer').href = C.games;
+  $('#dir').href = $('#cdir').href = C.map; $('#footer').href = C.games;
   if (RENDER) document.body.classList.add('r-' + RENDER);
 }
 function whenImages(sel, ms) {
@@ -202,13 +202,13 @@ function whenImages(sel, ms) {
 }
 (async () => {
   build(); fit(); applyLang();
-  if (!store.get('seen') && window.INTRO) INTRO.preload();   /* bundle sprites load with the card */
+  if (window.INTRO && !RENDER) INTRO.preload();   /* bundle sprites load with the card */
   const slow = setTimeout(() => { $('#slow').textContent = t('loading'); $('#slow').hidden = false; }, TUNE.slowMs);
   await whenImages('#hero image, #hero img, #stage > .f', TUNE.giveUpMs);
   clearTimeout(slow);
   applyLang();                                            /* fonts are in: re-measure the step-down */
   document.body.classList.add('loaded');
-  const first = !store.get('seen') || Q.has('intro');
+  const first = true;                                     /* user 2026-11-13: the intro plays on every visit */
   if (first && !RENDER) (window.INTRO ? INTRO.start() : ambient());   /* first visit: the olai intro; returning: straight to the card (screens.md) */
   store.set('seen', '1');
   setInterval(tickCountdown, TUNE.countdownEveryMs);
