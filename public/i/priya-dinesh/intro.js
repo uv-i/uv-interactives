@@ -325,6 +325,7 @@ window.INTRO = (() => {
     expand(false);
     document.body.classList.add('intro');                // hides the card + card-only feathers; corners + bed stay
     layer = el('<div id="intro"></div>'); $('#stage').appendChild(layer);
+    layer.addEventListener('contextmenu', e => e.preventDefault());   /* Android long-press menu on the globe */
     $('#skip').hidden = false;
     try {
       await arrival(); await untie();

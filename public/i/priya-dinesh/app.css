@@ -3,6 +3,7 @@
    always fills the real screen, so rotating or a taller phone only reveals more bed (seamless, screens.md v6). */
 :root { --night:#0E2229; --plum:#2A1424; --copper:#B5653A; --gilt:#C8913A; --gilt-hi:#F2D27A; --gilt-edge:#7A5518;
         --pblue:#2B5C9E; --teal:#388E9D; --dteal:#315462; --cream:#FBF7EC; }
+:root { color-scheme:only light; }   /* the page draws its own dark look; never let the browser recolour it */
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html, body { margin:0; height:100%; background:var(--night); overflow:hidden; overscroll-behavior:none; }
 button { font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; }
@@ -152,7 +153,9 @@ body.r-og .hud, body.r-og .cta, body.r-og .more, body.r-og .cd, body.r-poster #l
 /* ---- Phase B intro (screens 01–06) ---- */
 body.intro #card, body.intro #panel, body.intro #stage > .f:not(.corner), body.intro .tw { visibility:hidden; }
 body.intro.land #stage > .f.corner { visibility:hidden; }          /* landscape: the screen-edge feathers frame the intro */
-#intro { position:absolute; inset:0; z-index:6; }
+#intro { position:absolute; inset:0; z-index:6; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }   /* hold gestures must not open the image menu */
+#intro img { -webkit-user-drag:none; pointer-events:none; }
+.knot img { pointer-events:none; }
 .bundle { position:absolute; z-index:4; }
 .leaf { position:absolute; }
 .leaf img { display:block; width:100%; }
