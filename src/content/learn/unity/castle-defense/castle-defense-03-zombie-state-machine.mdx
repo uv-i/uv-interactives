@@ -1,0 +1,124 @@
+---
+title: 'The Zombie Animator State Machine'
+description: 'Chapter 3 — ZombieAnimatorController.controller and ZombieHealth.cs: states, transitions, a blend tree, and Any State triggers for Hit and Death.'
+series: castle-defense
+part: 3
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+An Animator Controller is a graph of **states** (each playing a clip or blend tree)
+connected by **transitions**, each gated by a condition on a **parameter**. Instead of
+writing `if (attacking) PlayAttackAnimation()` in code, you set a parameter and let the
+graph decide when to switch — including the blend between clips.
+
+## The real graph
+
+Double-click **Assets → CastleDefense → Animators →
+`ZombieAnimatorController.controller`** to open the Animator window. Walk the graph:
+
+- **Idle → Chase** when `Speed > 0.05` — the float `ZombieController` feeds every frame.
+- **Chase** is a *blend tree*, not a single state: `Speed` blends continuously between
+  idle, walk, and run clips. No separate Walk and Run states, because agent velocity is
+  continuous, not a discrete switch.
+- **Chase → Attack** when `IsAttacking` is true — set by `ZombieController` when the
+  agent is within `attackRange` of the gate.
+- **Any State → Hit** and **Any State → Death** on the `Hit` / `Die` triggers. A zombie
+  can be shot mid-walk, mid-attack, or mid-flinch — Any State transitions fire from
+  wherever the graph currently is.
+
+<StateDiagram states="Idle|waiting,Chase|blend tree: Speed,Attack|biting at gate,Hit|flinch,Death|terminal" transitions="0-1|Speed > 0.05,1-2|IsAttacking,2-1|!IsAttacking,1-3|Hit trigger (Any State),1-4|Die trigger (Any State)" note="Hit and Death fire from ANY state — damage doesn't wait" />
+
+## Who pulls the triggers
+
+Open **Assets → CastleDefense → Scripts → `ZombieHealth.cs`**:
+
+```csharp
+public void TakeDamage(int amount)
+{
+    if (isDead) return; // guard against double-death from overlapping hits
+
+    currentHealth -= amount;
+    if (hitVfx != null) hitVfx.Play();
+
+    if (currentHealth <= 0)
+    {
+        Die();
+    }
+    else
+    {
+        animator.SetTrigger(hitTrigger);
+    }
+}
+```
+
+Floats and bools are *levels* — they hold a value until changed. Triggers are *edges* —
+they fire once, consume themselves, and reset. `Hit` is a trigger because a flinch is
+an event, not a condition: "you just got hit," not "you are currently in a state of
+having been hit."
+
+Note also the `isDead` guard and, in `Die()`, the cleanup order: trigger the death clip,
+stop the agent, disable the collider, invoke `onDeath`, then `Destroy(gameObject, 3f)` —
+the 3-second delay gives the death animation time to play before the object vanishes.
+
+## What breaks without the state machine
+
+Imagine driving all of this from code: `animator.Play("Attack")` calls scattered across
+scripts, manual crossfade timing, a hand-rolled enum for the current state, and every
+new animation touching every script that plays one. The Animator window *is* that state
+machine — visual, inspectable live in Play mode, and editable without recompiling.
+
+<InstructorNotes title="teach it live">
+
+- In Play mode, select a live zombie and open the Animator window: the active state
+  glows blue with a progress bar. Drag the `Speed` parameter slider by hand and watch
+  the blend tree slide between idle/walk/run in real time.
+- Ask: "why is Chase a blend tree instead of two Walk/Run states?" — because `Speed` is
+  continuous. Discrete states would snap; the tree blends.
+
+</InstructorNotes>
+
+## Try it
+
+Break a transition on purpose. In the Animator window, select the **Idle → Chase**
+transition and change its condition from `Speed Greater 0.05` to `Speed Greater 999`.
+Press Play: the NavMeshAgent still moves every zombie to the gate (chapter 2's bridge is
+still feeding `Speed`), but the graph never leaves Idle — a horde of statues glides
+across the courtyard. Movement and animation are genuinely independent systems.
+Restore `0.05` after.
+
+## Challenge
+
+The Medium Animator challenge from `README_CHALLENGES.md`: add a fourth state, `Taunt`,
+that plays `zombie scream.fbx` when a zombie first starts chasing. Add a `HasSeenHero`
+bool parameter, set it once in `ZombieController.Update()`, and wire an
+`Idle → Taunt → Chase` transition chain. Copy the condition pattern from the existing
+`Idle → Chase` transition.
+
+## Interview corner
+
+**Q: What's the difference between a bool parameter and a trigger?**
+A: A bool holds its value until code changes it — good for conditions like
+`IsAttacking`. A trigger is consumed by the first transition it fires — good for
+one-shot events like `Hit` or `Die`. Using a bool for a flinch means remembering to
+reset it; a trigger resets itself.
+
+**Q: When do you use an Any State transition, and what's the risk?**
+A: For interrupts that must fire regardless of the current state — damage reactions,
+death. The risk is self-retriggering: an Any State transition into `Hit` can re-enter
+`Hit` from `Hit` while the trigger is still hot, restarting the clip. "Can Transition To
+Self" exists on the transition settings for exactly this reason.
+
+## Checkpoint
+
+- [ ] You can walk the Idle → Chase → Attack path and name each condition
+- [ ] You can explain why Chase is a blend tree
+- [ ] You broke a transition and watched sliding statues, then fixed it
+- [ ] You know why `Hit`/`Die` are triggers and `IsAttacking` is a bool
+
+**Next → Chapter 4: Humanoid Retargeting** — the vampire boss fights with capoeira
+kicks recorded for a completely different character, and the hero casts with clips from
+a third. Same skeleton system, three rigs.

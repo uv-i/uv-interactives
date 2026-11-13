@@ -1,0 +1,106 @@
+---
+title: 'NavMesh Baking — Scripted, Not Manual'
+description: 'Chapter 1 — SceneBootstrapper.cs: baking a walkable surface in code with NavMeshSurface, and why the castle itself is deliberately excluded.'
+series: castle-defense
+part: 1
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+Before any zombie can walk anywhere, Unity needs a **NavMesh**: a precomputed mesh of
+"here is walkable" polygons that pathfinding queries at runtime. Most tutorials have you
+click **Bake** in the Navigation window. This package never does — the bake is code.
+
+## The real code
+
+Open **Assets → CastleDefense → Scripts → Editor → `SceneBootstrapper.cs`** and find the
+`NavMesh lane + courtyard proxy` section:
+
+```csharp
+int navProxyLayer = LayerMask.NameToLayer("NavProxy");
+GameObject navLane = GameObject.CreatePrimitive(PrimitiveType.Cube);
+navLane.name = "NavMeshLaneProxy";
+navLane.transform.position = new Vector3(-350f, 0f, 700f);
+navLane.transform.localScale = new Vector3(700f, 1f, 260f); // long lane + small courtyard footprint
+if (navProxyLayer >= 0) navLane.layer = navProxyLayer;
+GameObjectUtility.SetStaticEditorFlags(navLane, StaticEditorFlags.NavigationStatic);
+
+var navSurfaceGo = new GameObject("NavMeshSurface");
+var navSurface = navSurfaceGo.AddComponent<NavMeshSurface>();
+if (navProxyLayer >= 0) navSurface.layerMask = 1 << navProxyLayer;
+navSurface.collectObjects = CollectObjects.All;
+navSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+navSurface.BuildNavMesh(); // scripted bake — no manual "Bake" click required
+```
+
+Three decisions worth reading twice:
+
+- **A proxy volume, not the castle.** The Medieval Castle FBX pieces (`Castle.fbx`,
+  `Bridge.fbx`, `Wall.fbx`, the towers) have arches, a raised bridge deck, and thin
+  walls that do not bake into a clean walkable surface. Instead of fighting that
+  geometry, one flat cube covers exactly one approach lane plus a small courtyard near
+  the gate — the only place the game needs pathing.
+- **`layerMask` scoping.** The proxy sits on its own `NavProxy` layer, and
+  `navSurface.layerMask` is restricted to that layer alone. The decorative castle
+  meshes are never even considered by the bake.
+- **`PhysicsColliders`, not `RenderMeshes`.** The bake reads the cube's `BoxCollider`,
+  so it keeps working even if someone hides or retextures the proxy's renderer. The
+  collider is what defines the walkable footprint.
+
+## What breaks without the proxy
+
+Point the bake at the raw castle instead and you get a NavMesh full of holes: agents
+that refuse to path under arches, get stuck on stair colliders, or walk on top of walls.
+"Fix the art" is sometimes the right answer in production — but when the art is
+decorative and the gameplay area is one lane, a proxy is hours cheaper. Knowing when
+*not* to bake your real geometry is the actual lesson.
+
+<InstructorNotes title="show the invisible">
+
+- Select `NavMeshLaneProxy` in the Hierarchy and open **Window → AI → Navigation** —
+  the blue NavMesh overlay appears in the Scene view, snapped exactly to the cube.
+- Ask: "why does the castle look walkable but isn't?" Let students find
+  `navSurface.layerMask` themselves before you point at it.
+
+</InstructorNotes>
+
+## Try it
+
+Break the bake on purpose. In `SceneBootstrapper.cs`, comment out the
+`navSurface.BuildNavMesh();` line, re-run **Castle Defense → Step 2 → Build Scene**, and
+press Play. Zombies spawn and stand still forever — the Console fills with
+`"Failed to create agent because it is not close enough to the NavMesh"`. No NavMesh, no
+pathing, no game. Restore the line and rebuild.
+
+## Challenge
+
+The Easy NavMesh challenge from `README_CHALLENGES.md`: select `NavMeshLaneProxy` after
+running Step 2, widen its `localScale.x`, then re-run Step 2 (which re-bakes). Watch
+zombies spread out more before converging on the gate.
+
+## Interview corner
+
+**Q: What actually happens when a NavMesh is "baked"?**
+A: Unity voxelizes the source geometry, filters it by agent radius, height, slope, and
+step settings, and generates a simplified polygon mesh of walkable areas. Runtime
+pathfinding (A* over the polygon graph) queries this precomputed mesh — which is why
+moving geometry after baking changes nothing until you re-bake.
+
+**Q: When would you use a NavMesh proxy instead of baking real geometry?**
+A: When the visual geometry is complex, non-flat, or full of decorative detail (arches,
+trim, thin walls) but the actual gameplay-walkable area is simple. A proxy on a dedicated
+layer gives a clean, predictable bake and decouples art iteration from navigation — the
+art team can swap the castle model without breaking pathing.
+
+## Checkpoint
+
+- [ ] You can point at the line that bakes the NavMesh — in code, not the Navigation window
+- [ ] You can explain why the castle meshes are excluded from the bake
+- [ ] You broke the bake, saw stranded zombies, and restored it
+- [ ] The widened lane visibly changed zombie approach paths
+
+**Next → Chapter 2: The NavMeshAgent ↔ Animator Bridge** — one float connects Unity's
+pathfinding to its animation system, and one wrong number deadlocked an entire wave.

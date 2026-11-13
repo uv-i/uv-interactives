@@ -25,7 +25,7 @@ export default function Image() {
           UV Interactives
         </div>
         <div style={{ fontSize: 64, color: '#f0f0ff', fontWeight: 900, textAlign: 'center', lineHeight: 1.1 }}>
-          Lets build games TOGETHER
+          Let&apos;s build games TOGETHER
         </div>
         <div style={{ fontSize: 22, color: '#f0f0ff', marginTop: 28, opacity: 0.55, textAlign: 'center' }}>
           Game studio &amp; free Unity learning — Chennai, India

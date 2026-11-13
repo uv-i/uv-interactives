@@ -1,0 +1,138 @@
+---
+title: 'The NavMeshAgent ↔ Animator Bridge'
+description: 'Chapter 2 — ZombieController.cs: agent.velocity feeds the Animator Speed parameter, and a real unit-scale bug that deadlocked a whole wave.'
+series: castle-defense
+part: 2
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+Pathfinding moves the zombie. Animation makes it *look* like it's moving. These are two
+separate Unity systems that know nothing about each other — and the entire bridge
+between them is one float.
+
+## The real code
+
+Open **Assets → CastleDefense → Scripts → `ZombieController.cs`**:
+
+```csharp
+private void Update()
+{
+    if (health != null && health.IsDead) return; // stop driving a dying zombie
+    if (castleGateTarget == null) return;
+
+    repathTimer -= Time.deltaTime;
+    if (repathTimer <= 0f)
+    {
+        agent.SetDestination(castleGateTarget.position);
+        repathTimer = repathInterval;
+    }
+
+    // CONCEPT: NAVMESHAGENT — bridge agent velocity into Animator blend value.
+    float speed = agent.velocity.magnitude;
+    animator.SetFloat(speedParam, speed);
+
+    bool inRange = !agent.pathPending && agent.remainingDistance <= attackRange;
+    animator.SetBool(isAttackingParam, inRange);
+    agent.isStopped = inRange; // stand still while attacking
+}
+```
+
+The pattern:
+
+- `agent.SetDestination(...)` tells the NavMeshAgent *where*; the agent computes the
+  path and moves the transform itself.
+- `agent.velocity.magnitude` is how fast the agent is *actually* moving right now —
+  including slowdowns from avoidance and corners.
+- `animator.SetFloat("Speed", speed)` hands that number to the Animator, whose Chase
+  blend tree (chapter 3) turns it into idle/walk/run blending.
+- Note the repath *interval*: calling `SetDestination` every frame recomputes the path
+  every frame for zero benefit. Every half second is plenty for a target that barely moves.
+
+The Animator never queries the NavMesh. The agent never plays a clip. Each system stays
+in its lane, connected by parameters — which means you can swap either side (a flying
+enemy, a different rig) without touching the other.
+
+## The bug that shipped — and what it teaches
+
+This package's zombies originally deadlocked ~23 units from the gate: wave 1 never
+cleared, the game froze forever. The cause was a **unit-scale bug** — the agent was
+configured as if Unity units were centimeters:
+
+```csharp
+// TEACHING MOMENT / FIX: this project's Unity units are meters (the
+// zombie model itself is ~2.1 units tall), so radius/height must be
+// metric too. The original 20/180 values (as if units were cm) made
+// the agent's collision radius 40x too large, causing zombies
+// converging on CastleGateTarget to mutually deadlock in avoidance.
+agent.radius = 0.35f;
+agent.height = 2f;
+```
+
+A radius of 20 means every zombie believes it is a 40-unit-wide obstacle. Several of
+those converging on the same gate can *never* satisfy avoidance — each one politely
+refuses to enter the others' enormous personal space. The fix was two numbers. Finding
+it required understanding what `radius` actually means to the avoidance system.
+
+There's a second half to the fix, in **`ZombieSpawner.cs`**: every spawned zombie also
+gets a *staggered* `avoidancePriority` (40–70 instead of everyone at the default 50).
+Identical priority + identical goal gives the avoidance solver no way to decide who
+yields; a consistent ordering resolves the standoff.
+
+## What breaks without the bridge
+
+Delete the `SetFloat` line and the agent still paths perfectly — but the zombie *slides*
+to the gate in a frozen idle pose. The inverse bug is just as common: animation plays
+but the agent is stopped, so the zombie runs on the spot. When movement and animation
+disagree, check the bridge first.
+
+<InstructorNotes title="the best bug in the package">
+
+- Re-introduce the bug live: set `agent.radius = 20f` in `BuildOrLoadZombiePrefab()`,
+  delete `Assets/CastleDefense/Prefabs/ZombiePrefab.prefab` (it's rebuilt on next Step 2),
+  re-run Step 2, Play. The wave visibly deadlocks. Students remember this one.
+- Select a live zombie in Play mode and watch `Speed` change in the Animator window as
+  it slows for avoidance — the bridge is visible in real time.
+
+</InstructorNotes>
+
+## Try it
+
+The break-it exercise above, hands-on: make the radius 20, rebuild the prefab (delete
+it first — the bootstrapper reuses existing prefabs), re-run Step 2, and watch the
+deadlock ~23 units out. Then restore `0.35f`, delete the prefab again, rebuild, and
+confirm the wave clears. You have now debugged a real shipped bug.
+
+## Challenge
+
+The Easy Animator challenge from `README_CHALLENGES.md`: open
+`Assets/CastleDefense/Prefabs/ZombiePrefab.prefab`, lower the `NavMeshAgent` component's
+`speed`, and press Play. The Chase blend tree still works correctly — because it reads
+real agent velocity, not a hardcoded number. Explain to yourself why that is.
+
+## Interview corner
+
+**Q: How do you synchronize a NavMeshAgent with an Animator?**
+A: Read `agent.velocity.magnitude` each frame and write it to an Animator float
+parameter that drives a locomotion blend tree. For tighter foot planting you can invert
+it — root motion drives the agent via `OnAnimatorMove` — but velocity-to-parameter is
+the standard, robust default.
+
+**Q: What does NavMeshAgent avoidance priority do?**
+A: It orders agents during local avoidance: lower numbers have higher priority, and
+lower-priority agents yield. When many agents share one destination, identical
+priorities can livelock — staggering priorities gives the solver a consistent ordering
+to resolve against.
+
+## Checkpoint
+
+- [ ] You can name the one value that bridges pathfinding to animation
+- [ ] You reproduced the radius deadlock and fixed it
+- [ ] You can explain why repathing runs on an interval, not every frame
+- [ ] You know what staggered `avoidancePriority` prevents
+
+**Next → Chapter 3: The Zombie's Animator State Machine** — the graph that turns
+`Speed` and `IsAttacking` into idle, walking, biting, flinching, and dying.

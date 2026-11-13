@@ -1,0 +1,131 @@
+---
+title: 'Particle Systems — Triggered by Code and Animation Events'
+description: 'Chapter 5 — VfxEmitter.cs: one tiny wrapper lets code and Animation Events fire the same burst, plus the real story of a clip with no events.'
+series: castle-defense
+part: 5
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+Every hit flash, death burst, cast trail, and impact flare in this game is a
+**Particle System** — Unity's component for spawning and simulating swarms of small
+quads. The interesting part isn't the particles; it's *who gets to trigger them*.
+
+## The real code — all of it
+
+Open **Assets → CastleDefense → Scripts → `VfxEmitter.cs`**:
+
+```csharp
+[RequireComponent(typeof(ParticleSystem))]
+public class VfxEmitter : MonoBehaviour
+{
+    private ParticleSystem ps;
+
+    private void Awake()
+    {
+        ps = GetComponent<ParticleSystem>();
+    }
+
+    // Public so it can be wired to an Animation Event (string method name match)
+    // or called directly from code (ZombieHealth.TakeDamage, HeroCombatController.Cast).
+    public void Play()
+    {
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        ps.Play();
+    }
+}
+```
+
+That's the whole file. The Stop-then-Play pair matters: without the
+`StopEmittingAndClear`, re-triggering a burst mid-playback stacks emissions instead of
+restarting cleanly.
+
+Two very different callers use it:
+
+- **Code**: `ZombieHealth.TakeDamage()` calls `hitVfx.Play()` the frame damage lands.
+- **Animation Events**: the hero's cast clip fires `OnCastImpact()` at the visual
+  moment the spell "lands", which plays `impactBurstVfx` — VFX synced to a *frame of
+  animation*, not a frame of code.
+
+## The Animation Event that wasn't there
+
+`Standing 2H Cast Spell 01.fbx` shipped with zero Animation Events — so `OnCastImpact()`
+never fired, the hero did no damage, and the game silently couldn't be won. Two fixes
+coexist in the package:
+
+1. A real `OnCastImpact` event was added at ~60% through the clip via the Model
+   Importer's clip settings (the FBX itself is untouched — events live in import
+   settings, in the `.meta` file).
+2. A timer fallback stayed in **`HeroCombatController.cs`**:
+
+```csharp
+// Fallback in case the cast clip has no "OnCastImpact" Animation Event wired
+CancelInvoke(nameof(OnCastImpact));
+Invoke(nameof(OnCastImpact), impactFallbackDelay);
+```
+
+Importer clip-event lists don't survive every re-import path (a "Revert" in the Model
+inspector wipes them). `OnCastImpact()` is idempotent per cast, so both firing is
+harmless — and a student who never touches importer settings still gets a working game.
+Belt and suspenders, deliberately.
+
+## What breaks without the wrapper
+
+Let every caller poke `ParticleSystem` directly and each one re-learns the
+stop/clear/play sequencing, and each one holds its own reference to particle internals.
+Want to swap a burst for a pooled VFX or an animation? You're editing every damage
+script. One wrapper = one place.
+
+<InstructorNotes title="live particle tuning">
+
+- Particle changes apply live: in Play mode, select the Hero's `ImpactBurstVfx` child,
+  crank `Start Size` or change `Start Color`, and watch the next cast. Instant feedback
+  loop — let students play here for a few minutes.
+- Show where the Animation Event lives: select the cast FBX → Animation tab → Events.
+  Emphasize it's an *import setting*, not a scene object — that's why "Revert" kills it.
+
+</InstructorNotes>
+
+## Try it
+
+Prove the two trigger paths are independent. In `HeroCombatController.BeginCast()`,
+comment out the `castTrailVfx.Play()` line and press Play: the impact burst still fires
+(Animation Event / timer path) but the trail is gone (code path). Restore it. Then find
+the event itself: select `Standing 2H Cast Spell 01.fbx`, Animation tab → Events — there
+is `OnCastImpact` at ~60%.
+
+## Challenge
+
+The Medium Particle challenge from `README_CHALLENGES.md`: make the death burst scale
+with the zombie's `maxHealth` — bigger zombies, bigger bursts. You'll need to modify the
+`ParticleSystem`'s `main` module before `Play()`, which means giving `VfxEmitter` an
+overload like `Play(float sizeMultiplier)`. Notice how the wrapper makes that a
+one-file change.
+
+## Interview corner
+
+**Q: How do Animation Events work, and what are their failure modes?**
+A: An event is a marker at a normalized time on a clip that calls a method *by string
+name* on any MonoBehaviour attached to the same GameObject as the Animator. Failure
+modes: method renamed (silent break — string match), no receiver component, transitions
+that blend past the event's frame so it never fires, and events on imported clips living
+in importer settings that a re-import can drop.
+
+**Q: When should VFX be triggered by an Animation Event versus code?**
+A: Animation Event when the effect must sync to a visual moment in the clip (a foot
+landing, a spell leaving the hand) — the timing survives clip retiming automatically.
+Code when the trigger is a gameplay fact independent of animation (damage applied,
+item picked up). This package shows both on the same character.
+
+## Checkpoint
+
+- [ ] You can explain the Stop-then-Play pattern in `VfxEmitter.Play()`
+- [ ] You can name both trigger paths into `OnCastImpact` and why both exist
+- [ ] You know where Animation Events on imported clips are actually stored
+- [ ] You tuned a live ParticleSystem in Play mode and saw it on the next cast
+
+**Next → Chapter 6: Interfaces** — why the hero doesn't know where her "cast now"
+signal comes from, and why that's the whole multiplayer roadmap in one file.

@@ -1,0 +1,123 @@
+---
+title: 'Humanoid Retargeting — One Boss, Three Rigs'
+description: 'Chapter 4 — VampireBossController.cs and HeroCombatController.cs: Humanoid avatars let the vampire fight with capoeira clips, and the hero cast with no locomotion at all.'
+series: castle-defense
+part: 4
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+The vampire boss walks with its own clips, kicks with capoeira moves recorded for a
+different character, and flinches with the *zombie's* hit animation. Three source rigs,
+one skeleton, zero re-animation. That's Unity's **Humanoid avatar** system doing its job.
+
+## The retargeting decision
+
+From the package README: both `Assets/Action Adventure Pack/Vampire A Lusth.fbx` and
+`Assets/Capoeira Pack/Kachujin G Rosales.fbx` shipped with their Model Importer's
+Animation Type set to **Generic** — rig-specific animation, no sharing possible.
+Switching both to **Humanoid** produced fully-populated avatars (54/54 bone mappings),
+and `Avatar.isValid` / `Avatar.isHuman` both report `true`.
+
+With Humanoid, clips aren't stored as "rotate *this* bone" — they're stored as **muscle
+values** on a normalized human rig, and Unity maps them onto any valid Humanoid avatar
+at runtime. The vampire's Animator Controller uses:
+
+- **Idle / Chase** — the vampire's own native `idle.fbx` / `walking.fbx` / `running.fbx`.
+- **Attack** — Capoeira `martelo do chau.fbx` (a strong kick), retargeted.
+- **Special** — Capoeira `meia lua de compasso.fbx`, retargeted.
+- **Hit / Death** — the zombie's `zombie biting.fbx` / `zombie death.fbx`, retargeted,
+  because the vampire pack ships no combat-reaction clips at all.
+
+## The boss controller — deliberately familiar
+
+Open **Assets → CastleDefense → Scripts → `VampireBossController.cs`**. It is
+`ZombieController` with a tougher stat profile and exactly one addition:
+
+```csharp
+// TEACHING MOMENT: the +1 special attack is capped at one extra trigger,
+// per spec, rather than a full extra combat state.
+specialTimer -= Time.deltaTime;
+if (inRange && specialTimer <= 0f)
+{
+    animator.SetTrigger(specialTrigger);
+    specialTimer = specialCooldown;
+}
+```
+
+Same Idle/Chase/Attack/Hit/Death shape, same `Speed` bridge, same `ZombieHealth`
+component (with `isBoss` flipping it to `bossMaxHealth`). This is intentional: the boss
+*reinforces* the chapter-3 pattern instead of introducing a new one. A cooldown-gated
+trigger is how you add one attack variant without redesigning the graph.
+
+## The hero — a state machine with no legs
+
+Open **`HeroCombatController.cs`**. The hero is a static turret-caster: no NavMeshAgent,
+no locomotion blend tree — only Idle/Cast/Recovery states, driven by a single `Cast`
+trigger. Her model comes from the Female Locomotion Pack, her cast clip
+(`Standing 2H Cast Spell 01.fbx`) from the Pro Magic Pack — retargeting again, in the
+quiet direction nobody notices.
+
+The design lesson: an Animator Controller should contain exactly the states its
+character needs. The hero doesn't move, so there is no `Speed` parameter to maintain, no
+blend tree to tune, and one whole axis of "why is this actor moving/not moving" bugs
+that cannot exist.
+
+## What breaks without Humanoid
+
+With Generic rigs, every character needs its own animation set. No combat clips in your
+vampire pack? You're re-animating, buying, or shipping a boss that T-poses when shot.
+Humanoid retargeting is why one mocap library can animate an entire cast of characters.
+
+<InstructorNotes title="show the muscle system">
+
+- Select `Vampire A Lusth.fbx`, open the Rig tab → Configure: the green mapped-bone
+  diagram *is* the avatar. Do the same for the Capoeira FBX — different proportions,
+  same 54 slots. That shared shape is what makes retargeting possible.
+- Play the boss phase and freeze on the Special: a capoeira spin kick on a vampire.
+  Students rarely believe it wasn't animated for this model.
+
+</InstructorNotes>
+
+## Try it
+
+Watch a retarget happen. Select `Assets/Capoeira Pack/martelo do chau.fbx` in the
+Project window — the Inspector preview plays the kick on the *capoeira* character. Now
+drag the vampire model into the preview pane (or select the boss prefab in Play mode
+during its Attack state): same motion, different body. The clip stores muscle curves,
+not bone rotations — you're watching the same data mapped onto two avatars.
+
+## Challenge
+
+The Hard Animator challenge from `README_CHALLENGES.md`: make the zombie's `Attack`
+state a sub-state machine (or blend tree with an int parameter) that randomly picks
+between `zombie biting.fbx` and `zombie neck bite.fbx` each time it's entered. You'll
+set the "which attack" parameter from code before the trigger fires — the same
+parameter-before-trigger pattern the boss's Special uses.
+
+## Interview corner
+
+**Q: Generic vs Humanoid rigs — when do you choose which?**
+A: Humanoid for bipedal humanlike characters where you want retargeting, IK, and shared
+animation libraries; it costs a retarget through the normalized muscle space. Generic
+for everything else — quadrupeds, machines, props — where exact authored bone animation
+matters and sharing across rigs doesn't apply.
+
+**Q: How would you add a second attack animation to a character without adding new
+states for each?**
+A: Either a blend tree or sub-state machine keyed by an int parameter set from code
+before firing the attack trigger, or (for pure visual variety) multiple clips with a
+random selector. The graph shape stays stable; code chooses the variant.
+
+## Checkpoint
+
+- [ ] You can explain what a Humanoid avatar stores and why it enables retargeting
+- [ ] You can name all three source rigs feeding the vampire's controller
+- [ ] You can say why the hero's Animator has no `Speed` parameter
+- [ ] You've seen the boss's cooldown-gated Special fire in Play mode
+
+**Next → Chapter 5: Particle Systems** — every hit, death, and spell in this game is a
+particle burst, and they're all triggered through one 20-line component.

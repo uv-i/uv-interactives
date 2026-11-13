@@ -1,0 +1,97 @@
+---
+title: 'Install & Play — Two Menu Clicks to a Siege'
+description: 'Chapter 0 — SceneBootstrapper.cs: from an empty scene to zombies, a hero mage, and a vampire boss with two editor menu items.'
+series: castle-defense
+seriesTitle: 'Castle Defense'
+part: 0
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+A static hero mage defends a castle gate. Zombies shamble in from the courtyard. After
+two waves, a vampire boss shows up. That one playable slice teaches three Unity systems
+that snap together: **Animator Controllers**, **Particle Systems**, and **NavMesh**.
+
+This package lives directly inside the project at `Assets/CastleDefense/` — there is no
+Package Manager install step. You need the project checkout and Unity 6.0+ with URP.
+
+## Prerequisite
+
+Completed **Coin Rush** (or an equivalent first Unity package). This series assumes you
+know MonoBehaviour basics, Inspector fields, and prefabs.
+
+## Build the scene
+
+1. Open **MainScene** (`Assets/Scenes/MainScene.unity`).
+2. Menu: **Castle Defense → Step 1 → Create Default ScriptableObjects**.
+   This creates `Assets/CastleDefense/Data/CastleDefenseConfig.asset` — the wave sizes
+   and balance numbers for the whole game.
+3. Menu: **Castle Defense → Step 2 → Build Scene**.
+   This clears the active scene and builds everything: castle geometry, the NavMesh
+   lane, the zombie/hero/vampire prefabs, spawn points, camera, light, and the
+   wave-status UI.
+4. Press **Play**. Wave 1 spawns automatically, then wave 2, then the vampire boss.
+   When the boss falls, the status text reads `Phase: Victory`.
+
+Everything you just saw was built by one editor script: open
+**Assets → CastleDefense → Scripts → Editor → `SceneBootstrapper.cs`**. `BuildScene()`
+places geometry, bakes the NavMesh in code, creates the prefabs on first run, and wires
+every Inspector reference via `SerializedObject`. No manual scene work.
+
+## What breaks without a bootstrapper
+
+The alternative is a README with forty manual steps: "drag this here, set that field,
+click Bake." One missed step and the student debugs setup instead of learning the
+concept. A scripted build makes the starting state reproducible — and, as you'll see in
+later chapters, lets you *deliberately* break the scene and rebuild it in seconds.
+
+<InstructorNotes title="session opener">
+
+- Do the two menu clicks live, then move a zombie spawn point in the Inspector before
+  pressing Play — the next zombie walks from the new position. Instant "the scene is
+  data" moment.
+- Point out there is no GameManager in the Hierarchy. Spawner, hero, and sequencer are
+  separate objects on purpose — that pays off in chapters 6–9.
+
+</InstructorNotes>
+
+## Try it
+
+Break the build order on purpose: delete `Assets/CastleDefense/Data/` (just the folder,
+in the Project window), then run **Step 2** *without* re-running Step 1. The Console
+shows `Castle Defense: run Step 1 first (CastleDefenseConfig.asset not found).` — the
+bootstrapper refuses to build a half-configured scene instead of failing later in Play
+mode. Run Step 1, then Step 2, and you're whole again.
+
+## Challenge
+
+Find where the camera gets its position in `SceneBootstrapper.BuildScene()` (search for
+`Main Camera`). Change the offset so the camera looks down the lane from the zombies'
+side instead of from behind the hero, re-run Step 2, and press Play.
+
+## Interview corner
+
+**Q: Why bake scene setup into an editor script instead of committing a finished scene file?**
+A: Reproducibility and reviewability. A scene file is an opaque YAML blob in code
+review; an editor script documents every object, component, and reference in readable
+C#. It also lets students destroy and rebuild the scene freely — the source of truth is
+code, not a fragile hand-edited scene.
+
+**Q: What is `SerializedObject` and why does the bootstrapper use it to set private fields?**
+A: `SerializedObject` is the editor-side wrapper around Unity's serialization system.
+It writes to a component's serialized (Inspector-visible) fields — even `private
+[SerializeField]` ones — the same way the Inspector does, with proper dirtying and undo
+integration. Setting fields via reflection or making them public would bypass that.
+
+## Checkpoint
+
+- [ ] `Assets/CastleDefense/Data/CastleDefenseConfig.asset` exists
+- [ ] `ZombiePrefab.prefab` and `VampireBossPrefab.prefab` exist in `Assets/CastleDefense/Prefabs/`
+- [ ] A full Play run reaches `Phase: Victory` with zero Console errors
+- [ ] You deleted `Data/` and recovered with Step 1 + Step 2
+
+**Next → Chapter 1: NavMesh Baking, Scripted Not Manual** — why the beautiful castle
+geometry is *not* part of the NavMesh, and what is.

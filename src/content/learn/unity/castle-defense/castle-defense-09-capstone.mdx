@@ -1,0 +1,117 @@
+---
+title: 'Capstone — The Whole Siege, and Breaking It on Purpose'
+description: 'Chapter 9 — the full wave 1 → wave 2 → boss → victory run, a map of every system seam, and a no-hints challenge round.'
+series: castle-defense
+part: 9
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+Press Play and watch every chapter fire at once. Zombies spawn (coroutine), path to the
+gate (NavMesh), blending idle-to-run as they go (agent→animator bridge, blend tree).
+The hero casts on a timer (interface), her clip fires an Animation Event (particles),
+damage lands (health, triggers, hit VFX), deaths bubble up as events, waves clear, the
+retargeted boss arrives, and the sequencer coroutine walks the phases to `Victory`.
+
+## The map of everything
+
+<CycleDiagram steps="CapstoneSequencer|coroutine spawns wave,ZombieSpawner|instantiates + wires,NavMesh + Animator|zombies path and animate,Hero + VFX|casts damage via events,ZombieHealth|onDeath bubbles up,onWaveCleared|resumes the sequencer" note="one full lap = one wave; the boss is the same lap with one prefab swapped" />
+
+Every arrow in that loop is a seam you studied:
+
+| Seam | Chapter | The contract |
+|------|---------|--------------|
+| Bake scoped to a proxy layer | 1 | `NavMeshSurface.layerMask` |
+| Pathfinding → animation | 2 | `agent.velocity` → `Speed` float |
+| Parameters → states | 3 | Animator conditions, Any State triggers |
+| Clips across rigs | 4 | Humanoid muscle retargeting |
+| Moments → VFX | 5 | `VfxEmitter.Play()` from code or Animation Event |
+| Input → combat | 6 | `IHeroInputSource.RequestCast()` |
+| Systems → sequencing | 7 | `UnityEvent` up, `WaitUntil` across |
+| Data → behaviour | 8 | `CastleDefenseConfig` asset |
+
+The architecture rule underneath all of it: **no monolith**. `ZombieSpawner`,
+`HeroCombatController`, and `CapstoneSequencer` are separate, independently swappable
+components. The sequencer never touches Animator, VFX, or NavMesh. Input is an
+interface. That's why the roadmap — player-controlled heroes, multiple heroes on the
+wall, deployable defender bots — is additive work, not a rewrite.
+
+## Break it on purpose — cross-system edition
+
+Each break shows up as a symptom in a *different* system than the one you broke.
+Diagnose from the symptom before you "know" the cause; that's the actual skill.
+
+1. **Break the bridge:** in the Animator window, raise Idle → Chase's condition to
+   `Speed > 999`. Symptom: statues gliding to the gate. Movement is NavMesh; the pose
+   is Animator; the bridge between them is one condition.
+2. **Break the event chain:** comment out `onWaveCleared.Invoke()` in
+   `ZombieSpawner.cs`. Symptom: wave 1 dies, phase text stays `Wave1` forever. Nothing
+   crashed — an event that never fires looks exactly like a game that's "thinking."
+3. **Break the impact:** remove the `OnCastImpact` Animation Event from the cast clip
+   *and* set `impactFallbackDelay` to 999. Symptom: the hero animates beautifully,
+   zombies never take damage, and eventually a wave stands at the gate unkillable —
+   the exact bug this package shipped with and fixed.
+
+Rebuild with Step 2 (and revert code edits) after each.
+
+<InstructorNotes title="running the final session">
+
+- Run the breaks as a diagnosis game: you break one seam off-screen, students get the
+  symptom and must name the system *and* the line. Score generously — naming the right
+  system is the pass bar; the line is a bonus.
+- The bug in break #3 is real project history (see `HeroCombatController.cs`'s FIX
+  comment). Tell it as a war story — silent failure across a system seam is the most
+  common shape of shipped bug they'll meet.
+
+</InstructorNotes>
+
+## Try it
+
+One clean full run, narrated: watch the status text walk `Wave1 → Wave2 → Boss →
+Victory` and, for each phase change, say out loud which component decided it and which
+event or predicate carried the decision. If you can narrate the full run without opening
+a file, the package is yours.
+
+## Challenge round — no hints
+
+From `README_CHALLENGES.md`, the hard tier. No starting-point hints this time; you've
+had nine chapters of them.
+
+- **NavMeshObstacle barricade** — a hero ability that spawns a temporary
+  `NavMeshObstacle`-carrying barricade in the lane, forcing zombies to path around it.
+- **Hit-direction VFX** — `TakeDamage` accepts a hit direction and the hit burst sprays
+  away from the impact point.
+- **Two bosses** — `CapstoneSequencer` runs an array of boss prefabs sequentially,
+  victory only after the last falls. Keep the sequencer thin.
+
+## Interview corner
+
+**Q: Walk me through debugging "enemies stopped reaching the objective" in a system
+like this.**
+A: Bisect by seam. Do agents have a path (`agent.hasPath`, NavMesh overlay visible)?
+If no — bake/placement problem. If yes, are they moving (`agent.velocity`)? If no —
+avoidance/radius/priority deadlock or `isStopped`. If they arrive but nothing happens —
+range checks, event wiring, or the kill path. Each seam has an observable, so check
+observables in order instead of guessing.
+
+**Q: Why avoid a central GameManager, and what replaces it?**
+A: A monolith accretes every system's knowledge and becomes the file everyone edits and
+merge-conflicts on. Replace it with small components owning one concern each, decoupled
+by events/interfaces, plus — if needed — one *thin* sequencer that coordinates timing
+but holds no domain logic. This package's `CapstoneSequencer` is that pattern.
+
+## Checkpoint
+
+- [ ] You narrated a full Victory run naming every deciding component
+- [ ] You diagnosed all three deliberate breaks from symptoms alone
+- [ ] You completed at least one no-hints hard challenge
+- [ ] You can sketch the seam table from memory
+
+**Series complete.** You've built and broken Animator state machines, scripted a NavMesh
+bake, retargeted animation across three rigs, and wired VFX to both code and animation
+frames — inside one architecture that's ready to grow into multiplayer. Next on the
+learning path: **Ember Hollow**, the collapsing-ruin capstone that pushes NavMesh AI,
+audio, input, and post-processing further.

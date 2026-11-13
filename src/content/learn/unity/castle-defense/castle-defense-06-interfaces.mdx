@@ -1,0 +1,146 @@
+---
+title: 'Interfaces — Swappable Input for a Hero Who Doesn''t Ask'
+description: 'Chapter 6 — HeroInputSource.cs: IHeroInputSource decouples "cast now" from who decided it, keeping the multiplayer/bot future open.'
+series: castle-defense
+part: 6
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+The hero casts a spell every few seconds. *Who decided that?* In this build, a timer.
+In a future build, a player's button press — or a bot AI defending the wall. The hero's
+combat code must not care. That's what an **interface** buys.
+
+## The real code
+
+Open **Assets → CastleDefense → Scripts → `HeroInputSource.cs`**:
+
+```csharp
+// CONCEPT: INTERFACE
+// Any future input source (player button, networked command, bot AI)
+// implements this and can be dropped onto the hero GameObject in place
+// of AutoFireHeroInputSource with zero changes to HeroCombatController.
+public interface IHeroInputSource
+{
+    // True on exactly the frame a cast should begin.
+    bool RequestCast();
+}
+
+// Simple stand-in implementation: fires automatically on a timer.
+public class AutoFireHeroInputSource : MonoBehaviour, IHeroInputSource
+{
+    [SerializeField] private float fireInterval = 3f;
+    private float timer;
+
+    private void Update()
+    {
+        timer += Time.deltaTime;
+    }
+
+    public bool RequestCast()
+    {
+        if (timer < fireInterval) return false;
+        timer = 0f;
+        return true;
+    }
+}
+```
+
+And the consumer side, in **`HeroCombatController.cs`**:
+
+```csharp
+[SerializeField] private MonoBehaviour inputSourceBehaviour; // must implement IHeroInputSource
+
+private void Awake()
+{
+    // CONCEPT: INTERFACE — cast the assigned behaviour to the interface,
+    // not to a concrete input class. Any IHeroInputSource works here.
+    inputSource = inputSourceBehaviour as IHeroInputSource;
+    if (inputSource == null)
+    {
+        Debug.LogWarning("HeroCombatController: assigned inputSourceBehaviour does not implement IHeroInputSource.", this);
+    }
+}
+
+private void Update()
+{
+    if (inputSource != null && inputSource.RequestCast())
+    {
+        BeginCast();
+    }
+}
+```
+
+Two details worth stealing:
+
+- **The `MonoBehaviour` field + `as` cast.** Unity's Inspector can't serialize an
+  interface field directly, so the idiom is: expose a `MonoBehaviour` slot, cast to the
+  interface in `Awake()`, and warn loudly if the assigned component doesn't implement
+  it. Fail at startup, not silently at cast time.
+- **The contract comment.** `RequestCast()` returns true *on exactly the frame a cast
+  should begin* — edge, not level. An implementation returning true continuously would
+  machine-gun casts. Good interfaces document their temporal contract, not just their
+  signature.
+
+## What breaks without the interface
+
+Write `GetComponent<AutoFireHeroInputSource>()` in the combat controller and the
+coupling is permanent: adding player input means *editing the combat/Animator/VFX
+class* — the code chapters 4 and 5 carefully built — for every new input method. The
+interface inverts that: new input sources are added *around* the combat logic, never
+inside it. This is why the package's multiplayer/bot roadmap costs zero rewrites: a
+`PlayerHeroInputSource` or a networked command source is a drop-in component swap.
+
+<InstructorNotes title="the roadmap file">
+
+- This one file is the answer to "can I add a real player-controlled hero?" from the
+  instructor guide: implement `IHeroInputSource`, return true on the button-press
+  frame, swap the component. `HeroCombatController` needs zero changes.
+- Ask students to find the seam: "which line would change if input came from the
+  network?" The answer — none in this file — lands the point better than the lecture.
+
+</InstructorNotes>
+
+## Try it
+
+Feel the seam without writing code: select the `Hero` in the Hierarchy and change
+`fireInterval` on `AutoFireHeroInputSource` from 3 to 0.5. Press Play — a
+machine-gun mage, and `HeroCombatController` never knew anything changed. Then break
+the contract check: clear the `inputSourceBehaviour` field in the Inspector and press
+Play — the warning fires once in `Awake()` and the hero simply never casts, instead of
+throwing every frame.
+
+## Challenge
+
+Write `KeyboardHeroInputSource`: implement `IHeroInputSource`, return true on the frame
+the spacebar is pressed (the project uses the new Input System —
+`Keyboard.current.spaceKey.wasPressedThisFrame` from `UnityEngine.InputSystem`), add it
+to the Hero, and assign it to the `inputSourceBehaviour` slot in place of the auto-fire
+component. You now control the siege — and you never opened `HeroCombatController.cs`.
+
+## Interview corner
+
+**Q: Why can't Unity serialize an interface field, and what's the workaround?**
+A: Unity's serializer works on concrete `UnityEngine.Object` references and plain data
+types; an interface has no serializable identity of its own. The standard workaround is
+a `MonoBehaviour` (or `ScriptableObject`) field cast to the interface at runtime with a
+validation warning — or `[SerializeReference]` for non-Unity-object polymorphic data.
+
+**Q: What does "program to an interface, not an implementation" buy in game code?**
+A: Swappability and testability at the seams that actually change: input sources, AI
+brains, save backends. The consumer depends on a small contract, so new implementations
+(player, bot, network, replay) are additive. The cost is indirection — so you apply it
+at real seams, not everywhere.
+
+## Checkpoint
+
+- [ ] You can explain the `MonoBehaviour` field + `as` cast idiom and why it exists
+- [ ] You can state `RequestCast()`'s temporal contract in one sentence
+- [ ] You changed input behaviour without touching the combat controller
+- [ ] Your keyboard input source works as a drop-in swap
+
+**Next → Chapter 7: Coroutines & Events** — how "spawn a wave, wait until it's dead,
+spawn the next" reads as three lines instead of a timer-flag state machine.

@@ -1,0 +1,160 @@
+---
+title: 'Coroutines & Events — The Wave Machine'
+description: 'Chapter 7 — ZombieSpawner.cs and CapstoneSequencer.cs: coroutines express time, UnityEvents decouple who needs to know, and the sequencer stays thin.'
+series: castle-defense
+part: 7
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+"Spawn four zombies, one every 1.2 seconds. When the last one dies, spawn six more.
+When *those* die, spawn the boss. When the boss dies — victory." That's a sequence
+spread across minutes of gameplay. Written with timers and flags in `Update()`, it's a
+bug farm. Written as a **coroutine**, it reads exactly like the sentence above.
+
+## Spawning over time
+
+Open **Assets → CastleDefense → Scripts → `ZombieSpawner.cs`**:
+
+```csharp
+private IEnumerator SpawnWaveRoutine(int count)
+{
+    aliveZombies.Clear();
+
+    for (int i = 0; i < count; i++)
+    {
+        Transform point = spawnPoints[i % spawnPoints.Length];
+        GameObject zombieGo = Instantiate(zombiePrefab, point.position, point.rotation);
+
+        var controller = zombieGo.GetComponent<ZombieController>();
+        if (controller != null) controller.SetTarget(castleGateTarget);
+
+        var health = zombieGo.GetComponent<ZombieHealth>();
+        if (health != null)
+        {
+            aliveZombies.Add(health);
+            health.onDeath.AddListener(() => OnZombieDied(health));
+        }
+
+        yield return new WaitForSeconds(delayBetweenSpawns);
+    }
+}
+```
+
+`yield return new WaitForSeconds(...)` suspends the method and resumes it later — the
+"wait" lives *inside* the loop, no timer fields, no "how many have I spawned so far"
+state smeared across frames. Spawning all at once would be a pop-in swarm; the delay is
+what makes it feel like a wave.
+
+## Deaths flow upward as events
+
+Each zombie's `ZombieHealth.onDeath` (a `UnityEvent`) notifies the spawner, which counts
+down its `aliveZombies` list; when the list empties, the spawner raises its *own* event:
+
+```csharp
+private void OnZombieDied(ZombieHealth health)
+{
+    aliveZombies.Remove(health);
+    if (aliveZombies.Count == 0)
+    {
+        onWaveCleared.Invoke();
+    }
+}
+```
+
+<EventFanout source="ZombieHealth.onDeath" hub="ZombieSpawner" listeners="aliveZombies count,onWaveCleared → CapstoneSequencer" note="deaths bubble up as events — nobody polls anybody" />
+
+## The thin sequencer
+
+Open **`CapstoneSequencer.cs`** — the spine of the whole game:
+
+```csharp
+private IEnumerator RunSequence()
+{
+    CurrentPhase = CapstonePhase.Wave1;
+    waveCleared = false;
+    zombieSpawner.SpawnWave(wave1Count);
+    yield return new WaitUntil(() => waveCleared);
+
+    CurrentPhase = CapstonePhase.Wave2;
+    waveCleared = false;
+    zombieSpawner.SpawnWave(wave2Count);
+    yield return new WaitUntil(() => waveCleared);
+
+    CurrentPhase = CapstonePhase.Boss;
+    GameObject bossGo = Instantiate(bossPrefab, bossSpawnPoint.position, bossSpawnPoint.rotation);
+    // ... wire boss target and death flag ...
+    yield return new WaitUntil(() => bossDead);
+
+    CurrentPhase = CapstonePhase.Victory;
+    onVictory.Invoke();
+}
+```
+
+`WaitUntil` bridges the two worlds: the event handler flips a bool
+(`waveCleared = true`), and the coroutine resumes when the predicate sees it. Read what
+this file *doesn't* contain: no Animator calls, no VFX, no NavMesh — only "tell the
+spawner a number, wait for an event." That thinness is a design rule, not an accident:
+add a third wave or a second boss and this file barely changes, because all the actual
+combat behaviour lives in the swappable components it coordinates.
+
+## What breaks without coroutines and events
+
+The `Update()` version needs a phase enum, a spawn counter, a spawn timer, a "waiting
+for clear" flag, and polling `FindObjectsByType` every frame to count the living. Every
+new phase multiplies the flag combinations. The coroutine version *is* the sequence
+diagram; the event version means nobody scans the scene asking "is everyone dead yet?"
+
+<InstructorNotes title="reading order matters">
+
+- Have students read `RunSequence()` aloud — it narrates the whole game in six
+  statements. Then show the same logic sketched as Update()-plus-flags on the
+  whiteboard. The comparison sells coroutines better than any definition.
+- Point at the wave-clear subtlety: the wave clears the instant the *last zombie of
+  this wave* dies, even if spawning finished long before. The list, not a timer,
+  defines "wave over".
+
+</InstructorNotes>
+
+## Try it
+
+Watch the phases move: the status text (top-left, from `CapstoneStatusUI`) polls
+`sequencer.CurrentPhase` every frame. Press Play and narrate the run: `Wave1` → kill
+four → `Wave2` → kill six → `Boss` → kill it → `Victory`. Then break the event chain on
+purpose: comment out `onWaveCleared.Invoke();` in `ZombieSpawner.cs` and Play — wave 1
+dies to the last zombie, and the game waits forever in `Wave1`. The sequencer isn't
+polling; no event, no progress. Restore it.
+
+## Challenge
+
+The Easy Capstone challenge from `README_CHALLENGES.md`: add a third wave. Add a
+`wave3Count` field to `CastleDefenseConfig`, and a third
+`SpawnWave(...)` / `WaitUntil(...)` pair in `RunSequence()` before the boss phase.
+Count the lines you touched — that's the payoff of the thin sequencer.
+
+## Interview corner
+
+**Q: How do Unity coroutines actually work?**
+A: A coroutine is a C# iterator (`IEnumerator`) the engine advances: each frame (or
+when the current yield instruction completes) Unity calls `MoveNext()`, running your
+code to the next `yield return`. It's cooperative scheduling on the main thread — not
+threading — so it can touch Unity APIs freely but must never block.
+
+**Q: `UnityEvent` vs C# `event` — trade-offs?**
+A: `UnityEvent` serializes to the Inspector (designers wire listeners without code)
+and survives as scene data, at the cost of slower invocation and weaker refactor
+safety. C# events are faster and compiler-checked, but code-only. Rule of thumb:
+`UnityEvent` at designer-facing seams, C# events for internal high-frequency signals.
+
+## Checkpoint
+
+- [ ] You can trace a single zombie death from `onDeath` to the sequencer resuming
+- [ ] You can explain what `WaitUntil` does and what flips its predicate
+- [ ] You broke `onWaveCleared` and watched the game wait forever, then fixed it
+- [ ] Your third wave works with only a config field and two sequencer lines
+
+**Next → Chapter 8: ScriptableObject Tuning** — every balance number in this game
+lives in one asset, and rebalancing the whole siege is an Inspector edit.

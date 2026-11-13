@@ -1,0 +1,124 @@
+---
+title: 'ScriptableObjects — One Asset to Balance the Siege'
+description: 'Chapter 8 — CastleDefenseConfig.cs: wave sizes and combat numbers as a data asset shared by three systems, editable without touching code or scene.'
+series: castle-defense
+part: 8
+level: intermediate
+unityVersion: '6000.0+'
+packageRepo: 'https://github.com/uv-interactives/uvi-learn-castle-defense'
+updated: '2026-07-17'
+draft: true
+---
+
+How many zombies in wave 2? How much health does the boss have? Those are *tuning
+numbers*, not behaviour — and they change constantly during balancing. A
+**ScriptableObject** gives them a home that is neither code nor scene: a data asset.
+
+## The real code — all of it
+
+Open **Assets → CastleDefense → Scripts → `CastleDefenseConfig.cs`**:
+
+```csharp
+// CONCEPT: SCRIPTABLEOBJECT
+[CreateAssetMenu(fileName = "CastleDefenseConfig", menuName = "CastleDefense/Config")]
+public class CastleDefenseConfig : ScriptableObject
+{
+    [Header("Wave Sizes")]
+    public int wave1Count = 4;
+    public int wave2Count = 6;
+
+    [Header("Balance")]
+    public int zombieMaxHealth = 30;
+    public int bossMaxHealth = 150;
+    public int heroCastDamage = 15;
+}
+```
+
+The asset itself lives at `Assets/CastleDefense/Data/CastleDefenseConfig.asset`
+(created by the Step 1 menu item — via `ScriptableObject.CreateInstance` and
+`AssetDatabase.CreateAsset`, or by hand through the `CreateAssetMenu` right-click entry).
+
+Three separate systems read it:
+
+- **`CapstoneSequencer`** takes `wave1Count` / `wave2Count` in `Start()`.
+- **`ZombieHealth`** picks `zombieMaxHealth` or `bossMaxHealth` depending on its
+  `isBoss` flag — the same component serves both enemy types off one asset.
+- **`HeroCombatController`** reads `heroCastDamage` in `Awake()`.
+
+Note the consumer pattern each uses:
+
+```csharp
+[SerializeField] private CastleDefenseConfig config;   // optional
+...
+if (config != null) maxHealth = isBoss ? config.bossMaxHealth : config.zombieMaxHealth;
+```
+
+The config is *optional* — every consumer keeps a sane serialized default and only
+overrides it if an asset is assigned. A prefab dragged into a test scene without the
+config still works.
+
+## Why not just public fields on the components?
+
+They *are* also fields on the components — that's the fallback. The asset's job is
+**sharing and separation**: one place retunes the whole game (instead of hunting values
+across three prefabs and a scene object), the same asset can be swapped wholesale
+(an "Easy Mode" config vs a "Nightmare" config is a different `.asset` file, zero code),
+and balance changes never touch the scene file — no merge conflicts with whoever is
+editing level geometry.
+
+## What breaks without it
+
+Hardcoded constants mean recompiling to rebalance. Values on scene objects mean the
+numbers live in a YAML scene diff nobody can review, duplicated per scene. Both fail the
+moment a designer — not a programmer — owns balancing.
+
+<InstructorNotes title="the designer moment">
+
+- Live rebalance: select `CastleDefenseConfig.asset`, set `wave2Count` to 12, Play.
+  A double-size second wave, zero code, zero scene edits. This is the moment
+  non-programmer students light up.
+- Warn about the classic gotcha: in the *editor*, edits to a ScriptableObject during
+  Play mode **persist after you stop** — it's an asset, not scene state. In a build,
+  runtime changes don't persist at all. Both directions surprise people.
+
+</InstructorNotes>
+
+## Try it
+
+Do the live rebalance above — then the gotcha: *while in Play mode*, drop
+`bossMaxHealth` from 150 to 15 on the asset, watch the boss die to one or two casts,
+stop Play — and observe the 15 is still there. Asset edits are not reverted by exiting
+Play mode the way scene changes are. Set it back to 150.
+
+## Challenge
+
+Build a difficulty variant: duplicate the asset (Ctrl+D) as
+`CastleDefenseConfig_Nightmare.asset`, set `wave1Count` 8, `wave2Count` 14,
+`bossMaxHealth` 300, then assign it to the `CapstoneSequencer`'s `config` slot in the
+Inspector. One field swap flips the whole game's difficulty — the sequencer, spawner,
+and health components never knew.
+
+## Interview corner
+
+**Q: What is a ScriptableObject and how does it differ from a MonoBehaviour?**
+A: A `UnityEngine.Object`-derived class that exists as a project asset (or pure runtime
+instance), not attached to any GameObject and with no transform or scene lifecycle. Use
+it for shared data and asset-based architecture; MonoBehaviours are for per-scene-object
+behaviour. Many objects referencing one ScriptableObject share a single instance —
+that's the feature.
+
+**Q: What are the persistence pitfalls of ScriptableObjects?**
+A: In the editor, runtime modifications write to the actual asset and persist after
+exiting Play mode (unlike scene state). In builds, they're loaded read-only copies —
+changes vanish on restart and are never shared across sessions. So: treat them as
+read-only config at runtime, or deliberately manage the editor/build difference.
+
+## Checkpoint
+
+- [ ] You can name the three systems reading `CastleDefenseConfig` and what each takes
+- [ ] You can explain the optional-config-with-defaults consumer pattern
+- [ ] You saw a Play-mode asset edit persist after stopping, and why
+- [ ] Your Nightmare config swaps in with a single Inspector field change
+
+**Next → Chapter 9: The Capstone** — all nine chapters running at once, a map of every
+seam, and a no-hints challenge round.

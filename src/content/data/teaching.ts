@@ -50,6 +50,18 @@ export const teaching: TeachingPackage[] = [
     status: 'active',
   },
   {
+    id: 'castle-defense',
+    title: 'Castle Defense',
+    summary:
+      'A castle-siege slice — hero mage vs zombie waves and a vampire boss — teaching Animator Controllers & state machines, Particle Systems triggered from code and Animation Events, and scripted NavMesh baking with NavMeshAgent pathing.',
+    engine: 'Unity',
+    category: 'Unity Systems',
+    level: 'Intermediate',
+    tags: ['Unity', 'C#', 'URP', 'Animator', 'NavMesh', 'VFX', 'Intermediate'],
+    githubUrl: 'https://github.com/uv-interactives/uvi-learn-castle-defense',
+    status: 'coming-soon',
+  },
+  {
     id: 'uefn-intro',
     title: 'UEFN Fundamentals',
     summary:
