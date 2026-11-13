@@ -10,11 +10,15 @@ const nextConfig = {
   // Private invitations: static sites in public/i/<slug>/ (built by gamepipe). Next doesn't serve a folder's
   // index.html, so map the clean URL to it; the page carries <base href> so its relative assets resolve.
   async rewrites() {
-    return [{ source: '/i/:slug', destination: '/i/:slug/index.html' }];
+    return [
+      { source: '/i/:slug', destination: '/i/:slug/index.html' },
+      { source: '/priya-dinesh', destination: '/i/priya-dinesh/index.html' },   // short share link (fresh for WhatsApp's preview cache)
+    ];
   },
   // ponytail: unlisted, not secret — noindex keeps them out of search; anyone with the link can open them.
   async headers() {
-    return [{ source: '/i/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }];
+    const noindex = [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }];
+    return [{ source: '/i/:path*', headers: noindex }, { source: '/priya-dinesh', headers: noindex }];
   },
 };
 
