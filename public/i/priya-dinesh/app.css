@@ -1,0 +1,209 @@
+/* Invitation · app styles. Ported from comps/screen.html (the approved stage-4 renderer); the card block is the
+   locked final_card_a comp. Design box = 360x740 (#stage), scaled to fit any phone by app.js; the petal bed (#world)
+   always fills the real screen, so rotating or a taller phone only reveals more bed (seamless, screens.md v6). */
+:root { --night:#0E2229; --plum:#2A1424; --copper:#B5653A; --gilt:#C8913A; --gilt-hi:#F2D27A; --gilt-edge:#7A5518;
+        --pblue:#2B5C9E; --teal:#388E9D; --dteal:#315462; --cream:#FBF7EC; }
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; height:100%; background:var(--night); overflow:hidden; overscroll-behavior:none; }
+button { font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; }
+a { color:inherit; text-decoration:none; }
+[hidden] { display:none !important; }
+.lx { transition:opacity .25s; }                         /* language cross-fade */
+body.swap .lx { opacity:0; }
+
+#world { position:fixed; inset:0; overflow:hidden; background:var(--night); }
+.bed { position:absolute; inset:-12px; background:url(a/petal_bed_portrait.webp) center/cover; filter:saturate(1.12) brightness(.74); }
+.bed::after { content:""; position:absolute; inset:0; background:radial-gradient(80% 62% at 50% 46%, transparent 30%, rgba(14,34,41,.45) 70%, rgba(14,34,41,.85)); }
+body.land .bed { background-image:url(a/petal_bed_landscape.webp); }
+#side { position:absolute; inset:0; pointer-events:none; }
+#stage { position:absolute; left:50%; top:50%; width:360px; height:740px; transform-origin:0 0; }
+
+/* ---- card (the locked comp) ---- */
+.card { position:absolute; left:30px; right:30px; top:58px; bottom:58px; border-radius:8px; overflow:hidden; z-index:2;
+        background: radial-gradient(62% 30% at 50% 74%, rgba(56,142,157,.75), transparent 72%),
+          radial-gradient(85% 55% at 50% 26%, rgba(43,92,158,.95), transparent 75%),
+          linear-gradient(180deg, #1B3B57 0%, #2B5C9E 38%, #24527F 62%, #173847 100%);
+        box-shadow:0 18px 40px rgba(0,0,0,.75), 0 0 0 2px var(--plum),
+          inset 0 0 0 3px var(--gilt-edge), inset 0 0 0 8px var(--copper), inset 0 0 0 9px var(--plum),
+          inset 0 0 0 11px var(--gilt-hi), inset 0 0 0 12px var(--gilt-edge), inset 0 0 70px 18px rgba(6,16,28,.7); }
+.card::before { content:""; position:absolute; inset:12px; opacity:.06; pointer-events:none;
+        background:radial-gradient(ellipse 7px 9px at 50% 50%, var(--gilt-hi) 0 3px, transparent 3.5px 5px, var(--gilt-hi) 5.5px 6.5px, transparent 7px) 0 0/34px 40px,
+                   radial-gradient(ellipse 7px 9px at 50% 50%, var(--gilt-hi) 0 3px, transparent 3.5px 5px, var(--gilt-hi) 5.5px 6.5px, transparent 7px) 17px 20px/34px 40px; }
+.hero { position:absolute; left:26px; right:26px; top:22px; height:47%; z-index:1; filter:drop-shadow(0 10px 16px rgba(0,0,0,.5)); }
+.hero svg { width:100%; height:100%; display:block; overflow:visible; }
+.hero .frame { filter:brightness(1.4) contrast(.9) saturate(1.05) sepia(.12); position:absolute; left:-1.21%; top:-0.34%; width:102.42%; height:100.34%; pointer-events:none; }
+.propgrade { filter:brightness(1.65) contrast(.9) saturate(1.05) sepia(.12); }
+.halo { position:absolute; left:50%; top:24%; width:330px; height:330px; margin:-165px 0 0 -165px; z-index:0; pointer-events:none;
+        background:radial-gradient(circle, rgba(242,210,122,.30), rgba(242,210,122,.10) 45%, transparent 68%); }
+.txt { position:absolute; left:12px; right:12px; top:52.5%; bottom:16px; text-align:center; z-index:2; }
+.txt::before { content:""; position:absolute; left:-8px; right:-8px; top:-6px; height:118px; z-index:-1;
+      background:radial-gradient(60% 55% at 50% 50%, rgba(6,16,30,.55), transparent 75%); }
+.t1 { font:700 15px "Noto Serif Tamil"; color:var(--gilt-hi); letter-spacing:.04em; text-shadow:0 1px 3px rgba(0,0,0,.6);
+      display:flex; align-items:center; gap:8px; justify-content:center; white-space:nowrap; }
+.t1::before, .t1::after { content:""; flex:0 0 22px; height:1px; background:linear-gradient(90deg, transparent, var(--gilt-hi)); }
+.t1::after { transform:scaleX(-1); }
+body:not(.ta) .t1 { font:700 14px 'Cormorant Garamond'; letter-spacing:.22em; text-transform:uppercase; }
+.names { font:italic 700 40px/1.05 "Cormorant Garamond"; margin:4px 0 0; white-space:nowrap;
+         background:linear-gradient(176deg, #fff6d2 0%, #f5d98a 28%, #c8913a 52%, #fbe6a6 66%, #b07a30 86%, #e9c56e 100%);
+         -webkit-background-clip:text; background-clip:text; color:transparent;
+         filter:drop-shadow(0 1px 0 #6a4316) drop-shadow(0 3px 4px rgba(6,14,30,.75)); }
+.ta .names { font:700 30px/1.25 "Noto Serif Tamil"; }
+.names .heart { display:inline-block; width:.74em; height:.66em; vertical-align:-.02em; margin:0 .1em; }
+.div { height:16px; margin:6px auto; width:78%; position:relative;
+       background:linear-gradient(90deg, transparent, var(--gilt) 18%, var(--gilt-hi) 50%, var(--gilt) 82%, transparent) center/100% 1px no-repeat; }
+.div::after { content:""; position:absolute; left:50%; top:50%; width:14px; height:16px; margin:-8px 0 0 -7px; border-radius:50%/60% 60% 40% 40%;
+       background:radial-gradient(ellipse at 50% 55%, #0A1238 0 3px, #2A6CD0 3.5px 4.5px, #1AA0A8 5px 5.5px, var(--gilt-hi) 6px 6.8px, transparent 7.2px); }
+.day { font:700 11px system-ui; letter-spacing:.32em; color:var(--gilt-hi); }
+.ta .day { font:700 12px "Noto Serif Tamil"; letter-spacing:.06em; }
+.d { font:700 19px/1.15 "Cormorant Garamond"; color:var(--cream); letter-spacing:.1em; }
+.ta .d { font:600 15px/1.4 "Noto Serif Tamil"; letter-spacing:0; }
+.m { font:600 14px/1.3 "Cormorant Garamond"; color:rgba(251,247,236,.88); }
+.v { font:italic 600 14px/1.3 "Cormorant Garamond"; color:var(--gilt-hi); }
+.ta .m, .ta .v { font:500 12.5px/1.45 "Noto Serif Tamil"; }
+.cd { display:inline-block; font:600 11px system-ui; color:var(--gilt-hi); margin-top:5px; letter-spacing:.06em;
+      padding:3px 10px; border:1px solid rgba(242,210,122,.55); border-radius:99px; background:rgba(6,16,28,.35); white-space:nowrap; }
+.ta .cd { font:600 11px "Noto Serif Tamil"; letter-spacing:0; }
+.cta { display:flex; align-items:center; gap:8px; width:max-content; margin:8px auto 0; padding:10px 24px 10px 18px; border-radius:99px; font:700 15px "Cormorant Garamond"; color:#2a1606;
+       background:linear-gradient(var(--gilt-hi), var(--gilt) 55%, var(--copper)); box-shadow:0 0 0 1.5px var(--gilt-edge), 0 0 0 3px var(--plum), 0 6px 14px rgba(0,0,0,.5); }
+.ta .cta { font:700 13px "Noto Serif Tamil"; }
+.cta img { width:18px; }
+.cta:active { transform:translateY(1px); filter:brightness(.95); }
+.more { display:block; margin:6px auto 0; padding:6px 12px; font:600 11px system-ui; color:rgba(251,247,236,.7); }
+.ta .more { font:600 11px "Noto Serif Tamil"; }
+
+/* ---- glass HUD (style.json icon.glass, Option B) ---- */
+.glass { display:grid; place-items:center; border-radius:12px;
+  background:linear-gradient(160deg, rgba(23,56,71,.94) 0%, rgba(14,34,41,.97) 100%);
+  backdrop-filter:blur(14px) saturate(1.3); -webkit-backdrop-filter:blur(14px) saturate(1.3);
+  border:1px solid rgba(242,184,140,.6);
+  box-shadow:inset 0 1px 0 rgba(255,222,196,.45), inset 0 -2px 6px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.4); }
+.hud { position:absolute; z-index:20; }
+.hud.btn { width:38px; height:38px; } .hud.btn img { width:22px; }
+.pill { height:32px; padding:0 12px; border-radius:99px; font:600 12px system-ui; color:#F2B88C; display:flex; align-items:center; gap:6px; }
+#lang { left:max(14px, env(safe-area-inset-left)); top:max(14px, env(safe-area-inset-top)); }
+#mute { right:max(14px, env(safe-area-inset-right)); top:max(12px, env(safe-area-inset-top)); }
+body.r-poster #mute, body.r-og #mute { display:none !important; }
+#lang span { opacity:.75; } #lang .on { color:#FBF7EC; font-weight:700; opacity:1; }
+.skip { left:50%; transform:translateX(-50%); bottom:max(28px, env(safe-area-inset-bottom)); }
+.skip img { width:16px; }
+
+/* ---- feathers, twinkles, petals ---- */
+.f { position:absolute; transform-origin:50% 100%; pointer-events:none; filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
+.tw { position:absolute; width:10px; height:10px; margin:-5px; z-index:3; pointer-events:none; opacity:0;
+      background:radial-gradient(circle, #fff 0 1px, rgba(255,240,190,.9) 1.5px, transparent 3px),
+                 linear-gradient(90deg, transparent 45%, rgba(255,240,190,.9) 50%, transparent 55%),
+                 linear-gradient(0deg, transparent 45%, rgba(255,240,190,.9) 50%, transparent 55%);
+      animation:tw 3.2s ease-in-out infinite; }
+@keyframes tw { 0%,100% { opacity:0; transform:scale(.4) rotate(0deg); } 50% { opacity:1; transform:scale(1) rotate(45deg); } }
+.petal { position:absolute; width:16px; pointer-events:none; z-index:9; }
+
+/* ---- expanded panel (07b) ---- */
+.panel { position:absolute; left:42px; right:42px; bottom:70px; z-index:5; border-radius:14px; padding:14px 14px 10px; text-align:center;
+         background:linear-gradient(170deg, rgba(23,56,71,.96), rgba(14,34,41,.98)); border:1px solid rgba(242,184,140,.55);
+         box-shadow:0 0 0 2px var(--gilt-edge), 0 -10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,222,196,.3); }
+.row { display:flex; gap:8px; justify-content:center; margin-top:8px; }
+.row .glass { width:auto; height:36px; padding:0 11px; gap:6px; display:flex; font:600 11px system-ui; color:#F2B88C; border-radius:10px; }
+.ta .row .glass { font:600 10.5px "Noto Serif Tamil"; }
+.row .glass img { width:18px; }
+.ev { text-align:left; font:600 12px/1.35 "Cormorant Garamond"; color:var(--cream); margin:6px 0; }
+.ev b { display:block; font:700 10px system-ui; letter-spacing:.2em; color:var(--gilt-hi); }
+.ev.venue { color:var(--gilt-hi); font-style:italic; }
+.ta .ev { font:500 11px/1.5 "Noto Serif Tamil"; } .ta .ev b { font:700 11px "Noto Serif Tamil"; letter-spacing:0; }
+.less { display:block; margin:10px auto 0; padding:4px 12px; font:600 11px system-ui; color:rgba(251,247,236,.7); }
+.ta .less { font-family:"Noto Serif Tamil"; }
+.footer { display:block; margin-top:6px; font:500 10px system-ui; color:rgba(251,247,236,.55); }
+.ta .footer { font:500 9.5px "Noto Serif Tamil"; }
+
+/* ---- sheets, poster, toast, loading ---- */
+.sheet-wrap, .poster-wrap { position:absolute; inset:0; z-index:30; }
+.scrim { position:absolute; inset:0; background:rgba(6,14,20,.6); }
+.scrim.dark { background:rgba(6,14,20,.94); }
+.sheet { position:absolute; left:50%; bottom:0; width:min(420px, 100%); transform:translateX(-50%); padding:16px 18px max(26px, env(safe-area-inset-bottom)); border-radius:18px 18px 0 0; display:block; }
+.sheet h4 { margin:0 0 10px; font:700 13px system-ui; color:var(--gilt-hi); text-align:center; }
+.ta .sheet h4 { font-family:"Noto Serif Tamil"; }
+.opt { display:flex; width:100%; align-items:center; gap:10px; margin:8px 0; padding:12px; border-radius:12px; font:600 13px system-ui; color:var(--cream); text-align:left;
+       background:rgba(255,255,255,.04); border:1px solid rgba(242,184,140,.35); }
+.ta .opt { font:600 12px "Noto Serif Tamil"; }
+.opt img { width:20px; }
+.opt img[src*=calendar] { filter:invert(1) sepia(1) saturate(3) hue-rotate(-20deg) brightness(1.05); }   /* the dark CTA glyph, re-tinted copper on dark glass */ .opt.close { justify-content:center; color:#F2B88C; }
+.poster-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; }
+.poster-wrap img { position:relative; max-width:86vw; max-height:78vh; border-radius:6px; box-shadow:0 10px 30px #000; }
+.poster-wrap p { position:relative; margin:0; font:600 13px system-ui; color:var(--gilt-hi); text-align:center; padding:0 20px; }
+.ta .poster-wrap p { font-family:"Noto Serif Tamil"; }
+.poster-wrap .hud { right:14px; top:14px; }
+.toast { position:absolute; left:50%; bottom:110px; transform:translateX(-50%); z-index:40; padding:8px 14px; border-radius:99px; white-space:nowrap; font:600 12px system-ui; color:#F2B88C; display:flex; }
+.ta .toast { font-family:"Noto Serif Tamil"; }
+#loading { position:absolute; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+           background:radial-gradient(60% 40% at 50% 46%, #173847, #0E2229); transition:opacity .45s; }
+#loading img { height:84px; filter:drop-shadow(0 0 14px rgba(242,210,122,.7)); animation:breathe 1.6s ease-in-out infinite; }
+#loading p { margin:0; font:600 12px system-ui; color:var(--gilt-hi); }
+@keyframes breathe { 50% { transform:scale(1.08); filter:drop-shadow(0 0 22px rgba(242,210,122,.9)); } }
+body.loaded #loading { opacity:0; pointer-events:none; }
+
+/* build-time renders: poster (no HUD / no buttons) and og:image */
+body.r-poster .hud, body.r-poster .cta, body.r-poster .more, body.r-poster .cd,
+body.r-og .hud, body.r-og .cta, body.r-og .more, body.r-og .cd, body.r-poster #loading, body.r-og #loading { display:none !important; }
+/* poster: no buttons, so the freed space carries both events (a saved image must stand alone) */
+.pextra { display:none; margin-top:4px; } body.r-poster .pextra, body.r-og .pextra { display:block; }
+.pev { margin:4px auto 0; font:600 13px/1.35 'Cormorant Garamond'; color:var(--cream); }
+.pev b { display:block; font:700 9.5px system-ui; letter-spacing:.24em; color:var(--gilt-hi); }
+.ta .pev { font:500 11.5px/1.5 'Noto Serif Tamil'; } .ta .pev b { font:700 11px 'Noto Serif Tamil'; letter-spacing:0; }
+
+/* ---- Phase B intro (screens 01–06) ---- */
+body.intro #card, body.intro #panel, body.intro #stage > .f:not(.corner), body.intro .tw { visibility:hidden; }
+body.intro.land #stage > .f.corner { visibility:hidden; }          /* landscape: the screen-edge feathers frame the intro */
+#intro { position:absolute; inset:0; z-index:6; }
+.bundle { position:absolute; z-index:4; }
+.leaf { position:absolute; }
+.leaf img { display:block; width:100%; }
+.ink { position:absolute; inset:0; display:flex; flex-direction:column; color:#4A2E14; }
+.ink.front { justify-content:center; align-items:flex-start; text-align:left; padding:3px 5% 3px 26%; gap:1px; }
+.ink.front .fit { white-space:nowrap; font:600 11.5px/1.3 'Cormorant Garamond',serif; color:#3A220E; }
+.ink.front .fit b { font:700 .74em system-ui; letter-spacing:.14em; color:#7A5518; }
+.ink.front .big { font:italic 700 19px/1.15 'Cormorant Garamond',serif; color:#4A2E14; }
+.ink .heart { display:inline-block; width:1.02em; height:.92em; vertical-align:-.12em; margin:0 .14em; filter:drop-shadow(0 1px 0 rgba(255,246,210,.6)); }
+.ink.front .wrap2 { font:600 10.5px/1.25 'Cormorant Garamond',serif; color:#4A2E14; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+body.ta .ink.front .fit { font:600 11px/1.35 'Noto Serif Tamil'; } body.ta .ink.front .fit b { font:700 .92em 'Noto Serif Tamil'; letter-spacing:0; }
+body.ta .ink.front .big { font:700 16px/1.3 'Noto Serif Tamil'; } body.ta .ink.front .wrap2 { font:500 9.5px/1.3 'Noto Serif Tamil'; -webkit-line-clamp:3; }
+.thread { position:absolute; z-index:40; overflow:visible; pointer-events:none; }
+.wrap { position:absolute; width:7px; z-index:41; border-radius:3px; background:linear-gradient(90deg,#8A5A18,#F2D27A,#8A5A18); }
+.knot { position:absolute; z-index:42; filter:drop-shadow(0 3px 4px #0006); animation:knot 2.4s ease-in-out infinite; }
+.knot img { display:block; width:100%; }
+@keyframes knot { 50% { transform:scale(1.05); filter:drop-shadow(0 3px 4px #0006) drop-shadow(0 0 10px rgba(242,210,122,.55)); } }
+.hint { position:absolute; z-index:45; width:46px; height:46px; margin:-23px; border-radius:50%; display:grid; place-items:center; pointer-events:none;
+        background:radial-gradient(circle, rgba(242,210,122,.35), transparent 70%); animation:hint 1.4s ease-in-out infinite; }
+.hint img { width:30px; filter:drop-shadow(0 0 6px rgba(242,184,140,.8)); }
+@keyframes hint { 50% { transform:scale(1.15); opacity:.75; } }
+.burst { position:absolute; width:120px; height:120px; z-index:46; mix-blend-mode:screen; pointer-events:none; }
+.burst img { position:absolute; filter:sepia(1) saturate(4) hue-rotate(-8deg); } .burst .ring { width:120px; left:0; top:0; }
+.kolam { position:absolute; left:0; top:0; z-index:3; touch-action:none; overflow:visible; }
+.dial { position:absolute; z-index:5; touch-action:none; }
+.dial > img, .dial .disc > img { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; }
+.dial > .ring { filter:drop-shadow(0 8px 12px #0008); }
+.disc { position:absolute; inset:0; }
+.dday { position:absolute; left:50%; top:50%; font:700 11px 'Cormorant Garamond'; color:#F7E7B8; text-shadow:0 1px 1px #000a; pointer-events:none; }
+.jewel { position:absolute; left:50%; top:50%; border-radius:50%; pointer-events:none;
+         background:radial-gradient(circle, rgba(56,142,157,.9) 0 34%, rgba(242,210,122,.95) 38% 46%, rgba(242,210,122,.35) 52%, transparent 70%); box-shadow:0 0 11px rgba(242,210,122,.8); }
+.arc { position:absolute; left:0; top:0; z-index:6; pointer-events:none; overflow:visible; transition:opacity .3s; }
+.arc { filter:drop-shadow(0 0 6px rgba(242,210,122,.55)); }
+.hint.ghost { margin:-6px 0 0 -21px; animation:none; z-index:46; }   /* fingertip on the point, no pulse: the motion is the cue */
+.hint.ghost img { width:34px; }
+.kolam .trail { stroke:#FFF2C4; }
+.globe { position:absolute; z-index:5; touch-action:none; }
+.globe img { width:100%; height:100%; display:block; }
+.beacon { position:absolute; z-index:6; width:0; height:0; pointer-events:none; mix-blend-mode:screen; }
+.beacon span { position:absolute; left:0; top:0; transform:translate(-50%,-50%); width:64px; height:64px; background-size:100% 100%; filter:sepia(1) saturate(4) hue-rotate(-8deg) brightness(1.05); }
+.beacon .b0 { background-image:url(a/beacon_0.webp); animation:bBreathe 1.2s ease-in-out infinite; }
+.beacon .b1 { background-image:url(a/beacon_1.webp); animation:bPulse 1.2s ease-out infinite; }
+.beacon .b2 { background-image:url(a/beacon_2.webp); animation:bGlint 2.4s linear infinite; }
+@keyframes bBreathe { 50% { transform:translate(-50%,-50%) scale(1.15); } }
+@keyframes bPulse { 0% { transform:translate(-50%,-50%) scale(.4); opacity:0 } 25% { opacity:.9 } 100% { transform:translate(-50%,-50%) scale(1.9); opacity:0 } }
+@keyframes bGlint { to { transform:translate(-50%,-50%) rotate(54deg); } }
+.hold { position:absolute; z-index:7; pointer-events:none; }
+.gold { position:absolute; inset:-200px; z-index:8; pointer-events:none; opacity:0; background:radial-gradient(circle at 50% 81%, rgba(255,240,190,.0) 10%, rgba(242,210,122,.9) 55%); }
+.pin { position:absolute; width:60px; height:60px; border-radius:50%; z-index:6; } .pin img { width:34px; }
+.f.fan { pointer-events:none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tw { animation:none; opacity:.6; } #loading img { animation:none; } .lx { transition:none; }
+}
