@@ -6,7 +6,7 @@
 'use strict';
 window.INTRO = (() => {
   const IT = {                                   // tunables
-    idleMs: 6000, hintMs: 2000, traceSnapPx: 34, traceAhead: 70, traceDone: .6,
+    idleMs: 6000, hintMs: 2000, skipMs: 3500, traceSnapPx: 34, traceAhead: 70, traceDone: .6,
     dialSnapDeg: 15, holdMs: 800, globeFps: 20, globeTimeoutMs: 3000, settleMs: 650,
   };
   const A = 'a/';
@@ -312,7 +312,26 @@ window.INTRO = (() => {
       return f.animate([{ transform: `rotate(${a}deg)` }, { transform: `rotate(${a - Math.sign(a || 1) * 70}deg)`, opacity: 0 }], { duration: 1100, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' }).finished; }));
     fs.forEach(([f]) => f.remove());
   }
+  /* Skip (user 2026-11-13): never on screen at a step's start. During a hand-played step (knot, kolam, dial, globe) it
+     fades in once the step has run skipMs with no touch — after the 2 s hint, before the 6 s auto-complete. Any touch hides
+     it and restarts the clock. Cinematic beats (untie, leaf lifts, fan reveal) are never skippable from here. */
+  let skippable = false, stepT0 = 0, lastTouch = 0, skipWatch = null;
+  const armSkip = on => { skippable = on; stepT0 = performance.now(); hideSkip(); };
+  const hideSkip = () => { $('#skip').hidden = true; };
+  document.addEventListener('pointerdown', e => { lastTouch = performance.now(); if (running && !e.target.closest('#skip')) hideSkip(); }, true);
+  function watchSkip() {
+    clearInterval(skipWatch);
+    skipWatch = setInterval(() => {
+      const sk = $('#skip'), n = performance.now();
+      if (!running) { clearInterval(skipWatch); return; }
+      if (skippable && sk.hidden && n - Math.max(stepT0, lastTouch) > IT.skipMs) {
+        sk.hidden = false;
+        if (!RM) sk.animate([{ opacity: 0, transform: 'translate(-50%, 8px)' }, { opacity: 1, transform: 'translate(-50%, 0)' }], { duration: 450, easing: 'ease-out' });
+      }
+    }, 250);
+  }
   function reveal(instant) {
+    clearInterval(skipWatch); skippable = false;
     layer.remove(); layer = null; running = false; clearTimers();
     document.body.classList.remove('intro');
     $('#skip').hidden = true;
@@ -326,17 +345,17 @@ window.INTRO = (() => {
     document.body.classList.add('intro');                // hides the card + card-only feathers; corners + bed stay
     layer = el('<div id="intro"></div>'); $('#stage').appendChild(layer);
     layer.addEventListener('contextmenu', e => e.preventDefault());   /* Android long-press menu on the globe */
-    $('#skip').hidden = false;
+    hideSkip(); watchSkip();
     try {
-      await arrival(); await untie();
+      armSkip(true); await arrival(); armSkip(false); await untie();
       preloadGlobe();                                    // fetch the globe while the guest traces
-      await kolam(); await wait(IT.settleMs); await lift(); await wait(900);
+      armSkip(true); await kolam(); armSkip(false); await wait(IT.settleMs); await lift(); await wait(900);
       layer.querySelector('.kolam').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
-      const db = await dial(); await wait(300); await lift();
+      armSkip(true); const db = await dial(); armSkip(false); await wait(300); await lift();
       db.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(60px) scale(.8)' }], { duration: 500, fill: 'forwards' }); await wait(900);
-      await globe(); await lift(); await wait(1300);
+      armSkip(true); await globe(); armSkip(false); await lift(); await wait(1300);
       await fanReveal();
-    } catch (e) { if (layer) reveal(); }
+    } catch (e) { console.error('intro aborted ->', e); if (layer) reveal(); }   /* never strand a guest; but never hide why */
   }
   function skip() { if (!running) return; document.getAnimations().forEach(a => { try { a.finish(); } catch (e) {} }); reveal(); }
   function preload() {                                   // first visit: fetch the bundle sprites while the loader shows
