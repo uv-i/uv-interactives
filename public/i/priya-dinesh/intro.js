@@ -101,8 +101,9 @@ window.INTRO = (() => {
   function arrival() {
     return new Promise(res => {
       const k = buildBundle(), knot = bundleEl.querySelector('.knot');
-      let h = null; later(() => h = hint('ic_hint_tap', k.x + 28, k.y - 36), IT.hintMs);
-      const go = () => { finishStep = null; knot.onclick = null; if (h) h.remove(); res(); };
+      let h = null, over = false;
+      later(() => { if (!over) h = hint('ic_hint_tap', k.x + 28, k.y - 36); }, IT.hintMs);   /* never after the knot is untied */
+      const go = () => { over = true; finishStep = null; knot.onclick = null; if (h) h.remove(); res(); };
       knot.onclick = go; finishStep = go;                         // the knot tap is also the first gesture: audio.js starts the BGM on it
       later(go, IT.idleMs);                      // no input for 6 s -> unties itself
     });
@@ -275,12 +276,15 @@ window.INTRO = (() => {
       const complete = async () => {
         if (done) return; done = true; finishStep = null; g.onpointerdown = null; if (h) h.remove();
         p.style.strokeDasharray = '1 1'; ring.remove(); beacon.remove();
+        unsay();                                         // the instruction is done the moment the hold completes
+        if (!RM) bundleEl.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });   /* the leaves must not peek around the zooming globe */
         SND.play('flyin');                               // fly-in: zoom into Vadipatti, the globe dissolves to gold
         img.src = `${A}globe.webp`;
         const gold = el('<div class="gold"></div>'); layer.appendChild(gold);
         await Promise.all([g.animate([{ transform: 'scale(1)' }, { transform: 'scale(3.2)' }], { duration: RM ? 1 : 1100, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards' }).finished,
                            gold.animate([{ opacity: 0 }, { opacity: .85, offset: .7 }, { opacity: 0 }], { duration: RM ? 1 : 1500 }).finished]);
-        g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }); gold.remove();
+        await g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished; gold.remove();
+        if (!RM) await bundleEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 450, fill: 'forwards' }).finished;   /* back for the venue leaf */
         res();
       };
       finishStep = complete;
