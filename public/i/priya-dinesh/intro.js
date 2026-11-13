@@ -35,6 +35,16 @@ window.INTRO = (() => {
     if (k < up) { let a = LIFT0; for (let j = 1; j <= k; j++) a += step(j - 1, j); return { a, b: 1 }; }
     let a = 0; for (let j = up + 1; j <= k; j++) a += step(j - 1, j); return { a, b: 1 - (k - up) * .05 };
   };
+  /* fit a leaf's text to the leaf, both ways, whatever the phone does to font size (Android boosting, accessibility
+     text scaling): scale the lines down together until nothing spills; never clip, never cut words. */
+  function fitInk(ink) {
+    if (!ink) return;
+    const kids = [...ink.children]; let z = 1;
+    kids.forEach(k => k.style.zoom = 1);
+    const over = () => ink.scrollHeight > ink.clientHeight + 1 || ink.scrollWidth > ink.clientWidth + 1 || kids.some(k => k.scrollWidth > k.clientWidth + 1);
+    while (over() && z > .45) { z -= .03; kids.forEach(k => k.style.zoom = z.toFixed(2)); }
+    ink.dataset.fit = z.toFixed(2);
+  }
   const tf = q => `rotate(${q.a.toFixed(2)}deg)`, lf = q => `brightness(${q.b}) drop-shadow(0 1.6px 1.2px rgba(40,20,5,.5))`;
   function buildBundle() {
     const b = el(`<div class="bundle" style="left:${BX}px;top:${TOP}px"></div>`); layer.appendChild(b);
@@ -60,7 +70,7 @@ window.INTRO = (() => {
     const top = leaves[lifted], q = pose(lifted, lifted + 1), ink = k => leaves[k] && leaves[k].querySelector('.ink');
     SND.play('lift');
     const t1 = ink(lifted + 1);
-    if (t1) { stepDown(t1); const an = t1.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RM ? 1 : 380, delay: RM ? 0 : 260, fill: 'forwards' }); an.finished.then(() => { t1.style.opacity = 1; an.cancel(); }); }
+    if (t1) { stepDown(t1); fitInk(t1); const an = t1.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RM ? 1 : 380, delay: RM ? 0 : 260, fill: 'forwards' }); an.finished.then(() => { t1.style.opacity = 1; an.cancel(); }); }
     const set = (l, q2, dur, delay = 0, settle = false) => (RM ? Promise.resolve() : l.animate(
       settle ? [{ transform: l.style.transform }, { transform: tf({ ...q2, a: q2.a * 1.01 }), offset: .85 }, { transform: tf(q2) }]
              : [{ transform: l.style.transform }, { transform: tf(q2) }],
