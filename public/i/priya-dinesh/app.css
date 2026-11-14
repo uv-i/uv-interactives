@@ -62,6 +62,9 @@ body:not(.ta) .t1 { font:700 14px 'Cormorant Garamond'; letter-spacing:.22em; te
 .m { font:600 14px/1.3 "Cormorant Garamond"; color:rgba(251,247,236,.88); }
 .v { font:italic 600 14px/1.3 "Cormorant Garamond"; color:var(--gilt-hi); }
 .ta .m, .ta .v { font:500 12.5px/1.45 "Noto Serif Tamil"; }
+.m.e { white-space:nowrap; }
+.ta .m.e { white-space:pre-line; }   /* Tamil: 2 readable lines instead of one 10.5px line */
+body.ta .txt { top:51%; }   /* the extra Tamil line: lift the block into the gap under the arch so the buttons stay clear of the feathers */   /* engagement line on the card (user 2026-11-14): pairs with the muhurtham line, steps down to fit */
 .cd { display:inline-block; font:600 11px system-ui; color:var(--gilt-hi); margin-top:5px; letter-spacing:.06em;
       padding:3px 10px; border:1px solid rgba(242,210,122,.55); border-radius:99px; background:rgba(6,16,28,.35); white-space:nowrap; }
 .ta .cd { font:600 11px "Noto Serif Tamil"; letter-spacing:0; }

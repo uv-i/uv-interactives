@@ -36,7 +36,7 @@ const HEART = () => { const id = 'hg' + (HID++);   /* the kolam heart, gold foil
 
 /* style.json type.names: single line, step down until it fits (never wrap, never clip) */
 function stepDown(root) {
-  root.querySelectorAll('.names, .t1, .d, .cd, .ink .fit, .say span').forEach(n => {
+  root.querySelectorAll('.names, .t1, .d, .cd, .m.e, .ink .fit, .say span').forEach(n => {
     n.style.fontSize = '';
     const ps = getComputedStyle(n.parentElement), box = n.parentElement.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight) - 2;
     let fs = parseFloat(getComputedStyle(n).fontSize);
