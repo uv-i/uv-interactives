@@ -5,7 +5,7 @@
    Browser rule: nothing plays before the first tap (S2). Mute is remembered; tab hidden = fade out + suspend. */
 'use strict';
 window.SND = (() => {
-  const VOL = { master: 1, bgm: .42, sfx: .75 };            // tunables
+  const VOL = { master: 1, bgm: .30, sfx: .75 };   // bgm v2 is ~3 dB hotter than v1: .42 -> .30 keeps the SFX balance            // tunables
   const FADE = { bgmIn: 2.5, mute: .5, unmute: 1, hide: .6, show: 1.2 };
   let ac = null, master, bgmBus, sfxBus, bgm = null, bgmBuf = null, rustle = null, started = false;
   let muted = (() => { try { return localStorage.getItem('mute') === '1'; } catch (e) { return false; } })();
