@@ -26,7 +26,7 @@ window.INTRO = (() => {
   const STACK = [['cover', 'leaf_cover'], ['L1', 'leaf_title'], ['L2', 'leaf_title'], ['L3', 'leaf_title'], ['L4', 'leaf_title'], ['L5', 'leaf_plain'], ['L6', 'leaf_plain']];
   const FACT = { L1: () => `<div class="fit big">${t('title')}</div>`,
                  L2: () => `<div class="fit big">${t('bride')} ${HEART()} ${t('groom')}</div><div class="wrap2">${t('welcome')}</div>`,
-                 L3: () => `<div class="fit"><b>${t('wedL')}</b></div><div class="two">${t('wedS')}</div>`,   /* wedding only (user: no engagement) */
+                 L3: () => `<div class="fit"><b>${t('engL')}</b></div><div class="fit">${t('engS')}</div><div class="fit"><b>${t('wedL')}</b></div><div class="fit">${t('wedS')}</div>`,   /* both events (user 2026-11-14); fitInk scales to the leaf */
                  L4: () => `<div class="fit"><b>${LANG === 'ta' ? 'இடம்' : 'VENUE'}</b></div><div class="two">${t('venue')}</div>`   /* elders: wrap to 2 big lines instead of shrinking */ };
   const LIFT0 = -58, SHOW = 6;
   const step = (p, q) => { const [wq, hq] = sz(STACK[q][1]), hp = sz(STACK[p][1])[1];

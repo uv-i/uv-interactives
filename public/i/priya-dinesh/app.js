@@ -100,6 +100,7 @@ function tickCountdown() {
   let txt;
   if (now >= thanks) { txt = t('thanks'); $('#cal').hidden = true; }
   else if (today === '2026-11-22') txt = t('today_wed');
+  else if (today === '2026-11-21') txt = now < new Date(E.engagement.end) ? t('today_eng') : t('tomorrow_wed');
   else { const ms = wed - now, d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
     txt = (d > 0 ? t('cd_days') : t('cd_hours')).replace('{d}', d).replace('{h}', h).replace('{m}', m);
     if (LANG === 'en') txt = txt.replace(/1 days/, '1 day').replace(/1 hrs/, '1 hr'); }
@@ -118,18 +119,18 @@ function toast(msg) { SND.play('toast'); const n = $('#toast'); n.textContent = 
 const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(navigator.userAgent);
 const z = d => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 function gcal(key) {
-  const e = C.events[key], p = new URLSearchParams({ action: 'TEMPLATE', text: t('ev_wed'),
+  const e = C.events[key], p = new URLSearchParams({ action: 'TEMPLATE', text: t(key === 'engagement' ? 'ev_eng' : 'ev_wed'),
     dates: `${z(e.start)}/${z(e.end)}`, location: t('venue'), details: C.map });
   return 'https://calendar.google.com/calendar/render?' + p;
 }
 function ics() {
   const ev = (key, uid) => ['BEGIN:VEVENT', `UID:${uid}@priya-dinesh`, `DTSTAMP:${z(Date.now())}`, `DTSTART:${z(C.events[key].start)}`, `DTEND:${z(C.events[key].end)}`,
-    `SUMMARY:${t('ev_wed')}`, `LOCATION:${t('venue')}`, `DESCRIPTION:${C.map}`,
+    `SUMMARY:${t(key === 'engagement' ? 'ev_eng' : 'ev_wed')}`, `LOCATION:${t('venue')}`, `DESCRIPTION:${C.map}`,
     'BEGIN:VALARM', 'TRIGGER:-PT3H', 'ACTION:DISPLAY', 'DESCRIPTION:Reminder', 'END:VALARM', 'END:VEVENT'];
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//uv-i//invitation//EN', 'CALSCALE:GREGORIAN', ...ev('wedding', 'wed'), 'END:VCALENDAR'].join('\r\n');
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//uv-i//invitation//EN', 'CALSCALE:GREGORIAN', ...ev('engagement', 'eng'), ...ev('wedding', 'wed'), 'END:VCALENDAR'].join('\r\n');
 }
 function download(href, name) { const a = el(`<a download="${name}" href="${href}"></a>`); document.body.appendChild(a); a.click(); a.remove(); }
-$('#cal').onclick = () => { SND.play('cta'); setTimeout(() => SND.play('open'), 120); $('#gWed').href = gcal('wedding'); $('#sheet').hidden = false; };
+$('#cal').onclick = () => { SND.play('cta'); setTimeout(() => SND.play('open'), 120); $('#gEng').href = gcal('engagement'); $('#gWed').href = gcal('wedding'); $('#sheet').hidden = false; };
 $('#ics').onclick = () => {
   if (inApp) toast(t('ics_blocked'));                     /* in-app browsers often block .ics; the Google links still work */
   download(URL.createObjectURL(new Blob([ics()], { type: 'text/calendar' })), 'Priya-Dinesh.ics'); SND.play('saved');
